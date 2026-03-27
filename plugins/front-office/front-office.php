@@ -467,29 +467,30 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function normalize_payload(array $posted_data): array {
-$full_name = sanitize_text_field((string) ($posted_data['full_name'] ?? ''));
-$phone_raw = sanitize_text_field((string) ($posted_data['phone'] ?? ''));
-$email_raw = sanitize_email((string) ($posted_data['email'] ?? ''));
-$invitation_code = sanitize_text_field((string) ($posted_data['invite_code'] ?? ''));
+    $full_name = sanitize_text_field((string) ($posted_data['full_name'] ?? ''));
+    $phone_raw = sanitize_text_field((string) ($posted_data['phone'] ?? ''));
+    $email_raw = sanitize_email((string) ($posted_data['email'] ?? ''));
+    $invite_code_input = sanitize_text_field((string) ($posted_data['invite_code'] ?? ''));
+    $invitation_code = strtoupper(trim($invite_code_input));
 
-        return [
+    return [
+        'full_name' => $full_name,
+        'phone_raw' => $phone_raw,
+        'phone_normalized' => self::normalize_phone($phone_raw),
+        'email_raw' => $email_raw,
+        'email_normalized' => strtolower(trim($email_raw)),
+        'invitation_code' => $invitation_code,
+        'submitted_at_gmt' => current_time('mysql', true),
+        'source' => 'request_access_form',
+        'channel' => 'cf7_request_access',
+        'payload_json' => wp_json_encode([
             'full_name' => $full_name,
-            'phone_raw' => $phone_raw,
-            'phone_normalized' => self::normalize_phone($phone_raw),
-            'email_raw' => $email_raw,
-            'email_normalized' => strtolower(trim($email_raw)),
-            'invitation_code' => strtoupper(trim($invitation_code)),
-            'submitted_at_gmt' => current_time('mysql', true),
-            'source' => 'request_access_form',
-            'channel' => 'cf7_request_access',
-            'payload_json' => wp_json_encode([
-                'full_name' => $full_name,
-                'phone' => $phone_raw,
-                'email' => $email_raw,
-                'invitation_code' => $invitation_code,
-            ]),
-        ];
-    }
+            'phone' => $phone_raw,
+            'email' => $email_raw,
+            'invitation_code' => $invitation_code,
+        ]),
+    ];
+}
 
     private static function normalize_phone(string $phone): string {
         return preg_replace('/\D+/', '', $phone) ?: '';
