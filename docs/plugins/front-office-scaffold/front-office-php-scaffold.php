@@ -22,7 +22,8 @@ if (!defined('ABSPATH')) {
 final class SD_Front_Office_Scaffold {
     private const PROSPECT_POST_TYPE = 'sd_prospect';
     private const TENANT_POST_TYPE   = 'sd_tenant';
-    private const CF7_FORM_KEY       = 'sd_request_access';
+    private const REQUEST_ACCESS_FORM_ID = 33;
+    private const INVITE_READY_FORM_ID   = 387;
     private const SUCCESS_PAGE_SLUG  = 'request-received';
 
     public static function bootstrap(): void {
@@ -442,9 +443,19 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function is_request_access_form($contact_form, array $posted_data): bool {
-        $title = method_exists($contact_form, 'title') ? (string) $contact_form->title() : '';
-        $unit_tag = isset($posted_data['_wpcf7_unit_tag']) ? (string) $posted_data['_wpcf7_unit_tag'] : '';
-        return stripos($title, self::CF7_FORM_KEY) !== false || stripos($unit_tag, self::CF7_FORM_KEY) !== false;
+        if (!is_object($contact_form) || !method_exists($contact_form, 'id')) {
+            return false;
+        }
+
+        return (int) $contact_form->id() === self::REQUEST_ACCESS_FORM_ID;
+    }
+
+    private static function is_invite_ready_form($contact_form): bool {
+        if (!is_object($contact_form) || !method_exists($contact_form, 'id')) {
+            return false;
+        }
+
+        return (int) $contact_form->id() === self::INVITE_READY_FORM_ID;
     }
 
     private static function normalize_payload(array $posted_data): array {
@@ -648,8 +659,8 @@ final class SD_Front_Office_Scaffold {
             return $response;
         }
 
-        $form_key = isset($posted_data['_wpcf7_unit_tag']) ? (string) $posted_data['_wpcf7_unit_tag'] : '';
-        if (stripos($form_key, self::CF7_FORM_KEY) === false) {
+        $submission_form_id = isset($posted_data['_wpcf7']) ? (int) $posted_data['_wpcf7'] : 0;
+        if ($submission_form_id !== self::REQUEST_ACCESS_FORM_ID) {
             return $response;
         }
 
