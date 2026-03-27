@@ -10,7 +10,7 @@
  * - Register lifecycle meta keys
  * - Add admin columns and filters
  * - Handle CF7 request-access intake
- * - Redirect to staged success screen
+ * - Redirect to staged success screen ttt
  *
  * Notes:
  * - Scaffold only. Review capabilities, nonce checks, invitation validation,
