@@ -1,16 +1,13 @@
 <?php
 /**
- * Plugin Name: SoloDrive Front Office
- * Description: Front-office intake, lifecycle, and onboarding control plane.
- * Version: 0.1.0
- * Author: SoloDrive
+ * SoloDrive Front-Office Scaffold
  *
  * Purpose:
  * - Register sd_prospect and sd_tenant CPTs
  * - Register lifecycle meta keys
  * - Add admin columns and filters
  * - Handle CF7 request-access intake
- * - Redirect to staged success screen ttt
+ * - Redirect to staged success screen
  *
  * Notes:
  * - Scaffold only. Review capabilities, nonce checks, invitation validation,
@@ -45,7 +42,10 @@ final class SD_Front_Office_Scaffold {
         add_action('pre_get_posts', [__CLASS__, 'apply_admin_filters']);
 
         add_action('wpcf7_mail_sent', [__CLASS__, 'handle_cf7_submission']);
-        add_filter('wpcf7_ajax_json_echo', [__CLASS__, 'inject_cf7_redirect'], 10, 2);
+
+        if (!is_admin()) {
+            add_filter('wpcf7_feedback_response', [__CLASS__, 'inject_cf7_redirect'], 10, 2);
+        }
     }
 
     public static function register_post_types(): void {
@@ -647,12 +647,12 @@ final class SD_Front_Office_Scaffold {
         return 'Prospect';
     }
 
-    public static function inject_cf7_redirect(array $response, $result): array {
-        if (empty($response['into'])) {
+    public static function inject_cf7_redirect(array $response, $contact_form): array {
+        if (!function_exists('WPCF7_Submission::get_instance')) {
             return $response;
         }
 
-        $submission = function_exists('WPCF7_Submission::get_instance') ? WPCF7_Submission::get_instance() : null;
+        $submission = WPCF7_Submission::get_instance();
         if (!$submission) {
             return $response;
         }
