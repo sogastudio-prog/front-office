@@ -1,6 +1,9 @@
 <?php
 /**
- * SoloDrive Front-Office Scaffold
+ * Plugin Name: SoloDrive Front Office
+ * Description: Front-office intake, lifecycle, and onboarding control plane.
+ * Version: 0.1.0
+ * Author: SoloDrive
  *
  * Purpose:
  * - Register sd_prospect and sd_tenant CPTs
