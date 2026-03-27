@@ -427,7 +427,7 @@ final class SD_Front_Office_Scaffold {
             error_log('SD Front Office: form id = ' . $contact_form->id());
         }
 
-        error_log('SD Front Office: posted data = ' . wp_json_encode($posted_data));
+        
 
 
         if (!function_exists('WPCF7_Submission::get_instance')) {
@@ -441,8 +441,11 @@ final class SD_Front_Office_Scaffold {
 
         $posted_data = $submission->get_posted_data();
         if (!is_array($posted_data)) {
+            error_log('SD Front Office: posted data missing or invalid');
             return;
         }
+
+        error_log('SD Front Office: posted data = ' . wp_json_encode($posted_data));
 
         if (!self::is_request_access_form($contact_form, $posted_data)) {
             return;
@@ -453,6 +456,7 @@ final class SD_Front_Office_Scaffold {
 
         error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
         error_log('SD Front Office: existing prospect id = ' . $prospect_post_id);
+
 
         $prospect_post_id = self::find_existing_prospect($payload);
         if ($prospect_post_id > 0) {
@@ -485,7 +489,7 @@ final class SD_Front_Office_Scaffold {
         $email_raw = sanitize_email((string) ($posted_data['email'] ?? ''));
         $invite_code_input = sanitize_text_field((string) ($posted_data['invite_code'] ?? ''));
         $invitation_code = strtoupper(trim($invite_code_input));
-
+                    error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
         return [
         'full_name' => $full_name,
         'phone_raw' => $phone_raw,
@@ -606,10 +610,14 @@ final class SD_Front_Office_Scaffold {
             'post_title' => self::build_prospect_title($payload),
         ], true);
 
+        error_log('SD Front Office: creating prospect');
+
         if (is_wp_error($post_id)) {
         error_log('SD Front Office: insert error = ' . $post_id->get_error_message());
         return 0;
         }
+
+        error_log('SD Front Office: created prospect post id = ' . $post_id);
 
         if (!$post_id) {
         error_log('SD Front Office: insert returned empty post id');
