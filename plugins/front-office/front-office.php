@@ -46,7 +46,7 @@ final class SD_Front_Office_Scaffold {
         add_action('restrict_manage_posts', [__CLASS__, 'admin_filters']);
         add_action('pre_get_posts', [__CLASS__, 'apply_admin_filters']);
 
-        add_action('wpcf7_mail_sent', [__CLASS__, 'handle_cf7_submission']);
+        add_action('wpcf7_before_send_mail', [__CLASS__, 'handle_cf7_submission']);
 
         if (!is_admin()) {
             add_filter('wpcf7_feedback_response', [__CLASS__, 'inject_cf7_redirect'], 10, 2);
@@ -467,10 +467,10 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function normalize_payload(array $posted_data): array {
-        $full_name = sanitize_text_field((string) ($posted_data['full-name'] ?? ''));
-        $phone_raw = sanitize_text_field((string) ($posted_data['mobile-phone'] ?? ''));
-        $email_raw = sanitize_email((string) ($posted_data['email-address'] ?? ''));
-        $invitation_code = sanitize_text_field((string) ($posted_data['invitation-code'] ?? ''));
+$full_name = sanitize_text_field((string) ($posted_data['full_name'] ?? ''));
+$phone_raw = sanitize_text_field((string) ($posted_data['phone'] ?? ''));
+$email_raw = sanitize_email((string) ($posted_data['email'] ?? ''));
+$invitation_code = sanitize_text_field((string) ($posted_data['invite_code'] ?? ''));
 
         return [
             'full_name' => $full_name,
