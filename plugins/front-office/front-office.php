@@ -1,5 +1,10 @@
 <?php
 /**
+ * Plugin Name: SoloDrive Front Office
+ * Description: Front-office intake, lifecycle, and onboarding control plane.
+ * Version: 0.1.0
+ * Author: SoloDrive
+ *
  * SoloDrive Front-Office Scaffold
  *
  * Purpose:
