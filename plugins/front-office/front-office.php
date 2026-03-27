@@ -686,11 +686,14 @@ SD_Front_Office_Scaffold::bootstrap();
  * Add this to the request-access page or enqueue as a tiny script.
  * It looks for the custom redirect URL in the CF7 AJAX response.
  */
-?>
-<script>
-document.addEventListener('wpcf7mailsent', function(event) {
-  if (event && event.detail && event.detail.apiResponse && event.detail.apiResponse.sd_redirect_url) {
-    window.location.href = event.detail.apiResponse.sd_redirect_url;
-  }
-}, false);
-</script>
+add_action('wp_footer', function () {
+    ?>
+    <script>
+    document.addEventListener('wpcf7mailsent', function(event) {
+      if (event && event.detail && event.detail.apiResponse && event.detail.apiResponse.sd_redirect_url) {
+        window.location.href = event.detail.apiResponse.sd_redirect_url;
+      }
+    }, false);
+    </script>
+    <?php
+});
