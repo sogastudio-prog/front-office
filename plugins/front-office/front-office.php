@@ -420,6 +420,16 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function handle_cf7_submission($contact_form): void {
+
+        error_log('SD Front Office: handler fired');
+
+        if (is_object($contact_form) && method_exists($contact_form, 'id')) {
+            error_log('SD Front Office: form id = ' . $contact_form->id());
+        }
+
+        error_log('SD Front Office: posted data = ' . wp_json_encode($posted_data));
+
+
         if (!function_exists('WPCF7_Submission::get_instance')) {
             return;
         }
@@ -437,9 +447,12 @@ final class SD_Front_Office_Scaffold {
         if (!self::is_request_access_form($contact_form, $posted_data)) {
             return;
         }
-
+        'post_title' => 'CF7 Prospect Test',
         $payload = self::normalize_payload($posted_data);
         $payload['invitation'] = self::evaluate_invitation_code($payload['invitation_code']);
+
+        error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
+        error_log('SD Front Office: existing prospect id = ' . $prospect_post_id);
 
         $prospect_post_id = self::find_existing_prospect($payload);
         if ($prospect_post_id > 0) {
@@ -586,16 +599,24 @@ final class SD_Front_Office_Scaffold {
         $is_invited = $payload['invitation']['status'] === 'valid';
         $lifecycle = $is_invited ? 'invited_prospect' : 'prospect';
         $now = $payload['submitted_at_gmt'];
-
+        error_log('SD Front Office: creating prospect');
         $post_id = wp_insert_post([
             'post_type' => self::PROSPECT_POST_TYPE,
             'post_status' => 'publish',
             'post_title' => self::build_prospect_title($payload),
         ], true);
 
-        if (is_wp_error($post_id) || !$post_id) {
-            return 0;
+        if (is_wp_error($post_id)) {
+        error_log('SD Front Office: insert error = ' . $post_id->get_error_message());
+        return 0;
         }
+
+        if (!$post_id) {
+        error_log('SD Front Office: insert returned empty post id');
+        return 0;
+        }
+
+        error_log('SD Front Office: created prospect post id = ' . $post_id);
 
         $prospect_id = 'prs_' . wp_generate_uuid4();
 
