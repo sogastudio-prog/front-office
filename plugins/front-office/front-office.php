@@ -447,7 +447,7 @@ final class SD_Front_Office_Scaffold {
         if (!self::is_request_access_form($contact_form, $posted_data)) {
             return;
         }
-        'post_title' => 'CF7 Prospect Test',
+        
         $payload = self::normalize_payload($posted_data);
         $payload['invitation'] = self::evaluate_invitation_code($payload['invitation_code']);
 
