@@ -467,13 +467,13 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function normalize_payload(array $posted_data): array {
-    $full_name = sanitize_text_field((string) ($posted_data['full_name'] ?? ''));
-    $phone_raw = sanitize_text_field((string) ($posted_data['phone'] ?? ''));
-    $email_raw = sanitize_email((string) ($posted_data['email'] ?? ''));
-    $invite_code_input = sanitize_text_field((string) ($posted_data['invite_code'] ?? ''));
-    $invitation_code = strtoupper(trim($invite_code_input));
+        $full_name = sanitize_text_field((string) ($posted_data['full_name'] ?? ''));
+        $phone_raw = sanitize_text_field((string) ($posted_data['phone'] ?? ''));
+        $email_raw = sanitize_email((string) ($posted_data['email'] ?? ''));
+        $invite_code_input = sanitize_text_field((string) ($posted_data['invite_code'] ?? ''));
+        $invitation_code = strtoupper(trim($invite_code_input));
 
-    return [
+        return [
         'full_name' => $full_name,
         'phone_raw' => $phone_raw,
         'phone_normalized' => self::normalize_phone($phone_raw),
@@ -489,8 +489,8 @@ final class SD_Front_Office_Scaffold {
             'email' => $email_raw,
             'invitation_code' => $invitation_code,
         ]),
-    ];
-}
+        ];
+    }
 
     private static function normalize_phone(string $phone): string {
         return preg_replace('/\D+/', '', $phone) ?: '';
