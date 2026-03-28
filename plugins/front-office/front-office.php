@@ -484,13 +484,13 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function normalize_payload(array $posted_data): array {
-        $full_name = sanitize_text_field((string) ($posted_data['full_name'] ?? ''));
-        $phone_raw = sanitize_text_field((string) ($posted_data['phone'] ?? ''));
-        $email_raw = sanitize_email((string) ($posted_data['email'] ?? ''));
-        $invite_code_input = sanitize_text_field((string) ($posted_data['invite_code'] ?? ''));
-        $invitation_code = strtoupper(trim($invite_code_input));
-                    error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
-        return [
+    $full_name = sanitize_text_field((string) ($posted_data['full_name'] ?? ''));
+    $phone_raw = sanitize_text_field((string) ($posted_data['phone'] ?? ''));
+    $email_raw = sanitize_email((string) ($posted_data['email'] ?? ''));
+    $invite_code_input = sanitize_text_field((string) ($posted_data['invite_code'] ?? ''));
+    $invitation_code = strtoupper(trim($invite_code_input));
+
+    $payload = [
         'full_name' => $full_name,
         'phone_raw' => $phone_raw,
         'phone_normalized' => self::normalize_phone($phone_raw),
@@ -506,8 +506,12 @@ final class SD_Front_Office_Scaffold {
             'email' => $email_raw,
             'invitation_code' => $invitation_code,
         ]),
-        ];
-    }
+    ];
+
+    error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
+
+    return $payload;
+}
 
     private static function normalize_phone(string $phone): string {
         return preg_replace('/\D+/', '', $phone) ?: '';
@@ -600,59 +604,57 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function create_new_prospect(array $payload): int {
-        $is_invited = $payload['invitation']['status'] === 'valid';
-        $lifecycle = $is_invited ? 'invited_prospect' : 'prospect';
-        $now = $payload['submitted_at_gmt'];
-        error_log('SD Front Office: creating prospect');
-        $post_id = wp_insert_post([
-            'post_type' => self::PROSPECT_POST_TYPE,
-            'post_status' => 'publish',
-            'post_title' => self::build_prospect_title($payload),
-        ], true);
+    $is_invited = $payload['invitation']['status'] === 'valid';
+    $lifecycle = $is_invited ? 'invited_prospect' : 'prospect';
+    $now = $payload['submitted_at_gmt'];
 
-        error_log('SD Front Office: creating prospect');
+    error_log('SD Front Office: creating prospect');
 
-        if (is_wp_error($post_id)) {
+    $post_id = wp_insert_post([
+        'post_type' => self::PROSPECT_POST_TYPE,
+        'post_status' => 'publish',
+        'post_title' => self::build_prospect_title($payload),
+    ], true);
+
+    if (is_wp_error($post_id)) {
         error_log('SD Front Office: insert error = ' . $post_id->get_error_message());
         return 0;
-        }
+    }
 
-        error_log('SD Front Office: created prospect post id = ' . $post_id);
-
-        if (!$post_id) {
+    if (!$post_id) {
         error_log('SD Front Office: insert returned empty post id');
         return 0;
-        }
-
-        error_log('SD Front Office: created prospect post id = ' . $post_id);
-
-        $prospect_id = 'prs_' . wp_generate_uuid4();
-
-        update_post_meta($post_id, 'sd_prospect_id', $prospect_id);
-        update_post_meta($post_id, 'sd_lifecycle_stage', $lifecycle);
-        update_post_meta($post_id, 'sd_source', $payload['source']);
-        update_post_meta($post_id, 'sd_created_at_gmt', $now);
-        update_post_meta($post_id, 'sd_updated_at_gmt', $now);
-        update_post_meta($post_id, 'sd_full_name', $payload['full_name']);
-        update_post_meta($post_id, 'sd_phone_raw', $payload['phone_raw']);
-        update_post_meta($post_id, 'sd_phone_normalized', $payload['phone_normalized']);
-        update_post_meta($post_id, 'sd_email_raw', $payload['email_raw']);
-        update_post_meta($post_id, 'sd_email_normalized', $payload['email_normalized']);
-        update_post_meta($post_id, 'sd_invitation_code', $payload['invitation_code']);
-        update_post_meta($post_id, 'sd_invitation_status', $payload['invitation']['status']);
-        update_post_meta($post_id, 'sd_invited_by', $payload['invitation']['invited_by']);
-        update_post_meta($post_id, 'sd_priority_lane', $payload['invitation']['priority_lane']);
-        update_post_meta($post_id, 'sd_review_status', 'new');
-        update_post_meta($post_id, 'sd_stripe_onboarding_status', 'not_started');
-        update_post_meta($post_id, 'sd_dedupe_key_email', $payload['email_normalized']);
-        update_post_meta($post_id, 'sd_dedupe_key_phone', $payload['phone_normalized']);
-        update_post_meta($post_id, 'sd_last_intake_channel', $payload['channel']);
-        update_post_meta($post_id, 'sd_last_submission_at_gmt', $now);
-        update_post_meta($post_id, 'sd_submission_count', 1);
-        update_post_meta($post_id, 'sd_last_submission_payload_json', $payload['payload_json']);
-
-        return (int) $post_id;
     }
+
+    error_log('SD Front Office: created prospect post id = ' . $post_id);
+
+    $prospect_id = 'prs_' . wp_generate_uuid4();
+
+    update_post_meta($post_id, 'sd_prospect_id', $prospect_id);
+    update_post_meta($post_id, 'sd_lifecycle_stage', $lifecycle);
+    update_post_meta($post_id, 'sd_source', $payload['source']);
+    update_post_meta($post_id, 'sd_created_at_gmt', $now);
+    update_post_meta($post_id, 'sd_updated_at_gmt', $now);
+    update_post_meta($post_id, 'sd_full_name', $payload['full_name']);
+    update_post_meta($post_id, 'sd_phone_raw', $payload['phone_raw']);
+    update_post_meta($post_id, 'sd_phone_normalized', $payload['phone_normalized']);
+    update_post_meta($post_id, 'sd_email_raw', $payload['email_raw']);
+    update_post_meta($post_id, 'sd_email_normalized', $payload['email_normalized']);
+    update_post_meta($post_id, 'sd_invitation_code', $payload['invitation_code']);
+    update_post_meta($post_id, 'sd_invitation_status', $payload['invitation']['status']);
+    update_post_meta($post_id, 'sd_invited_by', $payload['invitation']['invited_by']);
+    update_post_meta($post_id, 'sd_priority_lane', $payload['invitation']['priority_lane']);
+    update_post_meta($post_id, 'sd_review_status', 'new');
+    update_post_meta($post_id, 'sd_stripe_onboarding_status', 'not_started');
+    update_post_meta($post_id, 'sd_dedupe_key_email', $payload['email_normalized']);
+    update_post_meta($post_id, 'sd_dedupe_key_phone', $payload['phone_normalized']);
+    update_post_meta($post_id, 'sd_last_intake_channel', $payload['channel']);
+    update_post_meta($post_id, 'sd_last_submission_at_gmt', $now);
+    update_post_meta($post_id, 'sd_submission_count', 1);
+    update_post_meta($post_id, 'sd_last_submission_payload_json', $payload['payload_json']);
+
+    return (int) $post_id;
+}
 
     private static function resolve_lifecycle_stage(string $current_stage, string $invite_status): string {
         if ($current_stage === 'lead') {
