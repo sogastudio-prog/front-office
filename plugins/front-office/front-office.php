@@ -420,52 +420,57 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function handle_cf7_submission($contact_form): void {
+    error_log('SD Front Office: handler fired');
 
-        error_log('SD Front Office: handler fired');
-
-        if (is_object($contact_form) && method_exists($contact_form, 'id')) {
-            error_log('SD Front Office: form id = ' . $contact_form->id());
-        }
-
-        
-
-
-        if (!function_exists('WPCF7_Submission::get_instance')) {
-            return;
-        }
-
-        $submission = WPCF7_Submission::get_instance();
-        if (!$submission) {
-            return;
-        }
-
-        $posted_data = $submission->get_posted_data();
-        if (!is_array($posted_data)) {
-            error_log('SD Front Office: posted data missing or invalid');
-            return;
-        }
-
-        error_log('SD Front Office: posted data = ' . wp_json_encode($posted_data));
-
-        if (!self::is_request_access_form($contact_form, $posted_data)) {
-            return;
-        }
-        
-        $payload = self::normalize_payload($posted_data);
-        $payload['invitation'] = self::evaluate_invitation_code($payload['invitation_code']);
-
-        error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
-        error_log('SD Front Office: existing prospect id = ' . $prospect_post_id);
-
-
-        $prospect_post_id = self::find_existing_prospect($payload);
-        if ($prospect_post_id > 0) {
-            self::update_existing_prospect($prospect_post_id, $payload);
-            return;
-        }
-
-        self::create_new_prospect($payload);
+    if (is_object($contact_form) && method_exists($contact_form, 'id')) {
+        error_log('SD Front Office: form id = ' . $contact_form->id());
     }
+
+    if (!function_exists('WPCF7_Submission::get_instance')) {
+        error_log('SD Front Office: WPCF7_Submission::get_instance missing');
+        return;
+    }
+
+    $submission = WPCF7_Submission::get_instance();
+    if (!$submission) {
+        error_log('SD Front Office: submission instance is null');
+        return;
+    }
+
+    error_log('SD Front Office: submission instance acquired');
+
+    $posted_data = $submission->get_posted_data();
+
+    if (!is_array($posted_data)) {
+        error_log('SD Front Office: posted_data is not array');
+        error_log('SD Front Office: posted_data raw = ' . print_r($posted_data, true));
+        return;
+    }
+
+    error_log('SD Front Office: posted data = ' . wp_json_encode($posted_data));
+
+    if (!self::is_request_access_form($contact_form, $posted_data)) {
+        error_log('SD Front Office: form check failed');
+        return;
+    }
+
+    $payload = self::normalize_payload($posted_data);
+    $payload['invitation'] = self::evaluate_invitation_code($payload['invitation_code']);
+
+    error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
+
+    $prospect_post_id = self::find_existing_prospect($payload);
+    error_log('SD Front Office: existing prospect id = ' . $prospect_post_id);
+
+        if ($prospect_post_id > 0) {
+        self::update_existing_prospect($prospect_post_id, $payload);
+        error_log('SD Front Office: updated existing prospect');
+        return;
+        }
+
+        $created_id = self::create_new_prospect($payload);
+        error_log('SD Front Office: create_new_prospect returned = ' . $created_id);
+     }
 
     private static function is_request_access_form($contact_form, array $posted_data): bool {
         if (!is_object($contact_form) || !method_exists($contact_form, 'id')) {
@@ -511,7 +516,7 @@ final class SD_Front_Office_Scaffold {
     error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
 
     return $payload;
-}
+    }
 
     private static function normalize_phone(string $phone): string {
         return preg_replace('/\D+/', '', $phone) ?: '';
@@ -654,7 +659,7 @@ final class SD_Front_Office_Scaffold {
     update_post_meta($post_id, 'sd_last_submission_payload_json', $payload['payload_json']);
 
     return (int) $post_id;
-}
+    }
 
     private static function resolve_lifecycle_stage(string $current_stage, string $invite_status): string {
         if ($current_stage === 'lead') {
