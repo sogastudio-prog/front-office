@@ -47,7 +47,7 @@ final class SD_Front_Office_Scaffold {
         add_action('pre_get_posts', [__CLASS__, 'apply_admin_filters']);
 
         add_action('wpcf7_before_send_mail', [__CLASS__, 'handle_cf7_submission']);
-
+        add_action('save_post_sd_prospect', [__CLASS__, 'ensure_prospect_defaults'], 10, 3);
         if (!is_admin()) {
             add_filter('wpcf7_feedback_response', [__CLASS__, 'inject_cf7_redirect'], 10, 2);
         }
@@ -152,7 +152,11 @@ final class SD_Front_Office_Scaffold {
             'sd_last_submission_at_gmt' => 'string',
             'sd_submission_count' => 'integer',
             'sd_last_submission_payload_json' => 'string',
-        ];
+            'sd_city' => 'string',
+            'sd_repeat_clients' => 'string',
+            'sd_driving_status' => 'string',
+            'sd_weekly_gross' => 'string',
+                    ];
 
         $tenant_meta = [
             'sd_tenant_id' => 'string',
@@ -420,53 +424,53 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function handle_cf7_submission($contact_form): void {
-    error_log('SD Front Office: handler fired');
+        error_log('SD Front Office: handler fired');
 
-    if (is_object($contact_form) && method_exists($contact_form, 'id')) {
+        if (is_object($contact_form) && method_exists($contact_form, 'id')) {
         error_log('SD Front Office: form id = ' . $contact_form->id());
-    }
+        }
 
-    if (!class_exists('WPCF7_Submission') || !method_exists('WPCF7_Submission', 'get_instance')) {
-    error_log('SD Front Office: WPCF7_Submission class or get_instance missing');
-    return;
-}
+        if (!class_exists('WPCF7_Submission') || !method_exists('WPCF7_Submission', 'get_instance')) {
+        error_log('SD Front Office: WPCF7_Submission class or get_instance missing');
+        return;
+        }
 
-$submission = WPCF7_Submission::get_instance();
-if (!$submission) {
-    error_log('SD Front Office: submission instance is null');
-    return;
-}
-
-    $submission = WPCF7_Submission::get_instance();
-    if (!$submission) {
+        $submission = WPCF7_Submission::get_instance();
+        if (!$submission) {
         error_log('SD Front Office: submission instance is null');
         return;
-    }
+        }
 
-    error_log('SD Front Office: submission instance acquired');
+        $submission = WPCF7_Submission::get_instance();
+        if (!$submission) {
+        error_log('SD Front Office: submission instance is null');
+        return;
+        }
 
-    $posted_data = $submission->get_posted_data();
+        error_log('SD Front Office: submission instance acquired');
 
-    if (!is_array($posted_data)) {
+        $posted_data = $submission->get_posted_data();
+
+        if (!is_array($posted_data)) {
         error_log('SD Front Office: posted_data is not array');
         error_log('SD Front Office: posted_data raw = ' . print_r($posted_data, true));
         return;
-    }
+        }
 
-    error_log('SD Front Office: posted data = ' . wp_json_encode($posted_data));
+        error_log('SD Front Office: posted data = ' . wp_json_encode($posted_data));
 
-    if (!self::is_request_access_form($contact_form, $posted_data)) {
+        if (!self::is_request_access_form($contact_form, $posted_data)) {
         error_log('SD Front Office: form check failed');
         return;
-    }
+        }
 
-    $payload = self::normalize_payload($posted_data);
-    $payload['invitation'] = self::evaluate_invitation_code($payload['invitation_code']);
+        $payload = self::normalize_payload($posted_data);
+        $payload['invitation'] = self::evaluate_invitation_code($payload['invitation_code']);
 
-    error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
+        error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
 
-    $prospect_post_id = self::find_existing_prospect($payload);
-    error_log('SD Front Office: existing prospect id = ' . $prospect_post_id);
+        $prospect_post_id = self::find_existing_prospect($payload);
+        error_log('SD Front Office: existing prospect id = ' . $prospect_post_id);
 
         if ($prospect_post_id > 0) {
         self::update_existing_prospect($prospect_post_id, $payload);
@@ -476,7 +480,7 @@ if (!$submission) {
 
         $created_id = self::create_new_prospect($payload);
         error_log('SD Front Office: create_new_prospect returned = ' . $created_id);
-     }
+    }
 
     private static function is_request_access_form($contact_form, array $posted_data): bool {
         if (!is_object($contact_form) || !method_exists($contact_form, 'id')) {
@@ -495,13 +499,13 @@ if (!$submission) {
     }
 
     private static function normalize_payload(array $posted_data): array {
-    $full_name = sanitize_text_field((string) ($posted_data['full_name'] ?? ''));
-    $phone_raw = sanitize_text_field((string) ($posted_data['phone'] ?? ''));
-    $email_raw = sanitize_email((string) ($posted_data['email'] ?? ''));
-    $invite_code_input = sanitize_text_field((string) ($posted_data['invite_code'] ?? ''));
-    $invitation_code = strtoupper(trim($invite_code_input));
+        $full_name = sanitize_text_field((string) ($posted_data['full_name'] ?? ''));
+        $phone_raw = sanitize_text_field((string) ($posted_data['phone'] ?? ''));
+        $email_raw = sanitize_email((string) ($posted_data['email'] ?? ''));
+        $invite_code_input = sanitize_text_field((string) ($posted_data['invite_code'] ?? ''));
+        $invitation_code = strtoupper(trim($invite_code_input));
 
-    $payload = [
+        $payload = [
         'full_name' => $full_name,
         'phone_raw' => $phone_raw,
         'phone_normalized' => self::normalize_phone($phone_raw),
@@ -517,11 +521,11 @@ if (!$submission) {
             'email' => $email_raw,
             'invitation_code' => $invitation_code,
         ]),
-    ];
+        ];
 
-    error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
+        error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
 
-    return $payload;
+        return $payload;
     }
 
     private static function normalize_phone(string $phone): string {
@@ -615,56 +619,56 @@ if (!$submission) {
     }
 
     private static function create_new_prospect(array $payload): int {
-    $is_invited = $payload['invitation']['status'] === 'valid';
-    $lifecycle = $is_invited ? 'invited_prospect' : 'prospect';
-    $now = $payload['submitted_at_gmt'];
+        $is_invited = $payload['invitation']['status'] === 'valid';
+        $lifecycle = $is_invited ? 'invited_prospect' : 'prospect';
+        $now = $payload['submitted_at_gmt'];
 
-    error_log('SD Front Office: creating prospect');
+        error_log('SD Front Office: creating prospect');
 
-    $post_id = wp_insert_post([
-        'post_type' => self::PROSPECT_POST_TYPE,
-        'post_status' => 'publish',
-        'post_title' => self::build_prospect_title($payload),
-    ], true);
+        $post_id = wp_insert_post([
+            'post_type' => self::PROSPECT_POST_TYPE,
+            'post_status' => 'publish',
+            'post_title' => self::build_prospect_title($payload),
+        ], true);
 
-    if (is_wp_error($post_id)) {
-        error_log('SD Front Office: insert error = ' . $post_id->get_error_message());
-        return 0;
-    }
+        if (is_wp_error($post_id)) {
+            error_log('SD Front Office: insert error = ' . $post_id->get_error_message());
+            return 0;
+        }
 
-    if (!$post_id) {
-        error_log('SD Front Office: insert returned empty post id');
-        return 0;
-    }
+        if (!$post_id) {
+            error_log('SD Front Office: insert returned empty post id');
+            return 0;
+        }
 
-    error_log('SD Front Office: created prospect post id = ' . $post_id);
+        error_log('SD Front Office: created prospect post id = ' . $post_id);
 
-    $prospect_id = 'prs_' . wp_generate_uuid4();
+        $prospect_id = 'prs_' . wp_generate_uuid4();
 
-    update_post_meta($post_id, 'sd_prospect_id', $prospect_id);
-    update_post_meta($post_id, 'sd_lifecycle_stage', $lifecycle);
-    update_post_meta($post_id, 'sd_source', $payload['source']);
-    update_post_meta($post_id, 'sd_created_at_gmt', $now);
-    update_post_meta($post_id, 'sd_updated_at_gmt', $now);
-    update_post_meta($post_id, 'sd_full_name', $payload['full_name']);
-    update_post_meta($post_id, 'sd_phone_raw', $payload['phone_raw']);
-    update_post_meta($post_id, 'sd_phone_normalized', $payload['phone_normalized']);
-    update_post_meta($post_id, 'sd_email_raw', $payload['email_raw']);
-    update_post_meta($post_id, 'sd_email_normalized', $payload['email_normalized']);
-    update_post_meta($post_id, 'sd_invitation_code', $payload['invitation_code']);
-    update_post_meta($post_id, 'sd_invitation_status', $payload['invitation']['status']);
-    update_post_meta($post_id, 'sd_invited_by', $payload['invitation']['invited_by']);
-    update_post_meta($post_id, 'sd_priority_lane', $payload['invitation']['priority_lane']);
-    update_post_meta($post_id, 'sd_review_status', 'new');
-    update_post_meta($post_id, 'sd_stripe_onboarding_status', 'not_started');
-    update_post_meta($post_id, 'sd_dedupe_key_email', $payload['email_normalized']);
-    update_post_meta($post_id, 'sd_dedupe_key_phone', $payload['phone_normalized']);
-    update_post_meta($post_id, 'sd_last_intake_channel', $payload['channel']);
-    update_post_meta($post_id, 'sd_last_submission_at_gmt', $now);
-    update_post_meta($post_id, 'sd_submission_count', 1);
-    update_post_meta($post_id, 'sd_last_submission_payload_json', $payload['payload_json']);
+        update_post_meta($post_id, 'sd_prospect_id', $prospect_id);
+        update_post_meta($post_id, 'sd_lifecycle_stage', $lifecycle);
+        update_post_meta($post_id, 'sd_source', $payload['source']);
+        update_post_meta($post_id, 'sd_created_at_gmt', $now);
+        update_post_meta($post_id, 'sd_updated_at_gmt', $now);
+        update_post_meta($post_id, 'sd_full_name', $payload['full_name']);
+        update_post_meta($post_id, 'sd_phone_raw', $payload['phone_raw']);
+        update_post_meta($post_id, 'sd_phone_normalized', $payload['phone_normalized']);
+        update_post_meta($post_id, 'sd_email_raw', $payload['email_raw']);
+        update_post_meta($post_id, 'sd_email_normalized', $payload['email_normalized']);
+        update_post_meta($post_id, 'sd_invitation_code', $payload['invitation_code']);
+        update_post_meta($post_id, 'sd_invitation_status', $payload['invitation']['status']);
+        update_post_meta($post_id, 'sd_invited_by', $payload['invitation']['invited_by']);
+        update_post_meta($post_id, 'sd_priority_lane', $payload['invitation']['priority_lane']);
+        update_post_meta($post_id, 'sd_review_status', 'new');
+        update_post_meta($post_id, 'sd_stripe_onboarding_status', 'not_started');
+        update_post_meta($post_id, 'sd_dedupe_key_email', $payload['email_normalized']);
+        update_post_meta($post_id, 'sd_dedupe_key_phone', $payload['phone_normalized']);
+        update_post_meta($post_id, 'sd_last_intake_channel', $payload['channel']);
+        update_post_meta($post_id, 'sd_last_submission_at_gmt', $now);
+        update_post_meta($post_id, 'sd_submission_count', 1);
+        update_post_meta($post_id, 'sd_last_submission_payload_json', $payload['payload_json']);
 
-    return (int) $post_id;
+        return (int) $post_id;
     }
 
     private static function resolve_lifecycle_stage(string $current_stage, string $invite_status): string {
@@ -697,13 +701,13 @@ if (!$submission) {
 
     public static function inject_cf7_redirect(array $response, $contact_form): array {
         if (!class_exists('WPCF7_Submission') || !method_exists('WPCF7_Submission', 'get_instance')) {
-    return $response;
-}
+        return $response;
+        }
 
-$submission = WPCF7_Submission::get_instance();
-if (!$submission) {
-    return $response;
-}
+        $submission = WPCF7_Submission::get_instance();
+        if (!$submission) {
+        return $response;
+        }
 
         $posted_data = $submission->get_posted_data();
         if (!is_array($posted_data)) {
@@ -718,6 +722,95 @@ if (!$submission) {
         $redirect_url = home_url('/' . self::SUCCESS_PAGE_SLUG . '/');
         $response['sd_redirect_url'] = esc_url_raw($redirect_url);
         return $response;
+    }
+
+    public static function ensure_prospect_defaults(int $post_id, WP_Post $post, bool $update): void {
+        if ($post->post_type !== self::PROSPECT_POST_TYPE) {
+            return;
+        }
+
+        if (wp_is_post_revision($post_id) || defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+
+        $now = current_time('mysql', true);
+
+        if (!get_post_meta($post_id, 'sd_prospect_id', true)) {
+            update_post_meta($post_id, 'sd_prospect_id', 'prs_' . wp_generate_uuid4());
+        }
+
+        if (!get_post_meta($post_id, 'sd_lifecycle_stage', true)) {
+            update_post_meta($post_id, 'sd_lifecycle_stage', 'prospect');
+        }
+
+        if (!get_post_meta($post_id, 'sd_source', true)) {
+            update_post_meta($post_id, 'sd_source', 'admin_user');
+        }
+
+        if (!get_post_meta($post_id, 'sd_created_at_gmt', true)) {
+            update_post_meta($post_id, 'sd_created_at_gmt', $now);
+        }
+
+        update_post_meta($post_id, 'sd_updated_at_gmt', $now);
+
+        if (!get_post_meta($post_id, 'sd_invitation_status', true)) {
+            update_post_meta($post_id, 'sd_invitation_status', 'none');
+        }
+
+        if (!get_post_meta($post_id, 'sd_priority_lane', true)) {
+            update_post_meta($post_id, 'sd_priority_lane', 0);
+        }
+
+        if (!get_post_meta($post_id, 'sd_review_status', true)) {
+            update_post_meta($post_id, 'sd_review_status', 'new');
+        }
+
+        if (!get_post_meta($post_id, 'sd_stripe_onboarding_status', true)) {
+            update_post_meta($post_id, 'sd_stripe_onboarding_status', 'not_started');
+        }
+
+        if (!get_post_meta($post_id, 'sd_last_intake_channel', true)) {
+            update_post_meta($post_id, 'sd_last_intake_channel', 'admin_user');
+        }
+
+        if (!get_post_meta($post_id, 'sd_last_submission_at_gmt', true)) {
+            update_post_meta($post_id, 'sd_last_submission_at_gmt', $now);
+        }
+
+        if (!get_post_meta($post_id, 'sd_submission_count', true)) {
+            update_post_meta($post_id, 'sd_submission_count', 1);
+        }
+
+        if (!get_post_meta($post_id, 'sd_last_submission_payload_json', true)) {
+            update_post_meta($post_id, 'sd_last_submission_payload_json', wp_json_encode([
+                'origin' => 'admin_user',
+                'post_id' => $post_id,
+            ]));
+        }
+
+        $title = get_the_title($post_id);
+
+        if (!get_post_meta($post_id, 'sd_full_name', true) && $title) {
+            update_post_meta($post_id, 'sd_full_name', $title);
+        }
+
+        $phone_raw = (string) get_post_meta($post_id, 'sd_phone_raw', true);
+        if ($phone_raw && !get_post_meta($post_id, 'sd_phone_normalized', true)) {
+            update_post_meta($post_id, 'sd_phone_normalized', self::normalize_phone($phone_raw));
+        }
+
+        $email_raw = (string) get_post_meta($post_id, 'sd_email_raw', true);
+        if ($email_raw && !get_post_meta($post_id, 'sd_email_normalized', true)) {
+            update_post_meta($post_id, 'sd_email_normalized', strtolower(trim($email_raw)));
+        }
+
+        if (!get_post_meta($post_id, 'sd_dedupe_key_email', true)) {
+            update_post_meta($post_id, 'sd_dedupe_key_email', (string) get_post_meta($post_id, 'sd_email_normalized', true));
+        }
+
+        if (!get_post_meta($post_id, 'sd_dedupe_key_phone', true)) {
+            update_post_meta($post_id, 'sd_dedupe_key_phone', (string) get_post_meta($post_id, 'sd_phone_normalized', true));
+        }
     }
 }
 
