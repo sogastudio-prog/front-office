@@ -426,10 +426,16 @@ final class SD_Front_Office_Scaffold {
         error_log('SD Front Office: form id = ' . $contact_form->id());
     }
 
-    if (!function_exists('WPCF7_Submission::get_instance')) {
-        error_log('SD Front Office: WPCF7_Submission::get_instance missing');
-        return;
-    }
+    if (!class_exists('WPCF7_Submission') || !method_exists('WPCF7_Submission', 'get_instance')) {
+    error_log('SD Front Office: WPCF7_Submission class or get_instance missing');
+    return;
+}
+
+$submission = WPCF7_Submission::get_instance();
+if (!$submission) {
+    error_log('SD Front Office: submission instance is null');
+    return;
+}
 
     $submission = WPCF7_Submission::get_instance();
     if (!$submission) {
@@ -690,14 +696,14 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function inject_cf7_redirect(array $response, $contact_form): array {
-        if (!function_exists('WPCF7_Submission::get_instance')) {
-            return $response;
-        }
+        if (!class_exists('WPCF7_Submission') || !method_exists('WPCF7_Submission', 'get_instance')) {
+    return $response;
+}
 
-        $submission = WPCF7_Submission::get_instance();
-        if (!$submission) {
-            return $response;
-        }
+$submission = WPCF7_Submission::get_instance();
+if (!$submission) {
+    return $response;
+}
 
         $posted_data = $submission->get_posted_data();
         if (!is_array($posted_data)) {
