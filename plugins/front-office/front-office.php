@@ -30,10 +30,13 @@ final class SD_Front_Office_Scaffold {
     private const REQUEST_ACCESS_FORM_ID = 33;
     private const INVITE_READY_FORM_ID   = 387;
     private const SUCCESS_PAGE_SLUG  = 'request-received';
+    private const REST_NAMESPACE = 'sd/v1';
+    private const STRIPE_API_BASE = 'https://api.stripe.com/v1';
 
     public static function bootstrap(): void {
         add_action('init', [__CLASS__, 'register_post_types']);
         add_action('init', [__CLASS__, 'register_meta_keys']);
+        add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
 
         add_filter('manage_' . self::PROSPECT_POST_TYPE . '_posts_columns', [__CLASS__, 'prospect_columns']);
         add_action('manage_' . self::PROSPECT_POST_TYPE . '_posts_custom_column', [__CLASS__, 'render_prospect_column'], 10, 2);
@@ -722,6 +725,303 @@ final class SD_Front_Office_Scaffold {
         $redirect_url = home_url('/' . self::SUCCESS_PAGE_SLUG . '/');
         $response['sd_redirect_url'] = esc_url_raw($redirect_url);
         return $response;
+    }
+
+
+
+    public static function register_rest_routes(): void {
+        register_rest_route(self::REST_NAMESPACE, '/onboarding/start', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_start_onboarding'],
+            'permission_callback' => '__return_true',
+            'args' => [
+                'prospect_id' => [
+                    'required' => false,
+                    'type' => 'string',
+                    'sanitize_callback' => static fn($value) => sanitize_text_field((string) $value),
+                ],
+                'prospect_post_id' => [
+                    'required' => false,
+                    'type' => 'integer',
+                    'sanitize_callback' => static fn($value) => absint($value),
+                ],
+                'return_url' => [
+                    'required' => false,
+                    'type' => 'string',
+                    'sanitize_callback' => static fn($value) => esc_url_raw((string) $value),
+                ],
+                'refresh_url' => [
+                    'required' => false,
+                    'type' => 'string',
+                    'sanitize_callback' => static fn($value) => esc_url_raw((string) $value),
+                ],
+            ],
+        ]);
+    }
+
+    public static function rest_start_onboarding(WP_REST_Request $request): WP_REST_Response|WP_Error {
+        $prospect_post_id = self::resolve_prospect_post_id_from_request($request);
+        if ($prospect_post_id <= 0) {
+            return new WP_Error('sd_prospect_not_found', 'Prospect not found.', ['status' => 404]);
+        }
+
+        $eligibility = self::validate_prospect_for_onboarding($prospect_post_id);
+        if (is_wp_error($eligibility)) {
+            return $eligibility;
+        }
+
+        $secret_key = self::get_stripe_secret_key();
+        if ($secret_key === '') {
+            return new WP_Error('sd_stripe_not_configured', 'Stripe control-plane secret key is not configured.', ['status' => 500]);
+        }
+
+        $return_url = self::resolve_onboarding_return_url($request);
+        $refresh_url = self::resolve_onboarding_refresh_url($request);
+
+        $account_id = (string) get_post_meta($prospect_post_id, 'sd_stripe_account_id', true);
+        $created_new_account = false;
+
+        if ($account_id === '') {
+            $account = self::stripe_create_connected_account($prospect_post_id, $secret_key);
+            if (is_wp_error($account)) {
+                self::mark_prospect_stripe_failure($prospect_post_id, $account);
+                return $account;
+            }
+
+            $account_id = (string) ($account['id'] ?? '');
+            if ($account_id === '') {
+                $error = new WP_Error('sd_stripe_account_missing', 'Stripe account ID was not returned.', ['status' => 502]);
+                self::mark_prospect_stripe_failure($prospect_post_id, $error);
+                return $error;
+            }
+
+            $created_new_account = true;
+            update_post_meta($prospect_post_id, 'sd_stripe_account_id', $account_id);
+            update_post_meta($prospect_post_id, 'sd_stripe_onboarding_started_at_gmt', current_time('mysql', true));
+            update_post_meta($prospect_post_id, 'sd_stripe_onboarding_status', 'account_created');
+        }
+
+        $account_link = self::stripe_create_account_link($account_id, $return_url, $refresh_url, $secret_key);
+        if (is_wp_error($account_link)) {
+            self::mark_prospect_stripe_failure($prospect_post_id, $account_link);
+            return $account_link;
+        }
+
+        $snapshot = [
+            'account_id' => $account_id,
+            'account_link_url' => (string) ($account_link['url'] ?? ''),
+            'account_link_expires_at' => isset($account_link['expires_at']) ? (int) $account_link['expires_at'] : null,
+            'return_url' => $return_url,
+            'refresh_url' => $refresh_url,
+            'created_new_account' => $created_new_account,
+        ];
+
+        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', 'lead');
+        update_post_meta($prospect_post_id, 'sd_stripe_onboarding_status', 'started');
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+        update_post_meta($prospect_post_id, 'sd_last_staff_action_at_gmt', current_time('mysql', true));
+        update_post_meta($prospect_post_id, 'sd_last_submission_payload_json', wp_json_encode([
+            'event' => 'stripe_onboarding_started',
+            'snapshot' => $snapshot,
+        ]));
+
+        return new WP_REST_Response([
+            'ok' => true,
+            'prospect_post_id' => $prospect_post_id,
+            'prospect_id' => (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true),
+            'lifecycle_stage' => 'lead',
+            'stripe_account_id' => $account_id,
+            'stripe_onboarding_status' => 'started',
+            'onboarding_url' => (string) ($account_link['url'] ?? ''),
+            'onboarding_expires_at' => isset($account_link['expires_at']) ? (int) $account_link['expires_at'] : null,
+            'created_new_account' => $created_new_account,
+        ], 200);
+    }
+
+    private static function resolve_prospect_post_id_from_request(WP_REST_Request $request): int {
+        $prospect_post_id = absint($request->get_param('prospect_post_id'));
+        if ($prospect_post_id > 0) {
+            $post = get_post($prospect_post_id);
+            if ($post instanceof WP_Post && $post->post_type === self::PROSPECT_POST_TYPE) {
+                return $prospect_post_id;
+            }
+        }
+
+        $prospect_id = sanitize_text_field((string) $request->get_param('prospect_id'));
+        if ($prospect_id === '') {
+            return 0;
+        }
+
+        $posts = get_posts([
+            'post_type' => self::PROSPECT_POST_TYPE,
+            'post_status' => 'publish',
+            'fields' => 'ids',
+            'numberposts' => 1,
+            'meta_query' => [[
+                'key' => 'sd_prospect_id',
+                'value' => $prospect_id,
+                'compare' => '=',
+            ]],
+        ]);
+
+        return !empty($posts) ? (int) $posts[0] : 0;
+    }
+
+    private static function validate_prospect_for_onboarding(int $prospect_post_id): true|WP_Error {
+        $post = get_post($prospect_post_id);
+        if (!$post instanceof WP_Post || $post->post_type !== self::PROSPECT_POST_TYPE) {
+            return new WP_Error('sd_prospect_not_found', 'Prospect not found.', ['status' => 404]);
+        }
+
+        $invite_status = (string) get_post_meta($prospect_post_id, 'sd_invitation_status', true);
+        $lifecycle_stage = (string) get_post_meta($prospect_post_id, 'sd_lifecycle_stage', true);
+        $promoted_tenant_post_id = (int) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', true);
+        $email = (string) get_post_meta($prospect_post_id, 'sd_email_normalized', true);
+
+        if (!in_array($invite_status, ['valid', 'manual_override'], true)) {
+            return new WP_Error('sd_invitation_required', 'A valid invitation is required before Stripe onboarding can start.', ['status' => 403]);
+        }
+
+        if ($promoted_tenant_post_id > 0) {
+            return new WP_Error('sd_prospect_already_promoted', 'This prospect has already been promoted to a tenant.', ['status' => 409]);
+        }
+
+        if ($email === '' || !is_email($email)) {
+            return new WP_Error('sd_email_required', 'A valid email is required before Stripe onboarding can start.', ['status' => 422]);
+        }
+
+        if ($lifecycle_stage !== '' && !in_array($lifecycle_stage, ['prospect', 'invited_prospect', 'lead'], true)) {
+            return new WP_Error('sd_invalid_lifecycle', 'This prospect is not in a startable onboarding stage.', ['status' => 409]);
+        }
+
+        return true;
+    }
+
+    private static function get_stripe_secret_key(): string {
+        $constant_value = defined('SD_STRIPE_CONTROL_PLANE_SECRET_KEY') ? (string) SD_STRIPE_CONTROL_PLANE_SECRET_KEY : '';
+        if ($constant_value !== '') {
+            return $constant_value;
+        }
+
+        $option_value = (string) get_option('sd_stripe_control_plane_secret_key', '');
+        if ($option_value !== '') {
+            return $option_value;
+        }
+
+        $env_value = getenv('SD_STRIPE_CONTROL_PLANE_SECRET_KEY');
+        return is_string($env_value) ? trim($env_value) : '';
+    }
+
+    private static function resolve_onboarding_return_url(WP_REST_Request $request): string {
+        $request_url = esc_url_raw((string) $request->get_param('return_url'));
+        if ($request_url !== '') {
+            return $request_url;
+        }
+
+        return home_url('/request-received/?sd-onboarding=return');
+    }
+
+    private static function resolve_onboarding_refresh_url(WP_REST_Request $request): string {
+        $request_url = esc_url_raw((string) $request->get_param('refresh_url'));
+        if ($request_url !== '') {
+            return $request_url;
+        }
+
+        return home_url('/request-access/?sd-onboarding=refresh');
+    }
+
+    private static function stripe_create_connected_account(int $prospect_post_id, string $secret_key): array|WP_Error {
+        $email = (string) get_post_meta($prospect_post_id, 'sd_email_normalized', true);
+        $full_name = (string) get_post_meta($prospect_post_id, 'sd_full_name', true);
+        $phone = (string) get_post_meta($prospect_post_id, 'sd_phone_normalized', true);
+        $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
+
+        $body = [
+            'type' => 'express',
+            'country' => apply_filters('sd_stripe_connected_account_country', 'US', $prospect_post_id),
+            'email' => $email,
+            'capabilities[card_payments][requested]' => 'true',
+            'capabilities[transfers][requested]' => 'true',
+            'metadata[sd_prospect_id]' => $prospect_id,
+            'metadata[sd_prospect_post_id]' => (string) $prospect_post_id,
+        ];
+
+        if ($full_name !== '') {
+            $name_parts = preg_split('/\s+/', trim($full_name)) ?: [];
+            if (!empty($name_parts)) {
+                $body['business_type'] = 'individual';
+                $body['individual[first_name]'] = (string) array_shift($name_parts);
+                if (!empty($name_parts)) {
+                    $body['individual[last_name]'] = trim(implode(' ', $name_parts));
+                }
+                if ($phone !== '') {
+                    $body['individual[phone]'] = $phone;
+                }
+            }
+        }
+
+        return self::stripe_api_post('/accounts', $body, $secret_key);
+    }
+
+    private static function stripe_create_account_link(string $account_id, string $return_url, string $refresh_url, string $secret_key): array|WP_Error {
+        $body = [
+            'account' => $account_id,
+            'refresh_url' => $refresh_url,
+            'return_url' => $return_url,
+            'type' => 'account_onboarding',
+            'collection_options[fields]' => 'eventually_due',
+            'collection_options[future_requirements]' => 'include',
+        ];
+
+        return self::stripe_api_post('/account_links', $body, $secret_key);
+    }
+
+    private static function stripe_api_post(string $path, array $body, string $secret_key): array|WP_Error {
+        $response = wp_remote_post(self::STRIPE_API_BASE . $path, [
+            'timeout' => 30,
+            'headers' => [
+                'Authorization' => 'Bearer ' . $secret_key,
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ],
+            'body' => $body,
+        ]);
+
+        if (is_wp_error($response)) {
+            return new WP_Error('sd_stripe_http_error', $response->get_error_message(), ['status' => 502]);
+        }
+
+        $status_code = (int) wp_remote_retrieve_response_code($response);
+        $payload = json_decode((string) wp_remote_retrieve_body($response), true);
+
+        if ($status_code < 200 || $status_code >= 300) {
+            $message = 'Stripe request failed.';
+            if (is_array($payload) && isset($payload['error']['message'])) {
+                $message = (string) $payload['error']['message'];
+            }
+
+            return new WP_Error('sd_stripe_api_error', $message, [
+                'status' => 502,
+                'stripe_status_code' => $status_code,
+                'stripe_payload' => $payload,
+            ]);
+        }
+
+        if (!is_array($payload)) {
+            return new WP_Error('sd_stripe_invalid_response', 'Stripe returned an invalid response.', ['status' => 502]);
+        }
+
+        return $payload;
+    }
+
+    private static function mark_prospect_stripe_failure(int $prospect_post_id, WP_Error $error): void {
+        update_post_meta($prospect_post_id, 'sd_stripe_onboarding_status', 'failed');
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+        update_post_meta($prospect_post_id, 'sd_last_submission_payload_json', wp_json_encode([
+            'event' => 'stripe_onboarding_failed',
+            'code' => $error->get_error_code(),
+            'message' => $error->get_error_message(),
+            'data' => $error->get_error_data(),
+        ]));
     }
 
     public static function ensure_prospect_defaults(int $post_id, WP_Post $post, bool $update): void {
