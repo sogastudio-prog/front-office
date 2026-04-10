@@ -51,6 +51,7 @@ final class SD_Front_Office_Scaffold {
 
         add_action('wpcf7_before_send_mail', [__CLASS__, 'handle_cf7_submission']);
         add_action('save_post_sd_prospect', [__CLASS__, 'ensure_prospect_defaults'], 10, 3);
+        add_action('save_post_sd_tenant', [__CLASS__, 'ensure_tenant_defaults'], 10, 3);
         if (!is_admin()) {
             add_filter('wpcf7_feedback_response', [__CLASS__, 'inject_cf7_redirect'], 10, 2);
         }
@@ -147,6 +148,13 @@ final class SD_Front_Office_Scaffold {
             'sd_stripe_onboarding_started_at_gmt' => 'string',
             'sd_stripe_account_id' => 'string',
             'sd_stripe_onboarding_status' => 'string',
+            'sd_stripe_status_snapshot_json' => 'string',
+            'sd_stripe_last_event_id' => 'string',
+            'sd_billing_status' => 'string',
+            'sd_stripe_customer_id' => 'string',
+            'sd_stripe_subscription_id' => 'string',
+            'sd_stripe_checkout_session_id' => 'string',
+            'sd_subscription_paid_at_gmt' => 'string',
             'sd_promoted_to_tenant_id' => 'string',
             'sd_promoted_to_tenant_post_id' => 'integer',
             'sd_dedupe_key_email' => 'string',
@@ -171,6 +179,13 @@ final class SD_Front_Office_Scaffold {
             'sd_origin_prospect_id' => 'string',
             'sd_origin_prospect_post_id' => 'integer',
             'sd_connected_account_id' => 'string',
+            'sd_stripe_customer_id' => 'string',
+            'sd_stripe_subscription_id' => 'string',
+            'sd_billing_status' => 'string',
+            'sd_subscription_paid_at_gmt' => 'string',
+            'sd_provisioning_status' => 'string',
+            'sd_last_provisioning_payload_json' => 'string',
+            'sd_stripe_last_event_id' => 'string',
             'sd_charges_enabled' => 'integer',
             'sd_payouts_enabled' => 'integer',
             'sd_stripe_status_snapshot_json' => 'string',
@@ -757,6 +772,55 @@ final class SD_Front_Office_Scaffold {
                 ],
             ],
         ]);
+
+        register_rest_route(self::REST_NAMESPACE, '/billing/checkout/start', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_start_billing_checkout'],
+            'permission_callback' => '__return_true',
+            'args' => [
+                'prospect_id' => [
+                    'required' => false,
+                    'type' => 'string',
+                    'sanitize_callback' => static fn($value) => sanitize_text_field((string) $value),
+                ],
+                'prospect_post_id' => [
+                    'required' => false,
+                    'type' => 'integer',
+                    'sanitize_callback' => static fn($value) => absint($value),
+                ],
+                'success_url' => [
+                    'required' => false,
+                    'type' => 'string',
+                    'sanitize_callback' => static fn($value) => esc_url_raw((string) $value),
+                ],
+                'cancel_url' => [
+                    'required' => false,
+                    'type' => 'string',
+                    'sanitize_callback' => static fn($value) => esc_url_raw((string) $value),
+                ],
+                'price_id' => [
+                    'required' => false,
+                    'type' => 'string',
+                    'sanitize_callback' => static fn($value) => sanitize_text_field((string) $value),
+                ],
+                'trial_period_days' => [
+                    'required' => false,
+                    'type' => 'integer',
+                    'sanitize_callback' => static fn($value) => max(0, absint($value)),
+                ],
+                'coupon' => [
+                    'required' => false,
+                    'type' => 'string',
+                    'sanitize_callback' => static fn($value) => sanitize_text_field((string) $value),
+                ],
+            ],
+        ]);
+
+        register_rest_route(self::REST_NAMESPACE, '/stripe/webhook', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_stripe_webhook'],
+            'permission_callback' => '__return_true',
+        ]);
     }
 
     public static function rest_start_onboarding(WP_REST_Request $request): WP_REST_Response|WP_Error {
@@ -838,6 +902,772 @@ final class SD_Front_Office_Scaffold {
         ], 200);
     }
 
+
+    public static function rest_start_billing_checkout(WP_REST_Request $request): WP_REST_Response|WP_Error {
+        $prospect_post_id = self::resolve_prospect_post_id_from_request($request);
+        if ($prospect_post_id <= 0) {
+            return new WP_Error('sd_prospect_not_found', 'Prospect not found.', ['status' => 404]);
+        }
+
+        $eligibility = self::validate_prospect_for_billing_checkout($prospect_post_id);
+        if (is_wp_error($eligibility)) {
+            return $eligibility;
+        }
+
+        $secret_key = self::get_stripe_secret_key();
+        if ($secret_key === '') {
+            return new WP_Error('sd_stripe_not_configured', 'Stripe control-plane secret key is not configured.', ['status' => 500]);
+        }
+
+        $price_id = self::resolve_billing_price_id($request);
+        if ($price_id === '') {
+            return new WP_Error('sd_missing_billing_price', 'Stripe billing price ID is not configured.', ['status' => 500]);
+        }
+
+        $success_url = self::resolve_checkout_success_url($request);
+        $cancel_url = self::resolve_checkout_cancel_url($request);
+        $customer_email = (string) get_post_meta($prospect_post_id, 'sd_email_normalized', true);
+        $existing_customer_id = (string) get_post_meta($prospect_post_id, 'sd_stripe_customer_id', true);
+        $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
+        $trial_period_days = max(0, (int) $request->get_param('trial_period_days'));
+        $coupon = sanitize_text_field((string) $request->get_param('coupon'));
+
+        $session = self::stripe_create_billing_checkout_session($prospect_post_id, [
+            'price_id' => $price_id,
+            'success_url' => $success_url,
+            'cancel_url' => $cancel_url,
+            'customer_email' => $customer_email,
+            'customer_id' => $existing_customer_id,
+            'trial_period_days' => $trial_period_days,
+            'coupon' => $coupon,
+            'metadata' => [
+                'sd_prospect_id' => $prospect_id,
+                'sd_prospect_post_id' => (string) $prospect_post_id,
+            ],
+        ], $secret_key);
+
+        if (is_wp_error($session)) {
+            update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+            update_post_meta($prospect_post_id, 'sd_last_submission_payload_json', wp_json_encode([
+                'event' => 'stripe_checkout_session_failed',
+                'code' => $session->get_error_code(),
+                'message' => $session->get_error_message(),
+                'data' => $session->get_error_data(),
+            ]));
+            return $session;
+        }
+
+        $session_id = sanitize_text_field((string) ($session['id'] ?? ''));
+        $session_url = esc_url_raw((string) ($session['url'] ?? ''));
+        $customer_id = sanitize_text_field((string) ($session['customer'] ?? ''));
+        $subscription_id = sanitize_text_field((string) ($session['subscription'] ?? ''));
+
+        if ($session_id === '' || $session_url === '') {
+            return new WP_Error('sd_stripe_checkout_missing_fields', 'Stripe checkout session did not return the expected fields.', ['status' => 502]);
+        }
+
+        update_post_meta($prospect_post_id, 'sd_billing_status', 'checkout_open');
+        update_post_meta($prospect_post_id, 'sd_stripe_checkout_session_id', $session_id);
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+        update_post_meta($prospect_post_id, 'sd_last_staff_action_at_gmt', current_time('mysql', true));
+
+        if ($customer_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_stripe_customer_id', $customer_id);
+        }
+
+        if ($subscription_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_stripe_subscription_id', $subscription_id);
+        }
+
+        update_post_meta($prospect_post_id, 'sd_last_submission_payload_json', wp_json_encode([
+            'event' => 'stripe_checkout_session_started',
+            'session_id' => $session_id,
+            'session_mode' => (string) ($session['mode'] ?? ''),
+            'session_status' => (string) ($session['status'] ?? ''),
+            'customer_id' => $customer_id,
+            'subscription_id' => $subscription_id,
+            'price_id' => $price_id,
+            'success_url' => $success_url,
+            'cancel_url' => $cancel_url,
+        ]));
+
+        return new WP_REST_Response([
+            'ok' => true,
+            'prospect_post_id' => $prospect_post_id,
+            'prospect_id' => $prospect_id,
+            'billing_status' => 'checkout_open',
+            'stripe_checkout_session_id' => $session_id,
+            'stripe_customer_id' => $customer_id,
+            'stripe_subscription_id' => $subscription_id,
+            'checkout_url' => $session_url,
+        ], 200);
+    }
+
+    public static function rest_stripe_webhook(WP_REST_Request $request): WP_REST_Response {
+        $payload = file_get_contents('php://input');
+        if (!is_string($payload) || $payload === '') {
+            return new WP_REST_Response([
+                'ok' => false,
+                'message' => 'Empty webhook payload.',
+            ], 400);
+        }
+
+        $signature = isset($_SERVER['HTTP_STRIPE_SIGNATURE']) ? (string) wp_unslash($_SERVER['HTTP_STRIPE_SIGNATURE']) : '';
+        $webhook_secret = self::get_stripe_webhook_secret();
+        if ($webhook_secret === '') {
+            return new WP_REST_Response([
+                'ok' => false,
+                'message' => 'Stripe webhook secret is not configured.',
+            ], 500);
+        }
+
+        $verification = self::verify_stripe_webhook_signature($payload, $signature, $webhook_secret);
+        if (is_wp_error($verification)) {
+            return new WP_REST_Response([
+                'ok' => false,
+                'message' => $verification->get_error_message(),
+            ], (int) ($verification->get_error_data()['status'] ?? 400));
+        }
+
+        $event = json_decode($payload, true);
+        if (!is_array($event)) {
+            return new WP_REST_Response([
+                'ok' => false,
+                'message' => 'Invalid Stripe webhook payload.',
+            ], 400);
+        }
+
+        $event_id = sanitize_text_field((string) ($event['id'] ?? ''));
+        $event_type = sanitize_text_field((string) ($event['type'] ?? ''));
+        if ($event_id === '' || $event_type === '') {
+            return new WP_REST_Response([
+                'ok' => false,
+                'message' => 'Missing Stripe event identifiers.',
+            ], 400);
+        }
+
+        if (self::is_stripe_event_already_processed($event_id)) {
+            return new WP_REST_Response([
+                'ok' => true,
+                'duplicate' => true,
+                'event_id' => $event_id,
+                'event_type' => $event_type,
+            ], 200);
+        }
+
+        $result = self::handle_stripe_webhook_event($event);
+        if (is_wp_error($result)) {
+            return new WP_REST_Response([
+                'ok' => false,
+                'event_id' => $event_id,
+                'event_type' => $event_type,
+                'message' => $result->get_error_message(),
+            ], (int) ($result->get_error_data()['status'] ?? 422));
+        }
+
+        self::mark_stripe_event_processed($event_id);
+
+        return new WP_REST_Response([
+            'ok' => true,
+            'event_id' => $event_id,
+            'event_type' => $event_type,
+            'handled' => true,
+            'result' => $result,
+        ], 200);
+    }
+
+    private static function handle_stripe_webhook_event(array $event): array|WP_Error {
+        $event_id = sanitize_text_field((string) ($event['id'] ?? ''));
+        $event_type = sanitize_text_field((string) ($event['type'] ?? ''));
+        $object = $event['data']['object'] ?? null;
+
+        if (!is_array($object)) {
+            return new WP_Error('sd_invalid_stripe_event', 'Stripe event object missing.', ['status' => 400]);
+        }
+
+        return match ($event_type) {
+            'account.updated' => self::handle_stripe_account_updated($event_id, $object),
+            'checkout.session.completed' => self::handle_stripe_checkout_completed($event_id, $object),
+            'invoice.paid' => self::handle_stripe_invoice_paid($event_id, $object),
+            'invoice.payment_failed' => self::handle_stripe_invoice_payment_failed($event_id, $object),
+            'customer.subscription.updated' => self::handle_stripe_subscription_updated($event_id, $object),
+            'customer.subscription.deleted' => self::handle_stripe_subscription_deleted($event_id, $object),
+            default => [
+                'ignored' => true,
+                'reason' => 'Unhandled event type.',
+            ],
+        };
+    }
+
+    private static function handle_stripe_account_updated(string $event_id, array $account): array|WP_Error {
+        $account_id = sanitize_text_field((string) ($account['id'] ?? ''));
+        if ($account_id === '') {
+            return new WP_Error('sd_missing_account_id', 'Stripe account.updated event missing account ID.', ['status' => 400]);
+        }
+
+        $prospect_post_id = self::find_prospect_by_meta('sd_stripe_account_id', $account_id);
+        if ($prospect_post_id <= 0) {
+            return new WP_Error('sd_prospect_not_found', 'No prospect found for connected account.', ['status' => 404]);
+        }
+
+        $charges_enabled = !empty($account['charges_enabled']);
+        $payouts_enabled = !empty($account['payouts_enabled']);
+        $requirements_currently_due = is_array($account['requirements']['currently_due'] ?? null) ? $account['requirements']['currently_due'] : [];
+        $requirements_eventually_due = is_array($account['requirements']['eventually_due'] ?? null) ? $account['requirements']['eventually_due'] : [];
+        $details_submitted = !empty($account['details_submitted']);
+
+        $status = 'requirements_due';
+        if ($charges_enabled) {
+            $status = 'charges_enabled';
+        } elseif ($details_submitted && empty($requirements_currently_due)) {
+            $status = 'account_ready';
+        } elseif ($details_submitted) {
+            $status = 'started';
+        }
+
+        $snapshot = [
+            'event_id' => $event_id,
+            'account_id' => $account_id,
+            'charges_enabled' => $charges_enabled,
+            'payouts_enabled' => $payouts_enabled,
+            'details_submitted' => $details_submitted,
+            'requirements_currently_due' => array_values($requirements_currently_due),
+            'requirements_eventually_due' => array_values($requirements_eventually_due),
+            'disabled_reason' => (string) ($account['requirements']['disabled_reason'] ?? ''),
+            'capabilities' => is_array($account['capabilities'] ?? null) ? $account['capabilities'] : new stdClass(),
+            'raw_updated_at_gmt' => current_time('mysql', true),
+        ];
+
+        update_post_meta($prospect_post_id, 'sd_stripe_onboarding_status', $status);
+        update_post_meta($prospect_post_id, 'sd_stripe_status_snapshot_json', wp_json_encode($snapshot));
+        update_post_meta($prospect_post_id, 'sd_stripe_last_event_id', $event_id);
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+        $tenant_post_id = (int) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', true);
+        if ($tenant_post_id > 0) {
+            update_post_meta($tenant_post_id, 'sd_connected_account_id', $account_id);
+            update_post_meta($tenant_post_id, 'sd_charges_enabled', $charges_enabled ? 1 : 0);
+            update_post_meta($tenant_post_id, 'sd_payouts_enabled', $payouts_enabled ? 1 : 0);
+            update_post_meta($tenant_post_id, 'sd_stripe_status_snapshot_json', wp_json_encode($snapshot));
+            update_post_meta($tenant_post_id, 'sd_stripe_last_event_id', $event_id);
+            update_post_meta($tenant_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+        }
+
+        $promotion = self::maybe_promote_prospect_to_inactive_tenant($prospect_post_id);
+
+        return [
+            'prospect_post_id' => $prospect_post_id,
+            'tenant_post_id' => $tenant_post_id,
+            'stripe_account_id' => $account_id,
+            'stripe_onboarding_status' => $status,
+            'charges_enabled' => $charges_enabled,
+            'payouts_enabled' => $payouts_enabled,
+            'promotion' => $promotion,
+        ];
+    }
+
+    private static function handle_stripe_checkout_completed(string $event_id, array $session): array|WP_Error {
+        $prospect_post_id = self::resolve_prospect_post_id_from_stripe_object($session);
+        if ($prospect_post_id <= 0) {
+            return new WP_Error('sd_prospect_not_found', 'No prospect found for checkout.session.completed.', ['status' => 404]);
+        }
+
+        $session_id = sanitize_text_field((string) ($session['id'] ?? ''));
+        $customer_id = sanitize_text_field((string) ($session['customer'] ?? ''));
+        $subscription_id = sanitize_text_field((string) ($session['subscription'] ?? ''));
+
+        update_post_meta($prospect_post_id, 'sd_billing_status', 'checkout_completed');
+        update_post_meta($prospect_post_id, 'sd_stripe_last_event_id', $event_id);
+        update_post_meta($prospect_post_id, 'sd_stripe_checkout_session_id', $session_id);
+        if ($customer_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_stripe_customer_id', $customer_id);
+        }
+        if ($subscription_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_stripe_subscription_id', $subscription_id);
+        }
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+        $tenant_post_id = (int) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', true);
+        if ($tenant_post_id > 0) {
+            update_post_meta($tenant_post_id, 'sd_billing_status', 'checkout_completed');
+            if ($customer_id !== '') {
+                update_post_meta($tenant_post_id, 'sd_stripe_customer_id', $customer_id);
+            }
+            if ($subscription_id !== '') {
+                update_post_meta($tenant_post_id, 'sd_stripe_subscription_id', $subscription_id);
+            }
+            update_post_meta($tenant_post_id, 'sd_stripe_last_event_id', $event_id);
+            update_post_meta($tenant_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+        }
+
+        return [
+            'prospect_post_id' => $prospect_post_id,
+            'tenant_post_id' => $tenant_post_id,
+            'billing_status' => 'checkout_completed',
+            'checkout_session_id' => $session_id,
+            'customer_id' => $customer_id,
+            'subscription_id' => $subscription_id,
+        ];
+    }
+
+    private static function handle_stripe_invoice_paid(string $event_id, array $invoice): array|WP_Error {
+        $prospect_post_id = self::resolve_prospect_post_id_from_stripe_object($invoice);
+        if ($prospect_post_id <= 0) {
+            return new WP_Error('sd_prospect_not_found', 'No prospect found for invoice.paid.', ['status' => 404]);
+        }
+
+        $customer_id = sanitize_text_field((string) ($invoice['customer'] ?? ''));
+        $subscription_id = sanitize_text_field((string) ($invoice['subscription'] ?? ''));
+        $invoice_id = sanitize_text_field((string) ($invoice['id'] ?? ''));
+
+        update_post_meta($prospect_post_id, 'sd_billing_status', 'paid');
+        update_post_meta($prospect_post_id, 'sd_stripe_last_event_id', $event_id);
+        update_post_meta($prospect_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
+        if ($customer_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_stripe_customer_id', $customer_id);
+        }
+        if ($subscription_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_stripe_subscription_id', $subscription_id);
+        }
+        update_post_meta($prospect_post_id, 'sd_last_submission_payload_json', wp_json_encode([
+            'event' => 'invoice_paid',
+            'event_id' => $event_id,
+            'invoice_id' => $invoice_id,
+            'customer_id' => $customer_id,
+            'subscription_id' => $subscription_id,
+        ]));
+
+        $tenant_post_id = (int) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', true);
+        if ($tenant_post_id > 0) {
+            update_post_meta($tenant_post_id, 'sd_billing_status', 'paid');
+            update_post_meta($tenant_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
+            if ($customer_id !== '') {
+                update_post_meta($tenant_post_id, 'sd_stripe_customer_id', $customer_id);
+            }
+            if ($subscription_id !== '') {
+                update_post_meta($tenant_post_id, 'sd_stripe_subscription_id', $subscription_id);
+            }
+            update_post_meta($tenant_post_id, 'sd_stripe_last_event_id', $event_id);
+            update_post_meta($tenant_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+        }
+
+        $promotion = self::maybe_promote_prospect_to_inactive_tenant($prospect_post_id);
+
+        return [
+            'prospect_post_id' => $prospect_post_id,
+            'tenant_post_id' => $tenant_post_id,
+            'billing_status' => 'paid',
+            'invoice_id' => $invoice_id,
+            'customer_id' => $customer_id,
+            'subscription_id' => $subscription_id,
+            'promotion' => $promotion,
+        ];
+    }
+
+    private static function handle_stripe_invoice_payment_failed(string $event_id, array $invoice): array|WP_Error {
+        $prospect_post_id = self::resolve_prospect_post_id_from_stripe_object($invoice);
+        if ($prospect_post_id <= 0) {
+            return new WP_Error('sd_prospect_not_found', 'No prospect found for invoice.payment_failed.', ['status' => 404]);
+        }
+
+        $customer_id = sanitize_text_field((string) ($invoice['customer'] ?? ''));
+        $subscription_id = sanitize_text_field((string) ($invoice['subscription'] ?? ''));
+        $invoice_id = sanitize_text_field((string) ($invoice['id'] ?? ''));
+
+        update_post_meta($prospect_post_id, 'sd_billing_status', 'failed');
+        update_post_meta($prospect_post_id, 'sd_stripe_last_event_id', $event_id);
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+        $tenant_post_id = (int) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', true);
+        if ($tenant_post_id > 0) {
+            update_post_meta($tenant_post_id, 'sd_billing_status', 'failed');
+            update_post_meta($tenant_post_id, 'sd_payment_flag', 1);
+            update_post_meta($tenant_post_id, 'sd_stripe_last_event_id', $event_id);
+            update_post_meta($tenant_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+        }
+
+        return [
+            'prospect_post_id' => $prospect_post_id,
+            'tenant_post_id' => $tenant_post_id,
+            'billing_status' => 'failed',
+            'invoice_id' => $invoice_id,
+            'customer_id' => $customer_id,
+            'subscription_id' => $subscription_id,
+        ];
+    }
+
+    private static function handle_stripe_subscription_updated(string $event_id, array $subscription): array|WP_Error {
+        $prospect_post_id = self::resolve_prospect_post_id_from_stripe_object($subscription);
+        if ($prospect_post_id <= 0) {
+            return new WP_Error('sd_prospect_not_found', 'No prospect found for customer.subscription.updated.', ['status' => 404]);
+        }
+
+        $status = sanitize_text_field((string) ($subscription['status'] ?? ''));
+        $customer_id = sanitize_text_field((string) ($subscription['customer'] ?? ''));
+        $subscription_id = sanitize_text_field((string) ($subscription['id'] ?? ''));
+
+        update_post_meta($prospect_post_id, 'sd_billing_status', $status !== '' ? $status : 'updated');
+        update_post_meta($prospect_post_id, 'sd_stripe_last_event_id', $event_id);
+        if ($customer_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_stripe_customer_id', $customer_id);
+        }
+        if ($subscription_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_stripe_subscription_id', $subscription_id);
+        }
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+        $tenant_post_id = (int) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', true);
+        if ($tenant_post_id > 0) {
+            update_post_meta($tenant_post_id, 'sd_billing_status', $status !== '' ? $status : 'updated');
+            if ($customer_id !== '') {
+                update_post_meta($tenant_post_id, 'sd_stripe_customer_id', $customer_id);
+            }
+            if ($subscription_id !== '') {
+                update_post_meta($tenant_post_id, 'sd_stripe_subscription_id', $subscription_id);
+            }
+            update_post_meta($tenant_post_id, 'sd_stripe_last_event_id', $event_id);
+            update_post_meta($tenant_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+        }
+
+        return [
+            'prospect_post_id' => $prospect_post_id,
+            'tenant_post_id' => $tenant_post_id,
+            'billing_status' => $status !== '' ? $status : 'updated',
+            'customer_id' => $customer_id,
+            'subscription_id' => $subscription_id,
+        ];
+    }
+
+    private static function handle_stripe_subscription_deleted(string $event_id, array $subscription): array|WP_Error {
+        $prospect_post_id = self::resolve_prospect_post_id_from_stripe_object($subscription);
+        if ($prospect_post_id <= 0) {
+            return new WP_Error('sd_prospect_not_found', 'No prospect found for customer.subscription.deleted.', ['status' => 404]);
+        }
+
+        $customer_id = sanitize_text_field((string) ($subscription['customer'] ?? ''));
+        $subscription_id = sanitize_text_field((string) ($subscription['id'] ?? ''));
+
+        update_post_meta($prospect_post_id, 'sd_billing_status', 'canceled');
+        update_post_meta($prospect_post_id, 'sd_stripe_last_event_id', $event_id);
+        if ($customer_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_stripe_customer_id', $customer_id);
+        }
+        if ($subscription_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_stripe_subscription_id', $subscription_id);
+        }
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+        $tenant_post_id = (int) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', true);
+        if ($tenant_post_id > 0) {
+            update_post_meta($tenant_post_id, 'sd_billing_status', 'canceled');
+            update_post_meta($tenant_post_id, 'sd_payment_flag', 1);
+            if ($customer_id !== '') {
+                update_post_meta($tenant_post_id, 'sd_stripe_customer_id', $customer_id);
+            }
+            if ($subscription_id !== '') {
+                update_post_meta($tenant_post_id, 'sd_stripe_subscription_id', $subscription_id);
+            }
+            update_post_meta($tenant_post_id, 'sd_stripe_last_event_id', $event_id);
+            update_post_meta($tenant_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+        }
+
+        return [
+            'prospect_post_id' => $prospect_post_id,
+            'tenant_post_id' => $tenant_post_id,
+            'billing_status' => 'canceled',
+            'customer_id' => $customer_id,
+            'subscription_id' => $subscription_id,
+        ];
+    }
+
+    private static function resolve_prospect_post_id_from_stripe_object(array $object): int {
+        $metadata = is_array($object['metadata'] ?? null) ? $object['metadata'] : [];
+        $prospect_post_id = isset($metadata['sd_prospect_post_id']) ? absint($metadata['sd_prospect_post_id']) : 0;
+        if ($prospect_post_id > 0) {
+            $post = get_post($prospect_post_id);
+            if ($post instanceof WP_Post && $post->post_type === self::PROSPECT_POST_TYPE) {
+                return $prospect_post_id;
+            }
+        }
+
+        $prospect_id = sanitize_text_field((string) ($metadata['sd_prospect_id'] ?? ''));
+        if ($prospect_id !== '') {
+            $resolved_by_prospect_id = self::find_prospect_by_meta('sd_prospect_id', $prospect_id);
+            if ($resolved_by_prospect_id > 0) {
+                return $resolved_by_prospect_id;
+            }
+        }
+
+        foreach (['customer', 'subscription'] as $meta_key) {
+            $value = sanitize_text_field((string) ($object[$meta_key] ?? ''));
+            if ($value !== '') {
+                $key = $meta_key === 'customer' ? 'sd_stripe_customer_id' : 'sd_stripe_subscription_id';
+                $resolved = self::find_prospect_by_meta($key, $value);
+                if ($resolved > 0) {
+                    return $resolved;
+                }
+            }
+        }
+
+        if (!empty($object['lines']['data']) && is_array($object['lines']['data'])) {
+            foreach ($object['lines']['data'] as $line) {
+                if (!is_array($line)) {
+                    continue;
+                }
+                $line_metadata = is_array($line['metadata'] ?? null) ? $line['metadata'] : [];
+                $line_prospect_id = sanitize_text_field((string) ($line_metadata['sd_prospect_id'] ?? ''));
+                if ($line_prospect_id !== '') {
+                    $resolved = self::find_prospect_by_meta('sd_prospect_id', $line_prospect_id);
+                    if ($resolved > 0) {
+                        return $resolved;
+                    }
+                }
+            }
+        }
+
+        return 0;
+    }
+
+    private static function maybe_promote_prospect_to_inactive_tenant(int $prospect_post_id): array {
+        $existing_tenant_post_id = (int) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', true);
+        if ($existing_tenant_post_id > 0) {
+            return [
+                'action' => 'noop',
+                'reason' => 'already_promoted',
+                'tenant_post_id' => $existing_tenant_post_id,
+            ];
+        }
+
+        $account_status = (string) get_post_meta($prospect_post_id, 'sd_stripe_onboarding_status', true);
+        $billing_status = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
+
+        if (!in_array($account_status, ['charges_enabled', 'account_ready'], true)) {
+            return [
+                'action' => 'noop',
+                'reason' => 'account_not_ready',
+                'stripe_onboarding_status' => $account_status,
+                'billing_status' => $billing_status,
+            ];
+        }
+
+        if ($billing_status !== 'paid') {
+            return [
+                'action' => 'noop',
+                'reason' => 'billing_not_paid',
+                'stripe_onboarding_status' => $account_status,
+                'billing_status' => $billing_status,
+            ];
+        }
+
+        $tenant_post_id = self::create_inactive_tenant_from_prospect($prospect_post_id);
+        if ($tenant_post_id <= 0) {
+            return [
+                'action' => 'error',
+                'reason' => 'tenant_creation_failed',
+            ];
+        }
+
+        return [
+            'action' => 'created_inactive_tenant',
+            'tenant_post_id' => $tenant_post_id,
+        ];
+    }
+
+    private static function create_inactive_tenant_from_prospect(int $prospect_post_id): int {
+        $prospect_post = get_post($prospect_post_id);
+        if (!$prospect_post instanceof WP_Post || $prospect_post->post_type !== self::PROSPECT_POST_TYPE) {
+            return 0;
+        }
+
+        $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
+        $existing_tenant_post_id = (int) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', true);
+        if ($existing_tenant_post_id > 0) {
+            return $existing_tenant_post_id;
+        }
+
+        $full_name = (string) get_post_meta($prospect_post_id, 'sd_full_name', true);
+        $email = (string) get_post_meta($prospect_post_id, 'sd_email_normalized', true);
+        $title = $full_name !== '' ? $full_name : ($email !== '' ? $email : 'Tenant ' . $prospect_id);
+
+        $tenant_post_id = wp_insert_post([
+            'post_type' => self::TENANT_POST_TYPE,
+            'post_status' => 'publish',
+            'post_title' => $title,
+        ], true);
+
+        if (is_wp_error($tenant_post_id) || $tenant_post_id <= 0) {
+            return 0;
+        }
+
+        $tenant_id = 'ten_' . wp_generate_uuid4();
+        $slug_seed = $full_name !== '' ? $full_name : ($email !== '' ? sanitize_email($email) : $prospect_id);
+        $slug = self::generate_unique_tenant_slug($slug_seed, $tenant_post_id);
+
+        update_post_meta($tenant_post_id, 'sd_tenant_id', $tenant_id);
+        update_post_meta($tenant_post_id, 'sd_slug', $slug);
+        update_post_meta($tenant_post_id, 'sd_status', 'inactive');
+        update_post_meta($tenant_post_id, 'sd_created_at_gmt', current_time('mysql', true));
+        update_post_meta($tenant_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+        update_post_meta($tenant_post_id, 'sd_origin_prospect_id', $prospect_id);
+        update_post_meta($tenant_post_id, 'sd_origin_prospect_post_id', $prospect_post_id);
+        update_post_meta($tenant_post_id, 'sd_connected_account_id', (string) get_post_meta($prospect_post_id, 'sd_stripe_account_id', true));
+        update_post_meta($tenant_post_id, 'sd_stripe_customer_id', (string) get_post_meta($prospect_post_id, 'sd_stripe_customer_id', true));
+        update_post_meta($tenant_post_id, 'sd_stripe_subscription_id', (string) get_post_meta($prospect_post_id, 'sd_stripe_subscription_id', true));
+        update_post_meta($tenant_post_id, 'sd_billing_status', (string) get_post_meta($prospect_post_id, 'sd_billing_status', true));
+        update_post_meta($tenant_post_id, 'sd_subscription_paid_at_gmt', (string) get_post_meta($prospect_post_id, 'sd_subscription_paid_at_gmt', true));
+        update_post_meta($tenant_post_id, 'sd_stripe_status_snapshot_json', (string) get_post_meta($prospect_post_id, 'sd_stripe_status_snapshot_json', true));
+        update_post_meta($tenant_post_id, 'sd_charges_enabled', ((string) get_post_meta($prospect_post_id, 'sd_stripe_onboarding_status', true) === 'charges_enabled') ? 1 : 0);
+        update_post_meta($tenant_post_id, 'sd_payouts_enabled', 0);
+        update_post_meta($tenant_post_id, 'sd_storefront_status', 'not_started');
+        update_post_meta($tenant_post_id, 'sd_activation_ready', 0);
+        update_post_meta($tenant_post_id, 'sd_provisioning_status', 'queued');
+        update_post_meta($tenant_post_id, 'sd_last_provisioning_payload_json', wp_json_encode(self::build_provisioning_payload($tenant_post_id, $prospect_post_id)));
+
+        update_post_meta($prospect_post_id, 'sd_promoted_to_tenant_id', $tenant_id);
+        update_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', $tenant_post_id);
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+        update_post_meta($prospect_post_id, 'sd_last_staff_action_at_gmt', current_time('mysql', true));
+
+        do_action('sd_control_plane_tenant_provisioning_requested', $tenant_post_id, $prospect_post_id, self::build_provisioning_payload($tenant_post_id, $prospect_post_id));
+
+        return (int) $tenant_post_id;
+    }
+
+    private static function build_provisioning_payload(int $tenant_post_id, int $prospect_post_id): array {
+        return [
+            'tenant_post_id' => $tenant_post_id,
+            'tenant_id' => (string) get_post_meta($tenant_post_id, 'sd_tenant_id', true),
+            'tenant_slug' => (string) get_post_meta($tenant_post_id, 'sd_slug', true),
+            'prospect_post_id' => $prospect_post_id,
+            'prospect_id' => (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true),
+            'full_name' => (string) get_post_meta($prospect_post_id, 'sd_full_name', true),
+            'email' => (string) get_post_meta($prospect_post_id, 'sd_email_normalized', true),
+            'phone' => (string) get_post_meta($prospect_post_id, 'sd_phone_normalized', true),
+            'stripe_account_id' => (string) get_post_meta($prospect_post_id, 'sd_stripe_account_id', true),
+            'stripe_customer_id' => (string) get_post_meta($prospect_post_id, 'sd_stripe_customer_id', true),
+            'stripe_subscription_id' => (string) get_post_meta($prospect_post_id, 'sd_stripe_subscription_id', true),
+            'billing_status' => (string) get_post_meta($prospect_post_id, 'sd_billing_status', true),
+            'activation_mode' => 'inactive_until_provisioned',
+        ];
+    }
+
+    private static function generate_unique_tenant_slug(string $seed, int $tenant_post_id = 0): string {
+        $base = sanitize_title($seed);
+        if ($base === '') {
+            $base = 'tenant';
+        }
+
+        $slug = $base;
+        $suffix = 2;
+
+        while (self::tenant_slug_exists($slug, $tenant_post_id)) {
+            $slug = $base . '-' . $suffix;
+            $suffix++;
+        }
+
+        return $slug;
+    }
+
+    private static function tenant_slug_exists(string $slug, int $exclude_post_id = 0): bool {
+        $posts = get_posts([
+            'post_type' => self::TENANT_POST_TYPE,
+            'post_status' => 'publish',
+            'fields' => 'ids',
+            'numberposts' => 1,
+            'meta_query' => [[
+                'key' => 'sd_slug',
+                'value' => $slug,
+                'compare' => '=',
+            ]],
+            'exclude' => $exclude_post_id > 0 ? [$exclude_post_id] : [],
+        ]);
+
+        return !empty($posts);
+    }
+
+    private static function find_prospect_by_meta(string $meta_key, string $meta_value): int {
+        if ($meta_value === '') {
+            return 0;
+        }
+
+        $posts = get_posts([
+            'post_type' => self::PROSPECT_POST_TYPE,
+            'post_status' => 'publish',
+            'fields' => 'ids',
+            'numberposts' => 1,
+            'meta_query' => [[
+                'key' => $meta_key,
+                'value' => $meta_value,
+                'compare' => '=',
+            ]],
+        ]);
+
+        return !empty($posts) ? (int) $posts[0] : 0;
+    }
+
+    private static function get_stripe_webhook_secret(): string {
+        $constant_value = defined('SD_STRIPE_CONTROL_PLANE_WEBHOOK_SECRET') ? (string) SD_STRIPE_CONTROL_PLANE_WEBHOOK_SECRET : '';
+        if ($constant_value !== '') {
+            return $constant_value;
+        }
+
+        $option_value = (string) get_option('sd_stripe_control_plane_webhook_secret', '');
+        if ($option_value !== '') {
+            return $option_value;
+        }
+
+        $env_value = getenv('SD_STRIPE_CONTROL_PLANE_WEBHOOK_SECRET');
+        return is_string($env_value) ? trim($env_value) : '';
+    }
+
+    private static function verify_stripe_webhook_signature(string $payload, string $signature_header, string $webhook_secret): true|WP_Error {
+        if ($signature_header === '') {
+            return new WP_Error('sd_missing_stripe_signature', 'Missing Stripe-Signature header.', ['status' => 400]);
+        }
+
+        $parts = [];
+        foreach (explode(',', $signature_header) as $segment) {
+            $segment = trim($segment);
+            if ($segment === '' || !str_contains($segment, '=')) {
+                continue;
+            }
+            [$key, $value] = array_map('trim', explode('=', $segment, 2));
+            if ($key !== '' && $value !== '') {
+                $parts[$key][] = $value;
+            }
+        }
+
+        $timestamp = isset($parts['t'][0]) ? (string) $parts['t'][0] : '';
+        $signatures = isset($parts['v1']) && is_array($parts['v1']) ? $parts['v1'] : [];
+
+        if ($timestamp === '' || empty($signatures)) {
+            return new WP_Error('sd_invalid_stripe_signature', 'Invalid Stripe signature header.', ['status' => 400]);
+        }
+
+        if (abs(time() - (int) $timestamp) > 300) {
+            return new WP_Error('sd_expired_stripe_signature', 'Stripe signature timestamp is outside the tolerance window.', ['status' => 400]);
+        }
+
+        $signed_payload = $timestamp . '.' . $payload;
+        $expected = hash_hmac('sha256', $signed_payload, $webhook_secret);
+
+        foreach ($signatures as $signature) {
+            if (hash_equals($expected, $signature)) {
+                return true;
+            }
+        }
+
+        return new WP_Error('sd_signature_verification_failed', 'Stripe webhook signature verification failed.', ['status' => 400]);
+    }
+
+    private static function is_stripe_event_already_processed(string $event_id): bool {
+        return (bool) get_transient('sd_stripe_webhook_event_' . $event_id);
+    }
+
+    private static function mark_stripe_event_processed(string $event_id): void {
+        set_transient('sd_stripe_webhook_event_' . $event_id, 1, WEEK_IN_SECONDS);
+    }
+
     private static function resolve_prospect_post_id_from_request(WP_REST_Request $request): int {
         $prospect_post_id = absint($request->get_param('prospect_post_id'));
         if ($prospect_post_id > 0) {
@@ -895,6 +1725,77 @@ final class SD_Front_Office_Scaffold {
         }
 
         return true;
+    }
+
+
+    private static function validate_prospect_for_billing_checkout(int $prospect_post_id): true|WP_Error {
+        $invite_status = (string) get_post_meta($prospect_post_id, 'sd_invitation_status', true);
+        if (!in_array($invite_status, ['valid', 'manual_override'], true)) {
+            return new WP_Error('sd_invite_not_valid', 'Prospect invitation is not valid for billing checkout.', ['status' => 409]);
+        }
+
+        $account_status = (string) get_post_meta($prospect_post_id, 'sd_stripe_onboarding_status', true);
+        $allowed_account_statuses = [
+            'started',
+            'charges_enabled',
+            'account_ready',
+            'details_submitted',
+            'under_review',
+            'pending_verification',
+        ];
+
+        if (!in_array($account_status, $allowed_account_statuses, true)) {
+            return new WP_Error('sd_onboarding_not_started', 'Stripe onboarding must be started before billing checkout.', ['status' => 409]);
+        }
+
+        $billing_status = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
+        if (in_array($billing_status, ['paid', 'active'], true)) {
+            return new WP_Error('sd_billing_already_paid', 'This prospect already has an active paid billing state.', ['status' => 409]);
+        }
+
+        if ((string) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_id', true) !== '') {
+            return new WP_Error('sd_tenant_already_promoted', 'This prospect has already been promoted to a tenant.', ['status' => 409]);
+        }
+
+        return true;
+    }
+
+    private static function resolve_billing_price_id(WP_REST_Request $request): string {
+        $request_value = sanitize_text_field((string) $request->get_param('price_id'));
+        if ($request_value !== '') {
+            return $request_value;
+        }
+
+        $constant_value = defined('SD_STRIPE_CONTROL_PLANE_SUBSCRIPTION_PRICE_ID') ? (string) SD_STRIPE_CONTROL_PLANE_SUBSCRIPTION_PRICE_ID : '';
+        if ($constant_value !== '') {
+            return $constant_value;
+        }
+
+        $option_value = (string) get_option('sd_stripe_control_plane_subscription_price_id', '');
+        if ($option_value !== '') {
+            return $option_value;
+        }
+
+        $env_value = getenv('SD_STRIPE_CONTROL_PLANE_SUBSCRIPTION_PRICE_ID');
+        return is_string($env_value) ? trim($env_value) : '';
+    }
+
+    private static function resolve_checkout_success_url(WP_REST_Request $request): string {
+        $request_url = esc_url_raw((string) $request->get_param('success_url'));
+        if ($request_url !== '') {
+            return $request_url;
+        }
+
+        return home_url('/request-received/?sd-billing=success&session_id={CHECKOUT_SESSION_ID}');
+    }
+
+    private static function resolve_checkout_cancel_url(WP_REST_Request $request): string {
+        $request_url = esc_url_raw((string) $request->get_param('cancel_url'));
+        if ($request_url !== '') {
+            return $request_url;
+        }
+
+        return home_url('/request-access/?sd-billing=cancelled');
     }
 
     private static function get_stripe_secret_key(): string {
@@ -974,6 +1875,61 @@ final class SD_Front_Office_Scaffold {
         ];
 
         return self::stripe_api_post('/account_links', $body, $secret_key);
+    }
+
+
+    private static function stripe_create_billing_checkout_session(int $prospect_post_id, array $args, string $secret_key): array|WP_Error {
+        $price_id = sanitize_text_field((string) ($args['price_id'] ?? ''));
+        $success_url = esc_url_raw((string) ($args['success_url'] ?? ''));
+        $cancel_url = esc_url_raw((string) ($args['cancel_url'] ?? ''));
+        $customer_email = sanitize_email((string) ($args['customer_email'] ?? ''));
+        $customer_id = sanitize_text_field((string) ($args['customer_id'] ?? ''));
+        $trial_period_days = max(0, (int) ($args['trial_period_days'] ?? 0));
+        $coupon = sanitize_text_field((string) ($args['coupon'] ?? ''));
+        $metadata = is_array($args['metadata'] ?? null) ? $args['metadata'] : [];
+
+        $body = [
+            'mode' => 'subscription',
+            'success_url' => $success_url,
+            'cancel_url' => $cancel_url,
+            'line_items[0][price]' => $price_id,
+            'line_items[0][quantity]' => '1',
+            'metadata[sd_prospect_post_id]' => (string) $prospect_post_id,
+            'subscription_data[metadata][sd_prospect_post_id]' => (string) $prospect_post_id,
+            'allow_promotion_codes' => 'true',
+        ];
+
+        foreach ($metadata as $meta_key => $meta_value) {
+            $meta_key = sanitize_key((string) $meta_key);
+            $meta_value = sanitize_text_field((string) $meta_value);
+            if ($meta_key === '' || $meta_value === '') {
+                continue;
+            }
+
+            $body['metadata[' . $meta_key . ']'] = $meta_value;
+            $body['subscription_data[metadata][' . $meta_key . ']'] = $meta_value;
+        }
+
+        if ($customer_id !== '') {
+            $body['customer'] = $customer_id;
+        } elseif ($customer_email !== '') {
+            $body['customer_email'] = $customer_email;
+        }
+
+        if ($trial_period_days > 0) {
+            $body['subscription_data[trial_period_days]'] = (string) $trial_period_days;
+        }
+
+        if ($coupon !== '') {
+            $body['discounts[0][coupon]'] = $coupon;
+        }
+
+        $connected_account_id = (string) get_post_meta($prospect_post_id, 'sd_stripe_account_id', true);
+        if ($connected_account_id !== '') {
+            $body['subscription_data[metadata][sd_stripe_account_id]'] = $connected_account_id;
+        }
+
+        return self::stripe_api_post('/checkout/sessions', $body, $secret_key);
     }
 
     private static function stripe_api_post(string $path, array $body, string $secret_key): array|WP_Error {
@@ -1069,6 +2025,10 @@ final class SD_Front_Office_Scaffold {
             update_post_meta($post_id, 'sd_stripe_onboarding_status', 'not_started');
         }
 
+        if (!get_post_meta($post_id, 'sd_billing_status', true)) {
+            update_post_meta($post_id, 'sd_billing_status', 'not_started');
+        }
+
         if (!get_post_meta($post_id, 'sd_last_intake_channel', true)) {
             update_post_meta($post_id, 'sd_last_intake_channel', 'admin_user');
         }
@@ -1110,6 +2070,56 @@ final class SD_Front_Office_Scaffold {
 
         if (!get_post_meta($post_id, 'sd_dedupe_key_phone', true)) {
             update_post_meta($post_id, 'sd_dedupe_key_phone', (string) get_post_meta($post_id, 'sd_phone_normalized', true));
+        }
+    }
+
+    public static function ensure_tenant_defaults(int $post_id, WP_Post $post, bool $update): void {
+        if ($post->post_type !== self::TENANT_POST_TYPE) {
+            return;
+        }
+
+        if (wp_is_post_revision($post_id) || defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+
+        $now = current_time('mysql', true);
+
+        if (!get_post_meta($post_id, 'sd_tenant_id', true)) {
+            update_post_meta($post_id, 'sd_tenant_id', 'ten_' . wp_generate_uuid4());
+        }
+
+        if (!get_post_meta($post_id, 'sd_status', true)) {
+            update_post_meta($post_id, 'sd_status', 'inactive');
+        }
+
+        if (!get_post_meta($post_id, 'sd_created_at_gmt', true)) {
+            update_post_meta($post_id, 'sd_created_at_gmt', $now);
+        }
+
+        update_post_meta($post_id, 'sd_updated_at_gmt', $now);
+
+        if (!get_post_meta($post_id, 'sd_storefront_status', true)) {
+            update_post_meta($post_id, 'sd_storefront_status', 'not_started');
+        }
+
+        if (!get_post_meta($post_id, 'sd_activation_ready', true)) {
+            update_post_meta($post_id, 'sd_activation_ready', 0);
+        }
+
+        if (!get_post_meta($post_id, 'sd_billing_status', true)) {
+            update_post_meta($post_id, 'sd_billing_status', 'not_started');
+        }
+
+        if (!get_post_meta($post_id, 'sd_provisioning_status', true)) {
+            update_post_meta($post_id, 'sd_provisioning_status', 'not_started');
+        }
+
+        if (!get_post_meta($post_id, 'sd_charges_enabled', true)) {
+            update_post_meta($post_id, 'sd_charges_enabled', 0);
+        }
+
+        if (!get_post_meta($post_id, 'sd_payouts_enabled', true)) {
+            update_post_meta($post_id, 'sd_payouts_enabled', 0);
         }
     }
 }
