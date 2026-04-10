@@ -2125,7 +2125,88 @@ final class SD_Front_Office_Scaffold {
 }
 
 SD_Front_Office_Scaffold::bootstrap();
+add_action('sd_control_plane_tenant_provisioning_requested', function ($tenant_post_id, $prospect_post_id, $payload) {
+    if (empty($payload) || !is_array($payload)) {
+        error_log('[SD Front Office] Provisioning callback aborted: missing payload.');
+        return;
+    }
 
+    $endpoint = defined('SD_CONTROL_PLANE_PROVISIONING_ENDPOINT')
+        ? SD_CONTROL_PLANE_PROVISIONING_ENDPOINT
+        : get_option('sd_control_plane_provisioning_endpoint');
+
+    if (!$endpoint) {
+        error_log('[SD Front Office] Provisioning callback aborted: endpoint not configured.');
+        return;
+    }
+
+    $secret = defined('SD_CONTROL_PLANE_PROVISIONING_SECRET')
+        ? SD_CONTROL_PLANE_PROVISIONING_SECRET
+        : get_option('sd_control_plane_provisioning_secret');
+
+    if (!$secret) {
+        error_log('[SD Front Office] Provisioning callback aborted: secret not configured.');
+        return;
+    }
+
+    $request_id = 'sdprov_' . md5(implode('|', [
+        (string) ($payload['tenant_id'] ?? ''),
+        (string) ($payload['tenant_slug'] ?? ''),
+        (string) ($payload['stripe_account_id'] ?? ''),
+        (string) ($payload['stripe_subscription_id'] ?? ''),
+        (string) ($payload['billing_status'] ?? ''),
+    ]));
+
+    $body = wp_json_encode($payload);
+
+    if (!$body) {
+        error_log('[SD Front Office] Provisioning callback aborted: failed to JSON encode payload.');
+        return;
+    }
+
+    $signature = hash_hmac('sha256', $body, $secret);
+
+    update_post_meta($tenant_post_id, 'sd_provisioning_status', 'sending');
+    update_post_meta($tenant_post_id, 'sd_last_provisioning_payload_json', $body);
+
+    $response = wp_remote_post($endpoint, [
+        'timeout' => 20,
+        'headers' => [
+            'Content-Type' => 'application/json',
+            'X-SD-Request-ID' => $request_id,
+            'X-SD-Signature' => $signature,
+        ],
+        'body' => $body,
+    ]);
+
+    if (is_wp_error($response)) {
+        update_post_meta($tenant_post_id, 'sd_provisioning_status', 'failed');
+        update_post_meta($tenant_post_id, 'sd_health_status', 'attention');
+
+        error_log('[SD Front Office] Provisioning request failed: ' . $response->get_error_message());
+        return;
+    }
+
+    $code = (int) wp_remote_retrieve_response_code($response);
+    $raw_response = wp_remote_retrieve_body($response);
+    $json = json_decode($raw_response, true);
+
+    if ($code >= 200 && $code < 300 && is_array($json) && !empty($json['ok'])) {
+        update_post_meta($tenant_post_id, 'sd_provisioning_status', 'provisioned');
+        update_post_meta($tenant_post_id, 'sd_storefront_status', 'ready');
+        update_post_meta($tenant_post_id, 'sd_activation_ready', 1);
+        update_post_meta($tenant_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+        error_log('[SD Front Office] Provisioning request succeeded for tenant_post_id=' . $tenant_post_id);
+        return;
+    }
+
+    update_post_meta($tenant_post_id, 'sd_provisioning_status', 'failed');
+    update_post_meta($tenant_post_id, 'sd_health_status', 'attention');
+    update_post_meta($tenant_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+    error_log('[SD Front Office] Provisioning request returned HTTP ' . $code . ' body=' . $raw_response);
+}, 10, 3);
 /**
  * Front-end helper for CF7 redirect.
  *
