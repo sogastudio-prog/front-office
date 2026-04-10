@@ -1,0 +1,1415 @@
+/*
+SoloDrive Frontend Consolidated Stylesheet
+Purpose: single frontend CSS file for Astra + Gutenberg.
+Doctrine: use wrapper / block group classes for surgical page styling.
+
+Recommended wrappers:
+- Home: .sd-home-page
+- Convert: .sd-convert-page
+- Pricing: .sd-pricing-page
+- Exit: .sd-exit-page
+- Request Access: .sd-request-page
+
+This file consolidates and normalizes styles from theme custom CSS and the
+existing SoloDrive sheet, while removing duplicate / conflicting page-scoped rules.
+Source basis: existing SoloDrive stylesheet and pasted custom CSS. fileciteturn2file0
+*/
+
+/* =====================================
+   01. TOKENS / GLOBAL SAFETY
+   ===================================== */
+:root {
+  --sd-bg: #f5f5f4;
+  --sd-surface: #f8f8f7;
+  --sd-surface-strong: #ffffff;
+  --sd-text: #111111;
+  --sd-text-soft: #444444;
+  --sd-text-muted: #6b7280;
+  --sd-muted: #6b7280;
+  --sd-border: #e5e7eb;
+  --sd-border-soft: #eaeaea;
+  --sd-accent: #1f5f95;
+  --sd-accent-hover: #184f7d;
+  --sd-accent-dark: #0f172a;
+  --sd-max: 1240px;
+  --sd-max-wide: 1280px;
+  --sd-narrow: 820px;
+  --sd-radius: 14px;
+  --sd-radius-lg: 20px;
+  --sd-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+}
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+.wp-site-blocks {
+  overflow-x: clip;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+body {
+  color: var(--sd-text);
+  background: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.sd-hp {
+  display: none !important;
+}
+
+/* =====================================
+   02. GLOBAL TYPOGRAPHY / CONTENT RHYTHM
+   ===================================== */
+.entry-content,
+.ast-container {
+  max-width: 1040px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--sd-text);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 0;
+}
+
+h1 {
+  font-size: 48px;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+
+h2 {
+  font-size: 32px;
+  line-height: 1.2;
+  margin-top: 40px;
+  margin-bottom: 12px;
+}
+
+h3 {
+  font-size: 22px;
+  line-height: 1.3;
+  margin-top: 28px;
+  margin-bottom: 8px;
+}
+
+p {
+  font-size: 18px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.wp-block-group,
+.wp-block-columns {
+  margin-bottom: 32px;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+blockquote {
+  border-left: 2px solid var(--sd-border-soft);
+  padding-left: 16px;
+  margin: 32px 0;
+  font-style: italic;
+  color: var(--sd-text);
+}
+
+ul,
+ol {
+  margin-bottom: 24px;
+  padding-left: 20px;
+}
+
+li {
+  margin-bottom: 8px;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--sd-border-soft);
+  margin: 48px 0;
+}
+
+/* =====================================
+   03. ASTRA HEADER / LOGO / TOP BAR
+   ===================================== */
+#masthead,
+.ast-primary-header-bar {
+  background: #fff !important;
+  border-bottom: 1px solid var(--sd-border-soft) !important;
+  box-shadow: none !important;
+}
+
+.ast-primary-header-bar {
+  min-height: 56px !important;
+}
+
+.ast-primary-header-bar .ast-builder-grid-row-container,
+.ast-primary-header-bar .ast-builder-grid-row {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  align-items: center !important;
+}
+
+.ast-primary-header-bar .ast-container {
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+.ast-builder-menu,
+.ast-header-social-wrap,
+.ast-header-search {
+  display: none !important;
+}
+
+.sd-logo {
+  display: inline-flex;
+  align-items: baseline;
+  text-decoration: none !important;
+  color: var(--sd-text) !important;
+  letter-spacing: 0.01em;
+  line-height: 1 !important;
+}
+
+.sd-logo-main {
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: 0.01em;
+}
+
+.sd-logo-dot {
+  font-weight: 600;
+  font-size: 20px;
+  opacity: 0.4 !important;
+  margin: 0 -1px !important;
+}
+
+.sd-logo-tld {
+  font-weight: 500 !important;
+  font-size: 0.85em !important;
+  opacity: 0.52 !important;
+  letter-spacing: 0.03em !important;
+}
+
+.ast-header-button-1 .ast-custom-button,
+.ast-header-button-1 .ast-custom-button:visited {
+  background: transparent !important;
+  color: #111111 !important;
+  border: 1px solid rgba(17, 17, 17, 0.18) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+}
+
+.ast-header-button-1 .ast-custom-button:hover {
+  background: rgba(17, 17, 17, 0.04) !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+@media (max-width: 544px) {
+  .ast-primary-header-bar {
+    min-height: 52px !important;
+  }
+
+  .ast-primary-header-bar .ast-container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .sd-logo-main {
+    font-size: 18px !important;
+    font-weight: 600 !important;
+  }
+
+  .ast-header-button-1 .ast-custom-button,
+  .ast-header-button-1 .ast-custom-button:visited {
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+  }
+}
+
+/* =====================================
+   04. GENERIC SOLODRIVE PAGE SYSTEM
+   Apply by wrapper class on outer Group block.
+   ===================================== */
+.sd-home-page,
+.sd-convert-page,
+.sd-pricing-page,
+.sd-exit-page,
+.sd-request-page {
+  --sd-bg-local: var(--sd-bg);
+  --sd-surface-local: var(--sd-surface);
+  --sd-surface-strong-local: var(--sd-surface-strong);
+  --sd-text-local: var(--sd-text);
+  --sd-text-soft-local: var(--sd-text-soft);
+  --sd-text-muted-local: var(--sd-text-muted);
+  --sd-border-local: var(--sd-border);
+  --sd-accent-local: var(--sd-accent);
+  --sd-accent-hover-local: var(--sd-accent-hover);
+  background: var(--sd-bg-local);
+  color: var(--sd-text-local);
+  overflow: visible;
+}
+
+.sd-home-page,
+.sd-home-page .wp-block-group,
+.sd-home-page .wp-block-group__inner-container,
+.sd-home-page .wp-block-columns,
+.sd-home-page .wp-block-column,
+.sd-convert-page,
+.sd-convert-page .wp-block-group,
+.sd-convert-page .wp-block-group__inner-container,
+.sd-convert-page .wp-block-columns,
+.sd-convert-page .wp-block-column,
+.sd-pricing-page,
+.sd-pricing-page .wp-block-group,
+.sd-pricing-page .wp-block-group__inner-container,
+.sd-pricing-page .wp-block-columns,
+.sd-pricing-page .wp-block-column,
+.sd-exit-page,
+.sd-exit-page .wp-block-group,
+.sd-exit-page .wp-block-group__inner-container,
+.sd-exit-page .wp-block-columns,
+.sd-exit-page .wp-block-column,
+.sd-request-page,
+.sd-request-page .wp-block-group,
+.sd-request-page .wp-block-group__inner-container,
+.sd-request-page .wp-block-columns,
+.sd-request-page .wp-block-column {
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.sd-home-page .sd-section,
+.sd-convert-page .sd-section,
+.sd-pricing-page .sd-section,
+.sd-exit-page .sd-section {
+  padding: 72px 24px;
+}
+
+.sd-home-page .sd-section:first-child,
+.sd-convert-page .sd-section:first-child,
+.sd-pricing-page .sd-section:first-child,
+.sd-exit-page .sd-section:first-child {
+  padding-top: 20px;
+}
+
+.sd-home-page .sd-section--plain,
+.sd-convert-page .sd-section--plain,
+.sd-pricing-page .sd-section--plain,
+.sd-exit-page .sd-section--plain {
+  padding-top: 40px;
+  padding-bottom: 40px;
+}
+
+.sd-home-page .sd-container,
+.sd-convert-page .sd-container,
+.sd-pricing-page .sd-container,
+.sd-exit-page .sd-container,
+.sd-request-page .sd-container {
+  max-width: var(--sd-max);
+  margin: 0 auto;
+}
+
+.sd-home-page .sd-container--narrow,
+.sd-convert-page .sd-container--narrow,
+.sd-pricing-page .sd-container--narrow,
+.sd-exit-page .sd-container--narrow,
+.sd-request-page .sd-container--narrow {
+  max-width: var(--sd-narrow);
+}
+
+.sd-home-page .sd-container--wide,
+.sd-convert-page .sd-container--wide,
+.sd-pricing-page .sd-container--wide,
+.sd-exit-page .sd-container--wide {
+  max-width: var(--sd-max-wide);
+}
+
+.sd-home-page .sd-hero .sd-container,
+.sd-home-page .sd-final-cta .sd-container,
+.sd-home-page .sd-section--visual .sd-container,
+.sd-convert-page .sd-hero .sd-container,
+.sd-convert-page .sd-final-cta .sd-container,
+.sd-convert-page .sd-section--visual .sd-container,
+.sd-pricing-page .sd-hero .sd-container,
+.sd-pricing-page .sd-final-cta .sd-container,
+.sd-pricing-page .sd-section--visual .sd-container,
+.sd-exit-page .sd-hero .sd-container,
+.sd-exit-page .sd-final-cta .sd-container,
+.sd-exit-page .sd-section--visual .sd-container {
+  background: var(--sd-surface-local);
+  border-radius: var(--sd-radius-lg);
+  padding: 44px clamp(24px, 5vw, 56px);
+  box-sizing: border-box;
+}
+
+.sd-home-page .sd-hero .sd-container,
+.sd-convert-page .sd-hero .sd-container,
+.sd-pricing-page .sd-hero .sd-container,
+.sd-exit-page .sd-hero .sd-container {
+  padding-top: 28px;
+}
+
+.sd-home-page .sd-eyebrow,
+.sd-convert-page .sd-eyebrow,
+.sd-pricing-page .sd-eyebrow,
+.sd-exit-page .sd-eyebrow,
+.sd-request-page .sd-eyebrow {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--sd-text-soft-local);
+}
+
+.sd-home-page h1,
+.sd-home-page h2,
+.sd-home-page h3,
+.sd-convert-page h1,
+.sd-convert-page h2,
+.sd-convert-page h3,
+.sd-pricing-page h1,
+.sd-pricing-page h2,
+.sd-pricing-page h3,
+.sd-exit-page h1,
+.sd-exit-page h2,
+.sd-exit-page h3,
+.sd-request-page h1,
+.sd-request-page h2,
+.sd-request-page h3 {
+  margin: 0;
+  color: var(--sd-text-local);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.sd-home-page h1,
+.sd-convert-page h1,
+.sd-pricing-page h1,
+.sd-exit-page h1,
+.sd-request-page h1 {
+  max-width: 11ch;
+  font-size: clamp(42px, 7vw, 72px);
+  line-height: 0.98;
+}
+
+.sd-home-page h2,
+.sd-convert-page h2,
+.sd-pricing-page h2,
+.sd-exit-page h2,
+.sd-request-page h2 {
+  font-size: clamp(30px, 4.2vw, 48px);
+  line-height: 1.02;
+}
+
+.sd-home-page h3,
+.sd-convert-page h3,
+.sd-pricing-page h3,
+.sd-exit-page h3,
+.sd-request-page h3 {
+  font-size: clamp(20px, 2.2vw, 26px);
+  line-height: 1.15;
+}
+
+.sd-home-page .sd-lead,
+.sd-home-page .sd-section-heading > p,
+.sd-home-page .sd-copy-block p,
+.sd-home-page .sd-flow-card p,
+.sd-home-page .sd-feature-list li,
+.sd-home-page .sd-clean-list li,
+.sd-home-page .sd-final-cta p,
+.sd-home-page .sd-visual-caption,
+.sd-convert-page .sd-lead,
+.sd-convert-page .sd-section-heading > p,
+.sd-convert-page .sd-copy-block p,
+.sd-convert-page .sd-flow-card p,
+.sd-convert-page .sd-feature-list li,
+.sd-convert-page .sd-clean-list li,
+.sd-convert-page .sd-final-cta p,
+.sd-convert-page .sd-visual-caption,
+.sd-pricing-page .sd-lead,
+.sd-pricing-page .sd-section-heading > p,
+.sd-pricing-page .sd-copy-block p,
+.sd-pricing-page .sd-flow-card p,
+.sd-pricing-page .sd-feature-list li,
+.sd-pricing-page .sd-clean-list li,
+.sd-pricing-page .sd-final-cta p,
+.sd-pricing-page .sd-visual-caption,
+.sd-exit-page .sd-lead,
+.sd-exit-page .sd-section-heading > p,
+.sd-exit-page .sd-copy-block p,
+.sd-exit-page .sd-flow-card p,
+.sd-exit-page .sd-feature-list li,
+.sd-exit-page .sd-clean-list li,
+.sd-exit-page .sd-final-cta p,
+.sd-exit-page .sd-visual-caption,
+.sd-request-page .sd-lead,
+.sd-request-page .sd-copy-block p {
+  color: var(--sd-text-soft-local);
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.sd-home-page .sd-lead,
+.sd-convert-page .sd-lead,
+.sd-pricing-page .sd-lead,
+.sd-exit-page .sd-lead,
+.sd-request-page .sd-lead {
+  max-width: 42rem;
+  margin: 24px 0 0;
+}
+
+.sd-home-page .sd-copy-block,
+.sd-convert-page .sd-copy-block,
+.sd-pricing-page .sd-copy-block,
+.sd-exit-page .sd-copy-block,
+.sd-request-page .sd-copy-block {
+  display: grid;
+  gap: 8px;
+}
+
+.sd-home-page .sd-copy-block p,
+.sd-convert-page .sd-copy-block p,
+.sd-pricing-page .sd-copy-block p,
+.sd-exit-page .sd-copy-block p,
+.sd-request-page .sd-copy-block p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.sd-home-page .sd-actions,
+.sd-convert-page .sd-actions,
+.sd-pricing-page .sd-actions,
+.sd-exit-page .sd-actions,
+.sd-request-page .sd-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.sd-home-page .sd-actions--center,
+.sd-convert-page .sd-actions--center,
+.sd-pricing-page .sd-actions--center,
+.sd-exit-page .sd-actions--center,
+.sd-request-page .sd-actions--center {
+  justify-content: center;
+}
+
+.wp-block-button.sd-button {
+  margin: 0;
+}
+
+.sd-button .wp-block-button__link {
+  min-height: 48px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.sd-button--primary .wp-block-button__link {
+  background: var(--sd-accent-local);
+  border: 1px solid var(--sd-accent-local);
+  color: #ffffff;
+}
+
+.sd-button--primary .wp-block-button__link:hover,
+.sd-button--primary .wp-block-button__link:focus {
+  background: var(--sd-accent-hover-local);
+  border-color: var(--sd-accent-hover-local);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.sd-button--secondary .wp-block-button__link {
+  background: transparent;
+  border: 1px solid var(--sd-border-local);
+  color: var(--sd-text-local);
+}
+
+.sd-button--secondary .wp-block-button__link:hover,
+.sd-button--secondary .wp-block-button__link:focus {
+  border-color: var(--sd-text-local);
+  color: var(--sd-text-local);
+  transform: translateY(-1px);
+}
+
+.sd-home-page .sd-section-heading,
+.sd-convert-page .sd-section-heading,
+.sd-pricing-page .sd-section-heading,
+.sd-exit-page .sd-section-heading {
+  max-width: 860px;
+  margin-bottom: 28px;
+}
+
+.sd-home-page .sd-section-heading h2,
+.sd-convert-page .sd-section-heading h2,
+.sd-pricing-page .sd-section-heading h2,
+.sd-exit-page .sd-section-heading h2 {
+  max-width: 14ch;
+}
+
+.sd-home-page .sd-section-heading p:last-child,
+.sd-convert-page .sd-section-heading p:last-child,
+.sd-pricing-page .sd-section-heading p:last-child,
+.sd-exit-page .sd-section-heading p:last-child {
+  max-width: 42rem;
+  margin-top: 18px;
+}
+
+.sd-home-page .sd-section-heading--wide,
+.sd-convert-page .sd-section-heading--wide,
+.sd-pricing-page .sd-section-heading--wide,
+.sd-exit-page .sd-section-heading--wide {
+  max-width: 980px;
+}
+
+.sd-home-page .sd-section-heading--wide h2,
+.sd-convert-page .sd-section-heading--wide h2,
+.sd-pricing-page .sd-section-heading--wide h2,
+.sd-exit-page .sd-section-heading--wide h2 {
+  max-width: 16ch;
+}
+
+.sd-home-page .sd-flow-grid,
+.sd-convert-page .sd-flow-grid,
+.sd-pricing-page .sd-flow-grid,
+.sd-exit-page .sd-flow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 0 !important;
+}
+
+.sd-home-page .sd-flow-grid + .sd-flow-grid,
+.sd-convert-page .sd-flow-grid + .sd-flow-grid,
+.sd-pricing-page .sd-flow-grid + .sd-flow-grid,
+.sd-exit-page .sd-flow-grid + .sd-flow-grid {
+  margin-top: 18px !important;
+}
+
+.sd-home-page .sd-flow-grid > .wp-block-column,
+.sd-convert-page .sd-flow-grid > .wp-block-column,
+.sd-pricing-page .sd-flow-grid > .wp-block-column,
+.sd-exit-page .sd-flow-grid > .wp-block-column,
+.sd-home-page .sd-visual-grid > .wp-block-column,
+.sd-convert-page .sd-visual-grid > .wp-block-column,
+.sd-pricing-page .sd-visual-grid > .wp-block-column,
+.sd-exit-page .sd-visual-grid > .wp-block-column,
+.sd-home-page .sd-compare-grid > .wp-block-column,
+.sd-convert-page .sd-compare-grid > .wp-block-column,
+.sd-pricing-page .sd-compare-grid > .wp-block-column,
+.sd-exit-page .sd-compare-grid > .wp-block-column,
+.sd-home-page .sd-feature-columns > .wp-block-column,
+.sd-convert-page .sd-feature-columns > .wp-block-column,
+.sd-pricing-page .sd-feature-columns > .wp-block-column,
+.sd-exit-page .sd-feature-columns > .wp-block-column {
+  margin: 0 !important;
+}
+
+.sd-home-page .sd-flow-card,
+.sd-home-page .sd-compare-card,
+.sd-convert-page .sd-flow-card,
+.sd-convert-page .sd-compare-card,
+.sd-pricing-page .sd-flow-card,
+.sd-pricing-page .sd-compare-card,
+.sd-exit-page .sd-flow-card,
+.sd-exit-page .sd-compare-card {
+  background: var(--sd-surface-strong-local);
+  border: 1px solid var(--sd-border-local);
+  border-radius: var(--sd-radius);
+  box-shadow: var(--sd-shadow);
+  padding: 24px 22px;
+}
+
+.sd-home-page .sd-step,
+.sd-convert-page .sd-step,
+.sd-pricing-page .sd-step,
+.sd-exit-page .sd-step {
+  margin: 0 0 20px;
+  color: var(--sd-text-muted-local);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.sd-home-page .sd-flow-card h3,
+.sd-convert-page .sd-flow-card h3,
+.sd-pricing-page .sd-flow-card h3,
+.sd-exit-page .sd-flow-card h3 {
+  font-size: 24px;
+  line-height: 1.08;
+  margin-bottom: 10px;
+}
+
+.sd-home-page .sd-flow-card p,
+.sd-convert-page .sd-flow-card p,
+.sd-pricing-page .sd-flow-card p,
+.sd-exit-page .sd-flow-card p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.sd-home-page .sd-section--visual .sd-container,
+.sd-convert-page .sd-section--visual .sd-container,
+.sd-pricing-page .sd-section--visual .sd-container,
+.sd-exit-page .sd-section--visual .sd-container {
+  padding: 40px clamp(20px, 4vw, 40px);
+}
+
+.sd-home-page .sd-visual-grid,
+.sd-convert-page .sd-visual-grid,
+.sd-pricing-page .sd-visual-grid,
+.sd-exit-page .sd-visual-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 0 !important;
+}
+
+.sd-home-page .sd-visual-card,
+.sd-convert-page .sd-visual-card,
+.sd-pricing-page .sd-visual-card,
+.sd-exit-page .sd-visual-card {
+  background: var(--sd-surface-strong-local);
+  border: 1px solid var(--sd-border-local);
+  border-radius: var(--sd-radius);
+  overflow: hidden;
+}
+
+.sd-visual-card .wp-block-image {
+  margin: 0;
+}
+
+.sd-visual-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #ececec;
+}
+
+.sd-home-page .sd-visual-caption,
+.sd-convert-page .sd-visual-caption,
+.sd-pricing-page .sd-visual-caption,
+.sd-exit-page .sd-visual-caption {
+  margin: 0;
+  padding: 16px 18px 18px;
+  font-size: 16px;
+}
+
+.sd-home-page .sd-feature-list,
+.sd-home-page .sd-clean-list,
+.sd-convert-page .sd-feature-list,
+.sd-convert-page .sd-clean-list,
+.sd-pricing-page .sd-feature-list,
+.sd-pricing-page .sd-clean-list,
+.sd-exit-page .sd-feature-list,
+.sd-exit-page .sd-clean-list {
+  margin: 20px 0 0;
+  padding-left: 1.25rem;
+}
+
+.sd-home-page .sd-feature-list,
+.sd-convert-page .sd-feature-list,
+.sd-pricing-page .sd-feature-list,
+.sd-exit-page .sd-feature-list {
+  columns: 2;
+  column-gap: 48px;
+  max-width: 960px;
+}
+
+.sd-home-page .sd-feature-list li,
+.sd-home-page .sd-clean-list li,
+.sd-convert-page .sd-feature-list li,
+.sd-convert-page .sd-clean-list li,
+.sd-pricing-page .sd-feature-list li,
+.sd-pricing-page .sd-clean-list li,
+.sd-exit-page .sd-feature-list li,
+.sd-exit-page .sd-clean-list li {
+  margin-bottom: 14px;
+  line-height: 1.6;
+  break-inside: avoid;
+  font-size: 17px;
+}
+
+.sd-home-page .sd-feature-columns,
+.sd-convert-page .sd-feature-columns,
+.sd-pricing-page .sd-feature-columns,
+.sd-exit-page .sd-feature-columns {
+  gap: 36px;
+}
+
+.sd-home-page .sd-compare-grid,
+.sd-convert-page .sd-compare-grid,
+.sd-pricing-page .sd-compare-grid,
+.sd-exit-page .sd-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 0 !important;
+}
+
+.sd-home-page .sd-compare-card h3,
+.sd-convert-page .sd-compare-card h3,
+.sd-pricing-page .sd-compare-card h3,
+.sd-exit-page .sd-compare-card h3 {
+  margin-bottom: 16px;
+}
+
+.sd-home-page .sd-final-cta,
+.sd-convert-page .sd-final-cta,
+.sd-pricing-page .sd-final-cta,
+.sd-exit-page .sd-final-cta {
+  padding-top: 40px;
+  padding-bottom: 72px;
+}
+
+.sd-home-page .sd-final-cta .sd-container,
+.sd-convert-page .sd-final-cta .sd-container,
+.sd-pricing-page .sd-final-cta .sd-container,
+.sd-exit-page .sd-final-cta .sd-container {
+  text-align: center;
+  padding: 40px 24px;
+}
+
+.sd-home-page .sd-final-cta h2,
+.sd-convert-page .sd-final-cta h2,
+.sd-pricing-page .sd-final-cta h2,
+.sd-exit-page .sd-final-cta h2 {
+  max-width: none;
+}
+
+.sd-home-page .sd-final-cta p:not(.sd-eyebrow),
+.sd-convert-page .sd-final-cta p:not(.sd-eyebrow),
+.sd-pricing-page .sd-final-cta p:not(.sd-eyebrow),
+.sd-exit-page .sd-final-cta p:not(.sd-eyebrow) {
+  max-width: 42rem;
+  margin: 18px auto 0;
+}
+
+/* =====================================
+   05. INTENTIONAL FLOW GRID VARIANT
+   ===================================== */
+.sd-home-page .sd-flow-grid--intentional,
+.sd-convert-page .sd-flow-grid--intentional,
+.sd-pricing-page .sd-flow-grid--intentional,
+.sd-exit-page .sd-flow-grid--intentional {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.sd-home-page .sd-flow-grid--intentional .sd-flow-card:nth-child(1),
+.sd-home-page .sd-flow-grid--intentional .sd-flow-card:nth-child(2),
+.sd-home-page .sd-flow-grid--intentional .sd-flow-card:nth-child(3),
+.sd-convert-page .sd-flow-grid--intentional .sd-flow-card:nth-child(1),
+.sd-convert-page .sd-flow-grid--intentional .sd-flow-card:nth-child(2),
+.sd-convert-page .sd-flow-grid--intentional .sd-flow-card:nth-child(3),
+.sd-pricing-page .sd-flow-grid--intentional .sd-flow-card:nth-child(1),
+.sd-pricing-page .sd-flow-grid--intentional .sd-flow-card:nth-child(2),
+.sd-pricing-page .sd-flow-grid--intentional .sd-flow-card:nth-child(3),
+.sd-exit-page .sd-flow-grid--intentional .sd-flow-card:nth-child(1),
+.sd-exit-page .sd-flow-grid--intentional .sd-flow-card:nth-child(2),
+.sd-exit-page .sd-flow-grid--intentional .sd-flow-card:nth-child(3) {
+  grid-column: span 2;
+}
+
+.sd-home-page .sd-flow-grid--intentional .sd-flow-card--offset-left,
+.sd-convert-page .sd-flow-grid--intentional .sd-flow-card--offset-left,
+.sd-pricing-page .sd-flow-grid--intentional .sd-flow-card--offset-left,
+.sd-exit-page .sd-flow-grid--intentional .sd-flow-card--offset-left {
+  grid-column: 2 / span 2;
+}
+
+.sd-home-page .sd-flow-grid--intentional .sd-flow-card--offset-right,
+.sd-convert-page .sd-flow-grid--intentional .sd-flow-card--offset-right,
+.sd-pricing-page .sd-flow-grid--intentional .sd-flow-card--offset-right,
+.sd-exit-page .sd-flow-grid--intentional .sd-flow-card--offset-right {
+  grid-column: 4 / span 2;
+}
+
+.sd-home-page .sd-feature-list--single,
+.sd-convert-page .sd-feature-list--single,
+.sd-pricing-page .sd-feature-list--single,
+.sd-exit-page .sd-feature-list--single {
+  columns: 1;
+  margin-top: 0;
+}
+
+/* =====================================
+   06. REQUEST ACCESS / FORMS
+   ===================================== */
+.sd-request-page .request-access-wrap,
+body.page .request-access-wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 24px 72px;
+}
+
+.sd-request-page .request-access-intro,
+.sd-request-page .request-access-form,
+.sd-request-page .request-access-notes,
+body.page .request-access-intro,
+body.page .request-access-form,
+body.page .request-access-notes {
+  background: var(--sd-surface);
+  border-radius: 20px;
+  padding: 32px;
+}
+
+.sd-request-page .request-access-intro + .request-access-form,
+.sd-request-page .request-access-form + .request-access-notes,
+body.page .request-access-intro + .request-access-form,
+body.page .request-access-form + .request-access-notes {
+  margin-top: 24px;
+}
+
+.sd-request-page .request-access-intro h1,
+.sd-request-page .request-access-form h2,
+body.page .request-access-intro h1,
+body.page .request-access-form h2 {
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin: 0 0 16px;
+}
+
+.sd-request-page .request-access-intro p,
+.sd-request-page .request-access-intro li,
+.sd-request-page .request-access-form label,
+.sd-request-page .request-access-notes p,
+body.page .request-access-intro p,
+body.page .request-access-intro li,
+body.page .request-access-form label,
+body.page .request-access-notes p {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--sd-text-soft);
+}
+
+.sd-request-page .request-access-intro ul,
+body.page .request-access-intro ul {
+  margin: 18px 0 0;
+  padding-left: 1.25rem;
+}
+
+.sd-request-page .request-access-form input,
+.sd-request-page .request-access-form select,
+.sd-request-page .request-access-form textarea,
+body.page .request-access-form input,
+body.page .request-access-form select,
+body.page .request-access-form textarea {
+  min-height: 54px;
+  border: 1px solid var(--sd-border);
+  border-radius: 10px;
+  background: #fff;
+  padding: 12px 14px;
+  font-size: 16px;
+}
+
+.sd-request-page .request-access-form .wpcf7-list-item,
+body.page .request-access-form .wpcf7-list-item {
+  margin-right: 24px;
+}
+
+.sd-request-page .request-access-form input[type="submit"],
+.sd-request-page .request-access-form button,
+.sd-request-page .request-access-form .sd-button,
+body.page .request-access-form input[type="submit"],
+body.page .request-access-form button,
+body.page .request-access-form .sd-button {
+  background: var(--sd-accent);
+  border: 1px solid var(--sd-accent);
+  color: #fff;
+  border-radius: 10px;
+  min-height: 48px;
+  padding: 12px 18px;
+  font-weight: 600;
+}
+
+.sd-request-page .request-access-form input[type="submit"]:hover,
+.sd-request-page .request-access-form button:hover,
+body.page .request-access-form input[type="submit"]:hover,
+body.page .request-access-form button:hover {
+  background: var(--sd-accent-hover);
+  border-color: var(--sd-accent-hover);
+}
+
+/* CF7 radio / checkbox cleanup */
+.wpcf7 form .wpcf7-radio,
+.wpcf7 form .wpcf7-checkbox {
+  display: flex;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+.wpcf7-list-item {
+  margin: 0;
+}
+
+.wpcf7-list-item label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.wpcf7 input[type="radio"],
+.wpcf7 input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--sd-accent-dark);
+}
+
+.wpcf7 .wpcf7-acceptance {
+  margin-top: 24px;
+}
+
+/* =====================================
+   07. LEGACY / SUPPORTING UTILITY CLASSES
+   ===================================== */
+.sd-hero {
+  background: linear-gradient(to bottom, #f8f9fb 0%, #ffffff 60%);
+}
+
+.sdp-hero {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.04), rgba(15, 23, 42, 0));
+  border-radius: 14px;
+  padding: clamp(22px, 5vw, 44px);
+  margin: clamp(18px, 3vw, 36px) auto;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.sdp-hero .sdp-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  opacity: 0.7;
+  margin-top: 0;
+  margin-bottom: 14px;
+}
+
+.sdp-hero h1 {
+  margin-bottom: 0;
+}
+
+.sdp-hero h1 + h1 {
+  margin-top: 0;
+}
+
+.sdp-section {
+  padding: 56px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.sdp-section:first-of-type {
+  border-top: 0;
+  padding-top: 40px;
+}
+
+.sdp-feature-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 18px 0 0;
+}
+
+.sdp-feature-list li {
+  margin: 0;
+  padding: 10px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.sdp-feature-list li:first-child {
+  border-top: 0;
+}
+
+.sdp-feature-list li::before {
+  content: "•";
+  display: inline-block;
+  margin-right: 10px;
+  opacity: 0.35;
+}
+
+.sdp-wide-section {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.sd-feature-grid {
+  margin-top: 40px;
+}
+
+.sd-feature-grid ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sd-feature-grid li {
+  padding: 16px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.sd-feature-grid li:first-child {
+  border-top: 0;
+}
+
+.sdp-section-divider {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  margin: 72px 0;
+}
+
+.sdp-claim {
+  font-size: 24px;
+  margin-top: 36px;
+  opacity: 0.9;
+}
+
+/* =====================================
+   08. RESPONSIVE
+   ===================================== */
+@media (max-width: 1024px) {
+  .sd-home-page .sd-section,
+  .sd-convert-page .sd-section,
+  .sd-pricing-page .sd-section,
+  .sd-exit-page .sd-section {
+    padding: 60px 20px;
+  }
+
+  .sd-home-page .sd-hero .sd-container,
+  .sd-home-page .sd-final-cta .sd-container,
+  .sd-home-page .sd-section--visual .sd-container,
+  .sd-convert-page .sd-hero .sd-container,
+  .sd-convert-page .sd-final-cta .sd-container,
+  .sd-convert-page .sd-section--visual .sd-container,
+  .sd-pricing-page .sd-hero .sd-container,
+  .sd-pricing-page .sd-final-cta .sd-container,
+  .sd-pricing-page .sd-section--visual .sd-container,
+  .sd-exit-page .sd-hero .sd-container,
+  .sd-exit-page .sd-final-cta .sd-container,
+  .sd-exit-page .sd-section--visual .sd-container {
+    padding: 36px 24px;
+  }
+}
+
+@media (max-width: 960px) {
+  .sd-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 48px;
+  }
+
+  .sd-feature-grid .wp-block-column {
+    padding: 0;
+  }
+}
+
+@media (min-width: 920px) {
+  .sdp-feature-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 32px;
+  }
+
+  .sdp-feature-list li {
+    padding: 12px 0;
+  }
+
+  .sdp-wide-section h2 {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 781px) {
+  .sd-home-page h1,
+  .sd-convert-page h1,
+  .sd-pricing-page h1,
+  .sd-exit-page h1,
+  .sd-request-page h1 {
+    max-width: 10ch;
+  }
+
+  .sd-home-page .sd-section-heading h2,
+  .sd-convert-page .sd-section-heading h2,
+  .sd-pricing-page .sd-section-heading h2,
+  .sd-exit-page .sd-section-heading h2 {
+    max-width: 12ch;
+  }
+
+  .sd-home-page .sd-flow-grid,
+  .sd-home-page .sd-visual-grid,
+  .sd-home-page .sd-compare-grid,
+  .sd-home-page .sd-flow-grid--intentional,
+  .sd-convert-page .sd-flow-grid,
+  .sd-convert-page .sd-visual-grid,
+  .sd-convert-page .sd-compare-grid,
+  .sd-convert-page .sd-flow-grid--intentional,
+  .sd-pricing-page .sd-flow-grid,
+  .sd-pricing-page .sd-visual-grid,
+  .sd-pricing-page .sd-compare-grid,
+  .sd-pricing-page .sd-flow-grid--intentional,
+  .sd-exit-page .sd-flow-grid,
+  .sd-exit-page .sd-visual-grid,
+  .sd-exit-page .sd-compare-grid,
+  .sd-exit-page .sd-flow-grid--intentional {
+    grid-template-columns: 1fr;
+  }
+
+  .sd-home-page .sd-flow-grid + .sd-flow-grid,
+  .sd-convert-page .sd-flow-grid + .sd-flow-grid,
+  .sd-pricing-page .sd-flow-grid + .sd-flow-grid,
+  .sd-exit-page .sd-flow-grid + .sd-flow-grid {
+    margin-top: 14px !important;
+  }
+
+  .sd-home-page .sd-flow-grid--intentional .sd-flow-card:nth-child(1),
+  .sd-home-page .sd-flow-grid--intentional .sd-flow-card:nth-child(2),
+  .sd-home-page .sd-flow-grid--intentional .sd-flow-card:nth-child(3),
+  .sd-home-page .sd-flow-grid--intentional .sd-flow-card--offset-left,
+  .sd-home-page .sd-flow-grid--intentional .sd-flow-card--offset-right,
+  .sd-convert-page .sd-flow-grid--intentional .sd-flow-card:nth-child(1),
+  .sd-convert-page .sd-flow-grid--intentional .sd-flow-card:nth-child(2),
+  .sd-convert-page .sd-flow-grid--intentional .sd-flow-card:nth-child(3),
+  .sd-convert-page .sd-flow-grid--intentional .sd-flow-card--offset-left,
+  .sd-convert-page .sd-flow-grid--intentional .sd-flow-card--offset-right,
+  .sd-pricing-page .sd-flow-grid--intentional .sd-flow-card:nth-child(1),
+  .sd-pricing-page .sd-flow-grid--intentional .sd-flow-card:nth-child(2),
+  .sd-pricing-page .sd-flow-grid--intentional .sd-flow-card:nth-child(3),
+  .sd-pricing-page .sd-flow-grid--intentional .sd-flow-card--offset-left,
+  .sd-pricing-page .sd-flow-grid--intentional .sd-flow-card--offset-right,
+  .sd-exit-page .sd-flow-grid--intentional .sd-flow-card:nth-child(1),
+  .sd-exit-page .sd-flow-grid--intentional .sd-flow-card:nth-child(2),
+  .sd-exit-page .sd-flow-grid--intentional .sd-flow-card:nth-child(3),
+  .sd-exit-page .sd-flow-grid--intentional .sd-flow-card--offset-left,
+  .sd-exit-page .sd-flow-grid--intentional .sd-flow-card--offset-right {
+    grid-column: auto;
+  }
+
+  .sd-home-page .sd-feature-list,
+  .sd-convert-page .sd-feature-list,
+  .sd-pricing-page .sd-feature-list,
+  .sd-exit-page .sd-feature-list {
+    columns: 1;
+  }
+
+  .sd-home-page .sd-lead,
+  .sd-home-page .sd-section-heading > p,
+  .sd-home-page .sd-copy-block p,
+  .sd-home-page .sd-flow-card p,
+  .sd-home-page .sd-feature-list li,
+  .sd-home-page .sd-clean-list li,
+  .sd-home-page .sd-final-cta p,
+  .sd-home-page .sd-visual-caption,
+  .sd-convert-page .sd-lead,
+  .sd-convert-page .sd-section-heading > p,
+  .sd-convert-page .sd-copy-block p,
+  .sd-convert-page .sd-flow-card p,
+  .sd-convert-page .sd-feature-list li,
+  .sd-convert-page .sd-clean-list li,
+  .sd-convert-page .sd-final-cta p,
+  .sd-convert-page .sd-visual-caption,
+  .sd-pricing-page .sd-lead,
+  .sd-pricing-page .sd-section-heading > p,
+  .sd-pricing-page .sd-copy-block p,
+  .sd-pricing-page .sd-flow-card p,
+  .sd-pricing-page .sd-feature-list li,
+  .sd-pricing-page .sd-clean-list li,
+  .sd-pricing-page .sd-final-cta p,
+  .sd-pricing-page .sd-visual-caption,
+  .sd-exit-page .sd-lead,
+  .sd-exit-page .sd-section-heading > p,
+  .sd-exit-page .sd-copy-block p,
+  .sd-exit-page .sd-flow-card p,
+  .sd-exit-page .sd-feature-list li,
+  .sd-exit-page .sd-clean-list li,
+  .sd-exit-page .sd-final-cta p,
+  .sd-exit-page .sd-visual-caption {
+    font-size: 17px;
+    line-height: 1.65;
+  }
+}
+
+@media (max-width: 640px) {
+  .sd-request-page .request-access-wrap,
+  body.page .request-access-wrap {
+    padding: 20px 16px 48px;
+  }
+
+  .sd-request-page .request-access-intro,
+  .sd-request-page .request-access-form,
+  .sd-request-page .request-access-notes,
+  body.page .request-access-intro,
+  body.page .request-access-form,
+  body.page .request-access-notes {
+    padding: 22px 18px;
+    border-radius: 16px;
+  }
+
+  .sd-request-page .request-access-intro p,
+  .sd-request-page .request-access-intro li,
+  .sd-request-page .request-access-form label,
+  .sd-request-page .request-access-notes p,
+  body.page .request-access-intro p,
+  body.page .request-access-intro li,
+  body.page .request-access-form label,
+  body.page .request-access-notes p {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .sdp-section {
+    padding: 40px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .sd-home-page .sd-section,
+  .sd-convert-page .sd-section,
+  .sd-pricing-page .sd-section,
+  .sd-exit-page .sd-section {
+    padding: 44px 16px;
+  }
+
+  .sd-home-page .sd-section:first-child,
+  .sd-convert-page .sd-section:first-child,
+  .sd-pricing-page .sd-section:first-child,
+  .sd-exit-page .sd-section:first-child {
+    padding-top: 52px;
+  }
+
+  .sd-home-page .sd-hero .sd-container,
+  .sd-home-page .sd-final-cta .sd-container,
+  .sd-home-page .sd-section--visual .sd-container,
+  .sd-convert-page .sd-hero .sd-container,
+  .sd-convert-page .sd-final-cta .sd-container,
+  .sd-convert-page .sd-section--visual .sd-container,
+  .sd-pricing-page .sd-hero .sd-container,
+  .sd-pricing-page .sd-final-cta .sd-container,
+  .sd-pricing-page .sd-section--visual .sd-container,
+  .sd-exit-page .sd-hero .sd-container,
+  .sd-exit-page .sd-final-cta .sd-container,
+  .sd-exit-page .sd-section--visual .sd-container {
+    padding: 24px 16px;
+    border-radius: 16px;
+  }
+
+  .sd-home-page h1,
+  .sd-convert-page h1,
+  .sd-pricing-page h1,
+  .sd-exit-page h1,
+  .sd-request-page h1 {
+    font-size: clamp(34px, 10vw, 48px);
+    line-height: 1.02;
+    max-width: 9.5ch;
+  }
+
+  .sd-home-page h2,
+  .sd-convert-page h2,
+  .sd-pricing-page h2,
+  .sd-exit-page h2,
+  .sd-request-page h2 {
+    font-size: clamp(28px, 8vw, 36px);
+    line-height: 1.06;
+  }
+
+  .sd-home-page h3,
+  .sd-home-page .sd-flow-card h3,
+  .sd-convert-page h3,
+  .sd-convert-page .sd-flow-card h3,
+  .sd-pricing-page h3,
+  .sd-pricing-page .sd-flow-card h3,
+  .sd-exit-page h3,
+  .sd-exit-page .sd-flow-card h3,
+  .sd-request-page h3 {
+    font-size: 22px;
+  }
+
+  .sd-home-page .sd-actions,
+  .sd-convert-page .sd-actions,
+  .sd-pricing-page .sd-actions,
+  .sd-exit-page .sd-actions,
+  .sd-request-page .sd-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sd-home-page .sd-button,
+  .sd-home-page .sd-button .wp-block-button__link,
+  .sd-convert-page .sd-button,
+  .sd-convert-page .sd-button .wp-block-button__link,
+  .sd-pricing-page .sd-button,
+  .sd-pricing-page .sd-button .wp-block-button__link,
+  .sd-exit-page .sd-button,
+  .sd-exit-page .sd-button .wp-block-button__link,
+  .sd-request-page .sd-button,
+  .sd-request-page .sd-button .wp-block-button__link {
+    width: 100%;
+  }
+
+  .sd-home-page .sd-flow-card,
+  .sd-home-page .sd-compare-card,
+  .sd-convert-page .sd-flow-card,
+  .sd-convert-page .sd-compare-card,
+  .sd-pricing-page .sd-flow-card,
+  .sd-pricing-page .sd-compare-card,
+  .sd-exit-page .sd-flow-card,
+  .sd-exit-page .sd-compare-card {
+    padding: 22px 18px;
+  }
+
+  .sd-home-page .sd-flow-card p,
+  .sd-convert-page .sd-flow-card p,
+  .sd-pricing-page .sd-flow-card p,
+  .sd-exit-page .sd-flow-card p {
+    font-size: 15px;
+  }
+
+  .sd-home-page .sd-visual-caption,
+  .sd-convert-page .sd-visual-caption,
+  .sd-pricing-page .sd-visual-caption,
+  .sd-exit-page .sd-visual-caption {
+    padding: 14px 16px 16px;
+  }
+}

@@ -27,6 +27,7 @@ function sd_front_css_enqueue_assets() {
 		'06-forms.css',
 		'07-footer.css',
 		'08-responsive.css',
+		'99-legacy-import.css',
 	);
 
 	$deps = array();
