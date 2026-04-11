@@ -1,0 +1,139 @@
+/* =====================================
+   SOLODRIVE FOOTER
+   ===================================== */
+
+.sd-site-footer {
+  margin-top: 64px;
+  padding: 56px 24px 32px;
+  background: #ffffff;
+  border-top: 1px solid var(--sd-border-soft);
+}
+
+.sd-site-footer .sd-container {
+  max-width: var(--sd-max);
+  margin: 0 auto;
+}
+
+/* GRID */
+
+.sd-footer-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+/* COLUMN CONTENT */
+
+.sd-site-footer p {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--sd-text-soft);
+}
+
+.sd-site-footer strong {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 16px;
+  color: var(--sd-text);
+}
+
+/* EYEBROW */
+
+.sd-site-footer .sd-eyebrow {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sd-text-muted);
+  margin-bottom: 10px;
+}
+
+/* LISTS */
+
+.sd-site-footer ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sd-site-footer li {
+  margin-bottom: 10px;
+}
+
+.sd-site-footer a {
+  color: var(--sd-text-soft);
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.sd-site-footer a:hover {
+  color: var(--sd-text);
+  text-decoration: underline;
+}
+
+/* CTA */
+
+.sd-footer-cta {
+  border-top: 1px solid var(--sd-border-soft);
+  padding-top: 28px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.sd-footer-cta a {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 16px;
+  color: var(--sd-text);
+  text-decoration: none;
+}
+
+.sd-footer-cta a strong {
+  font-weight: 600;
+}
+
+.sd-footer-cta a:hover {
+  text-decoration: underline;
+}
+
+/* BOTTOM */
+
+.sd-footer-bottom {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--sd-border-soft);
+  font-size: 13px;
+  color: var(--sd-text-muted);
+  text-align: center;
+}
+
+/* =====================================
+   RESPONSIVE
+   ===================================== */
+
+@media (max-width: 920px) {
+  .sd-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+}
+
+@media (max-width: 640px) {
+  .sd-site-footer {
+    padding: 40px 16px 24px;
+  }
+
+  .sd-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .sd-footer-cta {
+    text-align: left;
+  }
+
+  .sd-footer-bottom {
+    text-align: left;
+  }
+}
