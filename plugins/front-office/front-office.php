@@ -2343,11 +2343,10 @@ final class SD_Front_Office_Scaffold {
 
     public static function shortcode_connect_payouts_state(): string {
         if (self::is_editor_request()) {
-            return '<div class="sd-front-placeholder">SOLODRIVE.PRO Confirm block preview</div>';
+            return '<div class="sd-front-placeholder">SOLODRIVE.PRO Connect payouts block</div>';
         }
 
         $prospect_post_id = self::require_prospect_post_id_from_request();
-
         $public_key = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
 
         $cta_url = add_query_arg([
@@ -2358,22 +2357,22 @@ final class SD_Front_Office_Scaffold {
         ob_start();
         ?>
         <div class="sd-front-copy">
-        <p class="sd-front-eyebrow">Step 3 of 4</p>
-        <h1>Connect payouts</h1>
-        <p class="sd-front-subhead">This is how you get paid by your customers.</p>
+            <p class="sd-front-eyebrow">Step 3 of 4</p>
+            <h1>Connect payouts</h1>
+            <p class="sd-front-subhead">This is how you get paid by your customers.</p>
         </div>
 
         <div class="sd-front-card">
-        <h2>Why this step matters</h2>
-        <p>Your booking page needs payouts connected before it can go live and accept customer payments.</p>
+            <h2>Why this step matters</h2>
+            <p>Your booking page needs payouts connected before it can go live and accept customer payments.</p>
         </div>
 
         <div class="sd-front-actions">
-        <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($cta_url); ?>">Continue to payouts</a>
+            <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($cta_url); ?>">Continue to payouts</a>
         </div>
 
         <div class="sd-front-fineprint">
-        <p>You will return here automatically after payouts are connected.</p>
+            <p>You will return here automatically after payouts are connected.</p>
         </div>
         <?php
         return (string) ob_get_clean();
@@ -2417,11 +2416,10 @@ final class SD_Front_Office_Scaffold {
 
     public static function shortcode_success_state(): string {
         if (self::is_editor_request()) {
-            return '<div class="sd-front-placeholder">SOLODRIVE.PRO Confirm block preview</div>';
+            return '<div class="sd-front-placeholder">SOLODRIVE.PRO Success block</div>';
         }
 
         $prospect_post_id = self::require_prospect_post_id_from_request();
-
         $state                = self::get_activation_state($prospect_post_id);
         $status_label         = self::map_public_status_label($state);
         $storefront_url       = (string) get_post_meta($prospect_post_id, self::META_STOREFRONT_URL, true);
@@ -2432,42 +2430,41 @@ final class SD_Front_Office_Scaffold {
         if (self::is_success_ready($prospect_post_id)) :
             ?>
             <div class="sd-front-status">
-            <span class="sd-front-status__label">Status</span>
-            <strong class="sd-front-status__value"><?php echo esc_html($status_label); ?></strong>
+                <span class="sd-front-status__label">Status</span>
+                <strong class="sd-front-status__value"><?php echo esc_html($status_label); ?></strong>
             </div>
 
             <div class="sd-front-copy">
-            <p class="sd-front-eyebrow">Step 4 of 4</p>
-            <h1>Your booking page is live.</h1>
-            <p class="sd-front-subhead">Share your link with riders to start accepting direct bookings.</p>
+                <p class="sd-front-eyebrow">Step 4 of 4</p>
+                <h1>Your booking page is live.</h1>
+                <p class="sd-front-subhead">Share your link with riders to start accepting direct bookings.</p>
             </div>
 
             <div class="sd-front-card sd-front-success-card">
-            <label class="sd-front-inline-label" for="sd-storefront-link">Your booking page</label>
-            <div class="sd-front-linkbox">
-                <input
-                id="sd-storefront-link"
-                class="sd-front-linkbox__input"
-                type="text"
-                value="<?php echo esc_attr($storefront_url); ?>"
-                readonly
-                >
-                <button class="sd-front-btn sd-front-btn--secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('sd-storefront-link').value);">
-                Copy
-                </button>
-            </div>
+                <label class="sd-front-inline-label" for="sd-storefront-link">Your booking page</label>
+                <div class="sd-front-linkbox">
+                    <input
+                        id="sd-storefront-link"
+                        class="sd-front-linkbox__input"
+                        type="text"
+                        value="<?php echo esc_attr($storefront_url); ?>"
+                        readonly
+                    >
+                    <button class="sd-front-btn sd-front-btn--secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('sd-storefront-link').value);">
+                        Copy
+                    </button>
+                </div>
             </div>
 
             <div class="sd-front-actions">
-            <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($storefront_url); ?>">Open your booking page</a>
-
-            <?php if ($operations_entry_url !== '') : ?>
-                <a class="sd-front-btn sd-front-btn--secondary" href="<?php echo esc_url($operations_entry_url); ?>">Log in to operations</a>
-            <?php endif; ?>
+                <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($storefront_url); ?>">Open your booking page</a>
+                <?php if ($operations_entry_url !== '') : ?>
+                    <a class="sd-front-btn sd-front-btn--secondary" href="<?php echo esc_url($operations_entry_url); ?>">Log in to operations</a>
+                <?php endif; ?>
             </div>
 
             <div class="sd-front-card">
-            <p>Next time a rider asks if you are available, send them your booking link.</p>
+                <p>Next time a rider asks if you are available, send them your booking link.</p>
             </div>
             <?php
 
@@ -2481,49 +2478,49 @@ final class SD_Front_Office_Scaffold {
         ], true)) :
             ?>
             <div class="sd-front-status">
-            <span class="sd-front-status__label">Status</span>
-            <strong class="sd-front-status__value">Payouts connected</strong>
+                <span class="sd-front-status__label">Status</span>
+                <strong class="sd-front-status__value">Payouts connected</strong>
             </div>
 
             <div class="sd-front-copy">
-            <p class="sd-front-eyebrow">Step 4 of 4</p>
-            <h1>We’re finishing your booking page.</h1>
-            <p class="sd-front-subhead">Your setup is still being completed.</p>
+                <p class="sd-front-eyebrow">Step 4 of 4</p>
+                <h1>We’re finishing your booking page.</h1>
+                <p class="sd-front-subhead">Your setup is still being completed.</p>
             </div>
 
             <div class="sd-front-card">
-            <p>Please keep this page open. We’ll show your booking page here as soon as it is ready.</p>
+                <p>Please keep this page open. We’ll show your booking page here as soon as it is ready.</p>
             </div>
             <?php
 
         elseif (in_array($state, ['ACTIVATION_FAILED', 'PARTIAL_SYNC_FAILED'], true)) :
             ?>
             <div class="sd-front-status">
-            <span class="sd-front-status__label">Status</span>
-            <strong class="sd-front-status__value">Activation issue</strong>
+                <span class="sd-front-status__label">Status</span>
+                <strong class="sd-front-status__value">Activation issue</strong>
             </div>
 
             <div class="sd-front-copy">
-            <p class="sd-front-eyebrow">Step 4 of 4</p>
-            <h1>We hit a setup issue.</h1>
-            <p class="sd-front-subhead">Your payouts may be connected, but your booking page is not live yet.</p>
+                <p class="sd-front-eyebrow">Step 4 of 4</p>
+                <h1>We hit a setup issue.</h1>
+                <p class="sd-front-subhead">Your payouts may be connected, but your booking page is not live yet.</p>
             </div>
 
             <div class="sd-front-card">
-            <p>Please try again shortly or contact support.</p>
+                <p>Please try again shortly or contact support.</p>
             </div>
             <?php
 
         else :
             ?>
             <div class="sd-front-status">
-            <span class="sd-front-status__label">Status</span>
-            <strong class="sd-front-status__value"><?php echo esc_html($status_label); ?></strong>
+                <span class="sd-front-status__label">Status</span>
+                <strong class="sd-front-status__value"><?php echo esc_html($status_label); ?></strong>
             </div>
 
             <div class="sd-front-copy">
-            <p class="sd-front-eyebrow">Step 4 of 4</p>
-            <h1>We’re still setting things up.</h1>
+                <p class="sd-front-eyebrow">Step 4 of 4</p>
+                <h1>We’re still setting things up.</h1>
             </div>
             <?php
         endif;
@@ -2531,43 +2528,43 @@ final class SD_Front_Office_Scaffold {
         return (string) ob_get_clean();
     }
 
-    public static function shortcode_start_form(): string {
-        $action_url = add_query_arg('action', self::ACTION_START, admin_url('admin-post.php'));
+    public static function shortcode_confirm_state(): string {
+        if (self::is_editor_request()) {
+            return '<div class="sd-front-placeholder">SOLODRIVE.PRO Confirm block preview</div>';
+        }
+
+        $prospect_post_id = self::require_prospect_post_id_from_request();
+        $state = self::get_activation_state($prospect_post_id);
+
+        if ($state === 'STARTED') {
+            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'CONFIRMED');
+            $state = 'CONFIRMED';
+        }
+
+        $status_label = self::map_public_status_label($state);
+        $public_key   = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
+        $cta_url      = add_query_arg('k', rawurlencode($public_key), home_url('/' . self::PAGE_SLUG_CONNECT_PAYOUTS . '/'));
 
         ob_start();
         ?>
-        <form class="sd-front-form" method="post" action="<?php echo esc_url($action_url); ?>">
-            <?php wp_nonce_field('sdfo_start_submit', 'sdfo_nonce'); ?>
+        <div class="sd-front-status">
+            <span class="sd-front-status__label">Status</span>
+            <strong class="sd-front-status__value"><?php echo esc_html($status_label); ?></strong>
+        </div>
 
-            <div class="sd-front-field">
-                <label for="sd-name">Name</label>
-                <input id="sd-name" name="name" type="text" required>
-            </div>
+        <div class="sd-front-copy">
+            <p class="sd-front-eyebrow">Step 2 of 4</p>
+            <h1>Your booking page is ready to activate.</h1>
+            <p class="sd-front-subhead">Next step: connect payouts so you can receive customer payments.</p>
+        </div>
 
-            <div class="sd-front-field">
-                <label for="sd-email">Email</label>
-                <input id="sd-email" name="email" type="email" required>
-            </div>
+        <div class="sd-front-card">
+            <p>Once payouts are connected, your booking page can move to live status.</p>
+        </div>
 
-            <div class="sd-front-field">
-                <label for="sd-mobile">Mobile</label>
-                <input id="sd-mobile" name="mobile" type="tel" required>
-            </div>
-
-            <div class="sd-front-field">
-                <label for="sd-business-name">Business / display name</label>
-                <input id="sd-business-name" name="business_display_name" type="text" required>
-            </div>
-
-            <div class="sd-front-field">
-                <label for="sd-service-area">Service area (optional)</label>
-                <input id="sd-service-area" name="service_area" type="text">
-            </div>
-
-            <div class="sd-front-form__actions">
-                <button class="sd-front-btn sd-front-btn--primary" type="submit">Continue</button>
-            </div>
-        </form>
+        <div class="sd-front-actions">
+            <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($cta_url); ?>">Connect payouts</a>
+        </div>
         <?php
         return (string) ob_get_clean();
     }
