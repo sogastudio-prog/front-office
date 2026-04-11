@@ -627,13 +627,6 @@ final class SD_Front_Office_Scaffold {
         return (int) $contact_form->id() === self::INVITE_READY_FORM_ID;
     }
 
-    private static function is_success_ready_payload(array $payload): bool {
-        $state = (string) ($payload['activation_state'] ?? '');
-        $storefront_url = (string) ($payload['storefront_url'] ?? '');
-
-        return $state === 'ACTIVATION_COMPLETE' && $storefront_url !== '';
-    }
-
     private static function generate_public_key(): string {
         return 'sdp_' . wp_generate_password(24, false, false);
     }
