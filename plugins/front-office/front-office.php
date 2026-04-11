@@ -1094,6 +1094,13 @@ final class SD_Front_Office_Scaffold {
             default                 => 'Started',
         };
     }
+
+    private static function is_success_ready_payload(array $payload): bool {
+        $state = (string) ($payload['activation_state'] ?? '');
+        $storefront_url = (string) ($payload['storefront_url'] ?? '');
+
+        return $state === 'ACTIVATION_COMPLETE' && $storefront_url !== '';
+    }
 }
 
 SD_Front_Office_Scaffold::bootstrap();
