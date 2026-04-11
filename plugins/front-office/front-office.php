@@ -2304,10 +2304,7 @@ final class SD_Front_Office_Scaffold {
             return '<div class="sd-front-placeholder">SOLODRIVE.PRO Confirm block preview</div>';
         }
 
-        $prospect_post_id = self::require_prospect_post_id_from_request();
-
-        // real rendering continues...
-        }
+        $prospect_post_id = self::require_prospect_post_id_from_request();      
 
         $state = self::get_activation_state($prospect_post_id);
 
@@ -2350,9 +2347,6 @@ final class SD_Front_Office_Scaffold {
         }
 
         $prospect_post_id = self::require_prospect_post_id_from_request();
-
-        // real rendering continues...
-        }
 
         $public_key = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
 
@@ -2427,9 +2421,6 @@ final class SD_Front_Office_Scaffold {
     }
 
     $prospect_post_id = self::require_prospect_post_id_from_request();
-
-    // real rendering continues...
-}
 
         $state                = self::get_activation_state($prospect_post_id);
         $status_label         = self::map_public_status_label($state);
