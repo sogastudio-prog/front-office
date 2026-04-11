@@ -1067,6 +1067,33 @@ final class SD_Front_Office_Scaffold {
 
         return 0;
     }
+
+    private static function get_activation_state(int $prospect_post_id): string {
+        $state = (string) get_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, true);
+
+        if ($state === '') {
+            return 'STARTED';
+        }
+
+        return $state;
+    }
+
+    private static function map_public_status_label(string $state): string {
+        return match ($state) {
+            'STARTED'               => 'Started',
+            'CONFIRMED'             => 'Confirmed',
+            'PAYOUTS_CONNECTED'     => 'Payouts connected',
+            'TENANT_CREATING'       => 'Payouts connected',
+            'TENANT_READY'          => 'Payouts connected',
+            'STOREFRONT_READY'      => 'Payouts connected',
+            'FRONTEND_SYNC_PENDING' => 'Payouts connected',
+            'OPERATIONS_READY'      => 'Payouts connected',
+            'ACTIVATION_COMPLETE'   => 'Booking page live',
+            'ACTIVATION_FAILED'     => 'Activation issue',
+            'PARTIAL_SYNC_FAILED'   => 'Activation issue',
+            default                 => 'Started',
+        };
+    }
 }
 
 SD_Front_Office_Scaffold::bootstrap();
