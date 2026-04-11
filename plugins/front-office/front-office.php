@@ -926,6 +926,10 @@ final class SD_Front_Office_Scaffold {
         return (string) ob_get_clean();
     }
 
+    public static function register_rest_routes(): void {
+        // Temporary no-op to prevent fatal while funnel wiring is stabilized.
+    }
+
     private static function is_editor_request(): bool {
         if (is_admin()) {
             return true;
