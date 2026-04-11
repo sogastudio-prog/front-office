@@ -1006,6 +1006,22 @@ final class SD_Front_Office_Scaffold {
 
         return false;
     }
+
+    private static function normalize_phone(string $phone): string {
+        $digits = preg_replace('/\D+/', '', $phone);
+        $digits = is_string($digits) ? $digits : '';
+
+        if ($digits === '') {
+            return '';
+        }
+
+        // Normalize leading US country code when 11 digits.
+        if (strlen($digits) === 11 && str_starts_with($digits, '1')) {
+            $digits = substr($digits, 1);
+        }
+
+        return $digits;
+    }
 }
 
 SD_Front_Office_Scaffold::bootstrap();
