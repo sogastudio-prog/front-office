@@ -544,8 +544,14 @@ final class SD_Front_Office_Scaffold {
         $mobile_normalized = self::normalize_phone($mobile);
         $email_normalized  = strtolower(trim($email));
 
-        if ($name === '' || $email_normalized === '' || $mobile_normalized === '' || $business_name === '') {
+        if ($name === '' || $email_normalized === '' || $business_name === '') {
             $redirect = add_query_arg('error', 'missing_required', home_url('/' . self::PAGE_SLUG_START . '/'));
+            wp_safe_redirect($redirect);
+            exit;
+        }
+
+        if ($mobile_normalized === '' || strlen($mobile_normalized) < 10) {
+            $redirect = add_query_arg('error', 'invalid_mobile', home_url('/' . self::PAGE_SLUG_START . '/'));
             wp_safe_redirect($redirect);
             exit;
         }
