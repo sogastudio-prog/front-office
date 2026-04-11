@@ -621,6 +621,13 @@ final class SD_Front_Office_Scaffold {
         return (int) $contact_form->id() === self::INVITE_READY_FORM_ID;
     }
 
+    private static function is_success_ready_payload(array $payload): bool {
+        $state = (string) ($payload['activation_state'] ?? '');
+        $storefront_url = (string) ($payload['storefront_url'] ?? '');
+
+        return $state === 'ACTIVATION_COMPLETE' && $storefront_url !== '';
+    }
+
     private static function generate_public_key(): string {
         return 'sdp_' . wp_generate_password(24, false, false);
     }
@@ -661,6 +668,55 @@ final class SD_Front_Office_Scaffold {
         }
 
         return $post_id;
+    }
+
+    private static function get_activation_payload_for_success(int $prospect_post_id): array {
+        $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
+
+        $state = self::get_activation_state($prospect_post_id);
+        $storefront_url = (string) get_post_meta($prospect_post_id, self::META_STOREFRONT_URL, true);
+        $operations_entry_url = (string) get_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, true);
+
+        if (
+            $prospect_id !== '' &&
+            class_exists('SD_Activation_Service') &&
+            method_exists('SD_Activation_Service', 'activate_prospect')
+        ) {
+            $result = SD_Activation_Service::activate_prospect($prospect_id);
+
+            if (is_array($result)) {
+                $state = isset($result['activation_state'])
+                    ? sanitize_text_field((string) $result['activation_state'])
+                    : $state;
+
+                $storefront_url = isset($result['storefront_url'])
+                    ? esc_url_raw((string) $result['storefront_url'])
+                    : $storefront_url;
+
+                $operations_entry_url = isset($result['operations_entry_url'])
+                    ? esc_url_raw((string) $result['operations_entry_url'])
+                    : $operations_entry_url;
+
+                if ($state !== '') {
+                    update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, $state);
+                }
+
+                if ($storefront_url !== '') {
+                    update_post_meta($prospect_post_id, self::META_STOREFRONT_URL, $storefront_url);
+                }
+
+                if ($operations_entry_url !== '') {
+                    update_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, $operations_entry_url);
+                }
+            }
+        }
+
+        return [
+            'prospect_id' => $prospect_id,
+            'activation_state' => $state,
+            'storefront_url' => $storefront_url,
+            'operations_entry_url' => $operations_entry_url,
+        ];
     }
 
     public static function shortcode_start_form(): string {
@@ -821,14 +877,16 @@ final class SD_Front_Office_Scaffold {
         }
 
         $prospect_post_id = self::require_prospect_post_id_from_request();
-        $state = self::get_activation_state($prospect_post_id);
+        $payload = self::get_activation_payload_for_success($prospect_post_id);
+
+        $state = (string) ($payload['activation_state'] ?? 'STARTED');
+        $storefront_url = (string) ($payload['storefront_url'] ?? '');
+        $operations_entry_url = (string) ($payload['operations_entry_url'] ?? '');
         $status_label = self::map_public_status_label($state);
-        $storefront_url = (string) get_post_meta($prospect_post_id, self::META_STOREFRONT_URL, true);
-        $operations_entry_url = (string) get_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, true);
 
         ob_start();
 
-        if (self::is_success_ready($prospect_post_id)) :
+        if (self::is_success_ready_payload($payload)) :
             ?>
             <div class="sd-front-status">
                 <span class="sd-front-status__label">Status</span>
@@ -837,7 +895,7 @@ final class SD_Front_Office_Scaffold {
 
             <div class="sd-front-copy">
                 <p class="sd-front-eyebrow">Step 4 of 4</p>
-                <h1>Your booking page is live.</h1>
+                <h1>Your SOLODRIVE.PRO booking page is live.</h1>
                 <p class="sd-front-subhead">Share your link with riders to start accepting direct bookings.</p>
             </div>
 
@@ -868,6 +926,7 @@ final class SD_Front_Office_Scaffold {
                 <p>Next time a rider asks if you are available, send them your booking link.</p>
             </div>
             <?php
+
         elseif (in_array($state, [
             'PAYOUTS_CONNECTED',
             'TENANT_CREATING',
@@ -892,6 +951,7 @@ final class SD_Front_Office_Scaffold {
                 <p>Please keep this page open. We’ll show your booking page here as soon as it is ready.</p>
             </div>
             <?php
+
         elseif (in_array($state, ['ACTIVATION_FAILED', 'PARTIAL_SYNC_FAILED'], true)) :
             ?>
             <div class="sd-front-status">
@@ -902,13 +962,14 @@ final class SD_Front_Office_Scaffold {
             <div class="sd-front-copy">
                 <p class="sd-front-eyebrow">Step 4 of 4</p>
                 <h1>We hit a setup issue.</h1>
-                <p class="sd-front-subhead">Your payouts may be connected, but your booking page is not live yet.</p>
+                <p class="sd-front-subhead">Your booking page is not live yet.</p>
             </div>
 
             <div class="sd-front-card">
-                <p>Please try again shortly or contact support.</p>
+                <p>Please try again shortly.</p>
             </div>
             <?php
+
         else :
             ?>
             <div class="sd-front-status">
