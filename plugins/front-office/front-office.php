@@ -1028,6 +1028,45 @@ final class SD_Front_Office_Scaffold {
 
         return $digits;
     }
+
+    private static function find_existing_prospect(array $args): int {
+        $email = $args['email_normalized'] ?? '';
+        $phone = $args['phone_normalized'] ?? '';
+
+        if ($email === '' && $phone === '') {
+            return 0;
+        }
+
+        $meta_query = ['relation' => 'OR'];
+
+        if ($email !== '') {
+            $meta_query[] = [
+                'key'   => 'sd_email_normalized',
+                'value' => $email,
+            ];
+        }
+
+        if ($phone !== '') {
+            $meta_query[] = [
+                'key'   => 'sd_phone_normalized',
+                'value' => $phone,
+            ];
+        }
+
+        $query = new WP_Query([
+            'post_type'      => self::PROSPECT_POST_TYPE,
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+            'fields'         => 'ids',
+            'meta_query'     => $meta_query,
+        ]);
+
+        if (!empty($query->posts)) {
+            return (int) $query->posts[0];
+        }
+
+        return 0;
+    }
 }
 
 SD_Front_Office_Scaffold::bootstrap();
