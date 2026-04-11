@@ -2299,48 +2299,6 @@ final class SD_Front_Office_Scaffold {
         }
     }
 
-    public static function shortcode_confirm_state(): string {
-        if (self::is_editor_request()) {
-            return '<div class="sd-front-placeholder">SOLODRIVE.PRO Confirm block preview</div>';
-        }
-
-        $prospect_post_id = self::require_prospect_post_id_from_request();      
-
-        $state = self::get_activation_state($prospect_post_id);
-
-        if ($state === 'STARTED') {
-            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'CONFIRMED');
-            $state = 'CONFIRMED';
-        }
-
-        $status_label = self::map_public_status_label($state);
-        $public_key   = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
-        $cta_url      = add_query_arg('k', rawurlencode($public_key), home_url('/' . self::PAGE_SLUG_CONNECT_PAYOUTS . '/'));
-
-        ob_start();
-        ?>
-        <div class="sd-front-status">
-        <span class="sd-front-status__label">Status</span>
-        <strong class="sd-front-status__value"><?php echo esc_html($status_label); ?></strong>
-        </div>
-
-        <div class="sd-front-copy">
-        <p class="sd-front-eyebrow">Step 2 of 4</p>
-        <h1>Your booking page is ready to activate.</h1>
-        <p class="sd-front-subhead">Next step: connect payouts so you can receive customer payments.</p>
-        </div>
-
-        <div class="sd-front-card">
-        <p>Once payouts are connected, your booking page can move to live status.</p>
-        </div>
-
-        <div class="sd-front-actions">
-        <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($cta_url); ?>">Connect payouts</a>
-        </div>
-        <?php
-        return (string) ob_get_clean();
-    }
-
     public static function shortcode_connect_payouts_state(): string {
         if (self::is_editor_request()) {
             return '<div class="sd-front-placeholder">SOLODRIVE.PRO Connect payouts block</div>';
