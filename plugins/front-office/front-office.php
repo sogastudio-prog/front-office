@@ -2300,7 +2300,14 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function shortcode_confirm_state(): string {
+        if (self::is_editor_request()) {
+            return '<div class="sd-front-placeholder">SOLODRIVE.PRO Confirm block preview</div>';
+        }
+
         $prospect_post_id = self::require_prospect_post_id_from_request();
+
+        // real rendering continues...
+        }
 
         $state = self::get_activation_state($prospect_post_id);
 
@@ -2338,7 +2345,14 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function shortcode_connect_payouts_state(): string {
+        if (self::is_editor_request()) {
+            return '<div class="sd-front-placeholder">SOLODRIVE.PRO Confirm block preview</div>';
+        }
+
         $prospect_post_id = self::require_prospect_post_id_from_request();
+
+        // real rendering continues...
+        }
 
         $public_key = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
 
@@ -2408,7 +2422,14 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function shortcode_success_state(): string {
-        $prospect_post_id = self::require_prospect_post_id_from_request();
+    if (self::is_editor_request()) {
+        return '<div class="sd-front-placeholder">SOLODRIVE.PRO Confirm block preview</div>';
+    }
+
+    $prospect_post_id = self::require_prospect_post_id_from_request();
+
+    // real rendering continues...
+}
 
         $state                = self::get_activation_state($prospect_post_id);
         $status_label         = self::map_public_status_label($state);
