@@ -22,3 +22,11 @@
   gap: 12px;
   margin-top: 24px;
 }
+.sd-front-placeholder {
+  padding: 16px 18px;
+  border: 1px dashed var(--sd-border-soft);
+  border-radius: 12px;
+  color: var(--sd-text-muted);
+  background: rgba(255,255,255,0.6);
+  font-size: 14px;
+}

@@ -2416,11 +2416,11 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function shortcode_success_state(): string {
-    if (self::is_editor_request()) {
-        return '<div class="sd-front-placeholder">SOLODRIVE.PRO Confirm block preview</div>';
-    }
+        if (self::is_editor_request()) {
+            return '<div class="sd-front-placeholder">SOLODRIVE.PRO Confirm block preview</div>';
+        }
 
-    $prospect_post_id = self::require_prospect_post_id_from_request();
+        $prospect_post_id = self::require_prospect_post_id_from_request();
 
         $state                = self::get_activation_state($prospect_post_id);
         $status_label         = self::map_public_status_label($state);
@@ -2570,6 +2570,22 @@ final class SD_Front_Office_Scaffold {
         </form>
         <?php
         return (string) ob_get_clean();
+    }
+
+    private static function is_editor_request(): bool {
+        if (is_admin()) {
+            return true;
+        }
+
+        if (defined('REST_REQUEST') && REST_REQUEST) {
+            return true;
+        }
+
+        if (wp_doing_ajax()) {
+            return true;
+        }
+
+        return false;
     }
 }
 
