@@ -828,6 +828,7 @@ final class SD_Front_Office_Scaffold {
 
         $stripe_account_id = self::ensure_stripe_account_for_prospect($prospect_post_id);
         if ($stripe_account_id === '') {
+            error_log('SOLODRIVE.PRO connect-payouts: no persisted sd_stripe_account_id for prospect post ' . $prospect_post_id);
             wp_safe_redirect(add_query_arg('k', rawurlencode($public_key), home_url('/' . self::PAGE_SLUG_CONFIRM . '/')));
             exit;
         }
@@ -1157,13 +1158,13 @@ final class SD_Front_Office_Scaffold {
             $result = SD_Activation_Service::ensure_stripe_account($prospect_id);
 
             if (is_array($result)) {
-                $account_id = isset($result['sd_stripe_account_id'])
-                    ? sanitize_text_field((string) $result['sd_stripe_account_id'])
-                    : '';
+                $account_id =
+                    isset($result['sd_stripe_account_id']) ? sanitize_text_field((string) $result['sd_stripe_account_id']) :
+                    (isset($result['stripe_account_id']) ? sanitize_text_field((string) $result['stripe_account_id']) : '');
 
-                $stripe_state = isset($result['sd_stripe_state'])
-                    ? sanitize_text_field((string) $result['sd_stripe_state'])
-                    : '';
+                $stripe_state =
+                    isset($result['sd_stripe_state']) ? sanitize_text_field((string) $result['sd_stripe_state']) :
+                    (isset($result['stripe_state']) ? sanitize_text_field((string) $result['stripe_state']) : '');
 
                 if ($account_id !== '') {
                     update_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, $account_id);
