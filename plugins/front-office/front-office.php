@@ -778,6 +778,8 @@ final class SD_Front_Office_Scaffold {
         $prospect_post_id = self::require_prospect_post_id_from_request();
 
         self::ensure_stripe_account_for_prospect($prospect_post_id);
+        $stripe_account_id = self::ensure_stripe_account_for_prospect($prospect_post_id);
+        error_log('SOLODRIVE.PRO confirm: resolved stripe account for prospect post ' . $prospect_post_id . ' => ' . $stripe_account_id);
 
         $state = self::get_activation_state($prospect_post_id);
 
@@ -1141,44 +1143,55 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function ensure_stripe_account_for_prospect(int $prospect_post_id): string {
-        $existing = self::get_stripe_account_id($prospect_post_id);
+        $existing = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
         if ($existing !== '') {
             return $existing;
         }
 
         $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
         if ($prospect_id === '') {
+            error_log('SOLODRIVE.PRO confirm: missing sd_prospect_id for prospect post ' . $prospect_post_id);
             return '';
         }
 
-        if (
-            class_exists('SD_Activation_Service') &&
-            method_exists('SD_Activation_Service', 'ensure_stripe_account')
-        ) {
-            $result = SD_Activation_Service::ensure_stripe_account($prospect_id);
-
-            if (is_array($result)) {
-                $account_id =
-                    isset($result['sd_stripe_account_id']) ? sanitize_text_field((string) $result['sd_stripe_account_id']) :
-                    (isset($result['stripe_account_id']) ? sanitize_text_field((string) $result['stripe_account_id']) : '');
-
-                $stripe_state =
-                    isset($result['sd_stripe_state']) ? sanitize_text_field((string) $result['sd_stripe_state']) :
-                    (isset($result['stripe_state']) ? sanitize_text_field((string) $result['stripe_state']) : '');
-
-                if ($account_id !== '') {
-                    update_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, $account_id);
-                }
-
-                if ($stripe_state !== '') {
-                    update_post_meta($prospect_post_id, self::META_STRIPE_STATE, $stripe_state);
-                }
-
-                return $account_id;
-            }
+        if (!class_exists('SD_Activation_Service')) {
+            error_log('SOLODRIVE.PRO confirm: SD_Activation_Service class missing');
+            return '';
         }
 
-        return '';
+        if (!method_exists('SD_Activation_Service', 'ensure_stripe_account')) {
+            error_log('SOLODRIVE.PRO confirm: ensure_stripe_account method missing');
+            return '';
+        }
+
+        $result = SD_Activation_Service::ensure_stripe_account($prospect_id);
+
+        error_log('SOLODRIVE.PRO confirm: ensure_stripe_account result for prospect ' . $prospect_id . ' => ' . wp_json_encode($result));
+
+        if (!is_array($result)) {
+            return '';
+        }
+
+        $account_id =
+            isset($result['sd_stripe_account_id']) ? sanitize_text_field((string) $result['sd_stripe_account_id']) :
+            (isset($result['stripe_account_id']) ? sanitize_text_field((string) $result['stripe_account_id']) : '');
+
+        $stripe_state =
+            isset($result['sd_stripe_state']) ? sanitize_text_field((string) $result['sd_stripe_state']) :
+            (isset($result['stripe_state']) ? sanitize_text_field((string) $result['stripe_state']) : '');
+
+        if ($account_id !== '') {
+            update_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, $account_id);
+            error_log('SOLODRIVE.PRO confirm: persisted sd_stripe_account_id for prospect post ' . $prospect_post_id . ' => ' . $account_id);
+        } else {
+            error_log('SOLODRIVE.PRO confirm: backend returned no stripe account id for prospect post ' . $prospect_post_id);
+        }
+
+        if ($stripe_state !== '') {
+            update_post_meta($prospect_post_id, self::META_STRIPE_STATE, $stripe_state);
+        }
+
+        return $account_id;
     }
 }
 
