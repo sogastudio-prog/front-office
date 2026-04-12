@@ -47,6 +47,10 @@ final class SD_Front_Office_Scaffold {
     private const ACTION_START               = 'sdfo_start';
     private const ACTION_START_PAYOUTS       = 'sdfo_start_payouts';
 
+    private const META_STRIPE_ACCOUNT_ID    = 'sd_stripe_account_id';
+    private const META_STRIPE_STATE         = 'sd_stripe_state';
+    private const META_STRIPE_COMPLETED_GMT = 'sd_stripe_completed_gmt';
+
     public static function bootstrap(): void {
         add_action('init', [__CLASS__, 'register_post_types']);
         add_action('init', [__CLASS__, 'register_meta_keys']);
@@ -194,6 +198,9 @@ final class SD_Front_Office_Scaffold {
             'sd_service_area' => 'string',
             'sd_storefront_url' => 'string',
             'sd_operations_entry_url' => 'string',
+            'sd_stripe_account_id' => 'string',
+            'sd_stripe_state' => 'string',
+            'sd_stripe_completed_gmt' => 'string',
                     ];
 
         $tenant_meta = [
@@ -769,6 +776,9 @@ final class SD_Front_Office_Scaffold {
         }
 
         $prospect_post_id = self::require_prospect_post_id_from_request();
+
+        self::ensure_stripe_account_for_prospect($prospect_post_id);
+
         $state = self::get_activation_state($prospect_post_id);
 
         if ($state === 'STARTED') {
@@ -816,9 +826,15 @@ final class SD_Front_Office_Scaffold {
         $prospect_post_id = self::require_prospect_post_id_from_request();
         $public_key = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
 
+        $stripe_account_id = self::ensure_stripe_account_for_prospect($prospect_post_id);
+        if ($stripe_account_id === '') {
+            wp_safe_redirect(add_query_arg('k', rawurlencode($public_key), home_url('/' . self::PAGE_SLUG_CONFIRM . '/')));
+            exit;
+        }
+
         $cta_url = add_query_arg([
             'action' => self::ACTION_START_PAYOUTS,
-            'k' => $public_key,
+            'k'      => $public_key,
         ], admin_url('admin-post.php'));
 
         ob_start();
@@ -854,19 +870,43 @@ final class SD_Front_Office_Scaffold {
             exit;
         }
 
-        $state = self::get_activation_state($prospect_post_id);
-        if ($state === 'STARTED') {
-            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'CONFIRMED');
+        $stripe_account_id = self::ensure_stripe_account_for_prospect($prospect_post_id);
+        if ($stripe_account_id === '') {
+            wp_safe_redirect(add_query_arg('k', rawurlencode($public_key), home_url('/' . self::PAGE_SLUG_CONFIRM . '/')));
+            exit;
         }
 
+        $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
         $return_url = add_query_arg('k', rawurlencode($public_key), home_url('/' . self::PAGE_SLUG_SUCCESS . '/'));
         $refresh_url = add_query_arg('k', rawurlencode($public_key), home_url('/' . self::PAGE_SLUG_CONNECT_PAYOUTS . '/'));
 
-        // Temporary skeleton behavior.
-        // Replace with real Stripe onboarding redirect.
-        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'PAYOUTS_CONNECTED');
+        if (
+            $prospect_id !== '' &&
+            class_exists('SD_Activation_Service') &&
+            method_exists('SD_Activation_Service', 'start_payouts_onboarding')
+        ) {
+            $result = SD_Activation_Service::start_payouts_onboarding($prospect_id, [
+                'return_url'  => $return_url,
+                'refresh_url' => $refresh_url,
+            ]);
 
-        wp_safe_redirect($return_url);
+            if (is_array($result)) {
+                if (!empty($result['sd_stripe_state'])) {
+                    update_post_meta(
+                        $prospect_post_id,
+                        self::META_STRIPE_STATE,
+                        sanitize_text_field((string) $result['sd_stripe_state'])
+                    );
+                }
+
+                if (!empty($result['redirect_url'])) {
+                    wp_safe_redirect(esc_url_raw((string) $result['redirect_url']));
+                    exit;
+                }
+            }
+        }
+
+        wp_safe_redirect($refresh_url);
         exit;
     }
 
@@ -1093,6 +1133,51 @@ final class SD_Front_Office_Scaffold {
         $storefront_url = (string) ($payload['storefront_url'] ?? '');
 
         return $state === 'ACTIVATION_COMPLETE' && $storefront_url !== '';
+    }
+
+    private static function get_stripe_account_id(int $prospect_post_id): string {
+        return (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
+    }
+
+    private static function ensure_stripe_account_for_prospect(int $prospect_post_id): string {
+        $existing = self::get_stripe_account_id($prospect_post_id);
+        if ($existing !== '') {
+            return $existing;
+        }
+
+        $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
+        if ($prospect_id === '') {
+            return '';
+        }
+
+        if (
+            class_exists('SD_Activation_Service') &&
+            method_exists('SD_Activation_Service', 'ensure_stripe_account')
+        ) {
+            $result = SD_Activation_Service::ensure_stripe_account($prospect_id);
+
+            if (is_array($result)) {
+                $account_id = isset($result['sd_stripe_account_id'])
+                    ? sanitize_text_field((string) $result['sd_stripe_account_id'])
+                    : '';
+
+                $stripe_state = isset($result['sd_stripe_state'])
+                    ? sanitize_text_field((string) $result['sd_stripe_state'])
+                    : '';
+
+                if ($account_id !== '') {
+                    update_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, $account_id);
+                }
+
+                if ($stripe_state !== '') {
+                    update_post_meta($prospect_post_id, self::META_STRIPE_STATE, $stripe_state);
+                }
+
+                return $account_id;
+            }
+        }
+
+        return '';
     }
 }
 
