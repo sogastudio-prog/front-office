@@ -778,7 +778,8 @@ final class SD_Front_Office_Scaffold {
         $prospect_post_id = self::require_prospect_post_id_from_request();
         $public_key = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
 
-        $confirm = self::post_control_plane_endpoint('confirm', $public_key);
+        $payload = self::build_runtime_prospect_contract($prospect_post_id);
+        $confirm = self::post_control_plane_endpoint('confirm', $payload);
 
         if (!empty($confirm['ok'])) {
             if (!empty($confirm['stripe_account_id'])) {
@@ -906,7 +907,13 @@ final class SD_Front_Office_Scaffold {
             exit;
         }
 
-        $result = self::post_control_plane_endpoint('payouts-start', $public_key);
+        $payload = [
+            'prospect_id' => (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true),
+            'public_key' => $public_key,
+            'prospect_post_id' => $prospect_post_id,
+        ];
+
+        $result = self::post_control_plane_endpoint('payouts-start', $payload);
 
         if (!empty($result['ok']) && !empty($result['stripe_account_id'])) {
             update_post_meta(
@@ -1191,7 +1198,22 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($post_id, 'sd_updated_at_gmt', current_time('mysql', true));
     }
 
-    private static function post_control_plane_endpoint(string $path, string $public_key): array {
+    private static function build_runtime_prospect_contract(int $prospect_post_id): array {
+        return [
+            'prospect_id' => (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true),
+            'public_key' => (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true),
+            'prospect_post_id' => $prospect_post_id,
+
+            'full_name' => (string) get_post_meta($prospect_post_id, 'sd_full_name', true),
+            'email' => (string) get_post_meta($prospect_post_id, 'sd_email_raw', true),
+            'phone' => (string) get_post_meta($prospect_post_id, 'sd_phone_raw', true),
+
+            'business_display_name' => (string) get_post_meta($prospect_post_id, self::META_BUSINESS_NAME, true),
+            'service_area' => (string) get_post_meta($prospect_post_id, self::META_SERVICE_AREA, true),
+        ];
+    }
+
+    private static function post_control_plane_endpoint(string $path, array $payload): array {
         $base = 'https://app.solodrive.pro/wp-json/sd/v1/control-plane/';
         $url = $base . ltrim($path, '/');
 
@@ -1201,17 +1223,12 @@ final class SD_Front_Office_Scaffold {
                 'Content-Type' => 'application/json',
                 'Accept'       => 'application/json',
             ],
-            'body' => wp_json_encode([
-                'k' => $public_key,
-            ]),
+            'body' => wp_json_encode($payload),
         ]);
 
         if (is_wp_error($response)) {
             error_log('SOLODRIVE.PRO control-plane POST failed: ' . $path . ' => ' . $response->get_error_message());
-            return [
-                'ok' => false,
-                'error' => 'request_failed',
-            ];
+            return ['ok' => false, 'error' => 'request_failed'];
         }
 
         $code = (int) wp_remote_retrieve_response_code($response);
@@ -1220,67 +1237,11 @@ final class SD_Front_Office_Scaffold {
 
         if (!is_array($json)) {
             error_log('SOLODRIVE.PRO control-plane invalid JSON: ' . $path . ' => HTTP ' . $code . ' body=' . $body);
-            return [
-                'ok' => false,
-                'error' => 'invalid_json',
-                'http_code' => $code,
-            ];
+            return ['ok' => false, 'error' => 'invalid_json', 'http_code' => $code];
         }
 
         $json['http_code'] = $code;
         return $json;
-    }
-
-    private static function ensure_stripe_account_for_prospect(int $prospect_post_id): string {
-        $existing = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
-        if ($existing !== '') {
-            return $existing;
-        }
-
-        $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
-        if ($prospect_id === '') {
-            error_log('SOLODRIVE.PRO confirm: missing sd_prospect_id for prospect post ' . $prospect_post_id);
-            return '';
-        }
-
-        if (!class_exists('SD_Activation_Service')) {
-            error_log('SOLODRIVE.PRO confirm: SD_Activation_Service class missing');
-            return '';
-        }
-
-        if (!method_exists('SD_Activation_Service', 'ensure_stripe_account')) {
-            error_log('SOLODRIVE.PRO confirm: ensure_stripe_account method missing');
-            return '';
-        }
-
-        $result = SD_Activation_Service::ensure_stripe_account($prospect_id);
-
-        error_log('SOLODRIVE.PRO confirm: ensure_stripe_account result for prospect ' . $prospect_id . ' => ' . wp_json_encode($result));
-
-        if (!is_array($result)) {
-            return '';
-        }
-
-        $account_id =
-            isset($result['sd_stripe_account_id']) ? sanitize_text_field((string) $result['sd_stripe_account_id']) :
-            (isset($result['stripe_account_id']) ? sanitize_text_field((string) $result['stripe_account_id']) : '');
-
-        $stripe_state =
-            isset($result['sd_stripe_state']) ? sanitize_text_field((string) $result['sd_stripe_state']) :
-            (isset($result['stripe_state']) ? sanitize_text_field((string) $result['stripe_state']) : '');
-
-        if ($account_id !== '') {
-            update_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, $account_id);
-            error_log('SOLODRIVE.PRO confirm: persisted sd_stripe_account_id for prospect post ' . $prospect_post_id . ' => ' . $account_id);
-        } else {
-            error_log('SOLODRIVE.PRO confirm: backend returned no stripe account id for prospect post ' . $prospect_post_id);
-        }
-
-        if ($stripe_state !== '') {
-            update_post_meta($prospect_post_id, self::META_STRIPE_STATE, $stripe_state);
-        }
-
-        return $account_id;
     }
 }
 
