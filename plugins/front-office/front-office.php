@@ -1142,6 +1142,38 @@ final class SD_Front_Office_Scaffold {
         return (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
     }
 
+    public static function ensure_prospect_defaults(int $post_id, WP_Post $post, bool $update): void {
+        if ($post->post_type !== self::PROSPECT_POST_TYPE) {
+            return;
+        }
+
+        if (wp_is_post_revision($post_id) || wp_is_post_autosave($post_id)) {
+            return;
+        }
+
+        $prospect_id = (string) get_post_meta($post_id, 'sd_prospect_id', true);
+        if ($prospect_id === '') {
+            update_post_meta($post_id, 'sd_prospect_id', 'prs_' . wp_generate_uuid4());
+        }
+
+        $activation_state = (string) get_post_meta($post_id, self::META_ACTIVATION_STATE, true);
+        if ($activation_state === '') {
+            update_post_meta($post_id, self::META_ACTIVATION_STATE, 'STARTED');
+        }
+
+        $public_key = (string) get_post_meta($post_id, self::META_PUBLIC_KEY, true);
+        if ($public_key === '') {
+            update_post_meta($post_id, self::META_PUBLIC_KEY, self::generate_public_key());
+        }
+
+        $created_at = (string) get_post_meta($post_id, 'sd_created_at_gmt', true);
+        if ($created_at === '') {
+            update_post_meta($post_id, 'sd_created_at_gmt', current_time('mysql', true));
+        }
+
+        update_post_meta($post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+    }
+
     private static function ensure_stripe_account_for_prospect(int $prospect_post_id): string {
         $existing = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
         if ($existing !== '') {
