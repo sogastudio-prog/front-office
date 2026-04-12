@@ -1192,7 +1192,8 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function post_control_plane_endpoint(string $path, string $public_key): array {
-        $url = rest_url('sd/v1/control-plane/' . ltrim($path, '/'));
+        $base = 'https://app.solodrive.pro/wp-json/sd/v1/control-plane/';
+        $url = $base . ltrim($path, '/');
 
         $response = wp_remote_post($url, [
             'timeout' => 20,
