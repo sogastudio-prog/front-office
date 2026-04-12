@@ -776,10 +776,38 @@ final class SD_Front_Office_Scaffold {
         }
 
         $prospect_post_id = self::require_prospect_post_id_from_request();
+        $public_key = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
 
-        self::ensure_stripe_account_for_prospect($prospect_post_id);
-        $stripe_account_id = self::ensure_stripe_account_for_prospect($prospect_post_id);
-        error_log('SOLODRIVE.PRO confirm: resolved stripe account for prospect post ' . $prospect_post_id . ' => ' . $stripe_account_id);
+        $confirm = self::post_control_plane_endpoint('confirm', $public_key);
+
+        if (!empty($confirm['ok'])) {
+            if (!empty($confirm['stripe_account_id'])) {
+                update_post_meta(
+                    $prospect_post_id,
+                    self::META_STRIPE_ACCOUNT_ID,
+                    sanitize_text_field((string) $confirm['stripe_account_id'])
+                );
+            }
+
+            if (!empty($confirm['stripe_state'])) {
+                update_post_meta(
+                    $prospect_post_id,
+                    self::META_STRIPE_STATE,
+                    sanitize_text_field((string) $confirm['stripe_state'])
+                );
+            }
+
+            error_log(
+                'SOLODRIVE.PRO confirm: persisted stripe continuity for prospect post ' .
+                $prospect_post_id . ' => ' .
+                ((string) ($confirm['stripe_account_id'] ?? ''))
+            );
+        } else {
+            error_log(
+                'SOLODRIVE.PRO confirm: control-plane confirm failed for prospect post ' .
+                $prospect_post_id . ' => ' . wp_json_encode($confirm)
+            );
+        }
 
         $state = self::get_activation_state($prospect_post_id);
 
@@ -789,7 +817,6 @@ final class SD_Front_Office_Scaffold {
         }
 
         $status_label = self::map_public_status_label($state);
-        $public_key = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
         $cta_url = add_query_arg(
             'k',
             rawurlencode($public_key),
@@ -827,10 +854,9 @@ final class SD_Front_Office_Scaffold {
 
         $prospect_post_id = self::require_prospect_post_id_from_request();
         $public_key = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
+        $stripe_account_id = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
 
-        $stripe_account_id = self::ensure_stripe_account_for_prospect($prospect_post_id);
         if ($stripe_account_id === '') {
-            error_log('SOLODRIVE.PRO connect-payouts: no persisted sd_stripe_account_id for prospect post ' . $prospect_post_id);
             wp_safe_redirect(add_query_arg('k', rawurlencode($public_key), home_url('/' . self::PAGE_SLUG_CONFIRM . '/')));
             exit;
         }
@@ -873,43 +899,34 @@ final class SD_Front_Office_Scaffold {
             exit;
         }
 
-        $stripe_account_id = self::ensure_stripe_account_for_prospect($prospect_post_id);
+        $stripe_account_id = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
         if ($stripe_account_id === '') {
+            error_log('SOLODRIVE.PRO connect-payouts: no persisted sd_stripe_account_id for prospect post ' . $prospect_post_id);
             wp_safe_redirect(add_query_arg('k', rawurlencode($public_key), home_url('/' . self::PAGE_SLUG_CONFIRM . '/')));
             exit;
         }
 
-        $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
-        $return_url = add_query_arg('k', rawurlencode($public_key), home_url('/' . self::PAGE_SLUG_SUCCESS . '/'));
-        $refresh_url = add_query_arg('k', rawurlencode($public_key), home_url('/' . self::PAGE_SLUG_CONNECT_PAYOUTS . '/'));
+        $result = self::post_control_plane_endpoint('payouts-start', $public_key);
 
-        if (
-            $prospect_id !== '' &&
-            class_exists('SD_Activation_Service') &&
-            method_exists('SD_Activation_Service', 'start_payouts_onboarding')
-        ) {
-            $result = SD_Activation_Service::start_payouts_onboarding($prospect_id, [
-                'return_url'  => $return_url,
-                'refresh_url' => $refresh_url,
-            ]);
-
-            if (is_array($result)) {
-                if (!empty($result['sd_stripe_state'])) {
-                    update_post_meta(
-                        $prospect_post_id,
-                        self::META_STRIPE_STATE,
-                        sanitize_text_field((string) $result['sd_stripe_state'])
-                    );
-                }
-
-                if (!empty($result['redirect_url'])) {
-                    wp_safe_redirect(esc_url_raw((string) $result['redirect_url']));
-                    exit;
-                }
-            }
+        if (!empty($result['ok']) && !empty($result['stripe_account_id'])) {
+            update_post_meta(
+                $prospect_post_id,
+                self::META_STRIPE_ACCOUNT_ID,
+                sanitize_text_field((string) $result['stripe_account_id'])
+            );
         }
 
-        wp_safe_redirect($refresh_url);
+        if (!empty($result['redirect_url'])) {
+            wp_safe_redirect(esc_url_raw((string) $result['redirect_url']));
+            exit;
+        }
+
+        error_log(
+            'SOLODRIVE.PRO connect-payouts: payouts-start failed for prospect post ' .
+            $prospect_post_id . ' => ' . wp_json_encode($result)
+        );
+
+        wp_safe_redirect(add_query_arg('k', rawurlencode($public_key), home_url('/' . self::PAGE_SLUG_CONFIRM . '/')));
         exit;
     }
 
@@ -1172,6 +1189,45 @@ final class SD_Front_Office_Scaffold {
         }
 
         update_post_meta($post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+    }
+
+    private static function post_control_plane_endpoint(string $path, string $public_key): array {
+        $url = rest_url('sd/v1/control-plane/' . ltrim($path, '/'));
+
+        $response = wp_remote_post($url, [
+            'timeout' => 20,
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'Accept'       => 'application/json',
+            ],
+            'body' => wp_json_encode([
+                'k' => $public_key,
+            ]),
+        ]);
+
+        if (is_wp_error($response)) {
+            error_log('SOLODRIVE.PRO control-plane POST failed: ' . $path . ' => ' . $response->get_error_message());
+            return [
+                'ok' => false,
+                'error' => 'request_failed',
+            ];
+        }
+
+        $code = (int) wp_remote_retrieve_response_code($response);
+        $body = (string) wp_remote_retrieve_body($response);
+        $json = json_decode($body, true);
+
+        if (!is_array($json)) {
+            error_log('SOLODRIVE.PRO control-plane invalid JSON: ' . $path . ' => HTTP ' . $code . ' body=' . $body);
+            return [
+                'ok' => false,
+                'error' => 'invalid_json',
+                'http_code' => $code,
+            ];
+        }
+
+        $json['http_code'] = $code;
+        return $json;
     }
 
     private static function ensure_stripe_account_for_prospect(int $prospect_post_id): string {
