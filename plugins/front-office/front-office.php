@@ -1556,6 +1556,34 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($post_id, 'sd_updated_at_gmt', current_time('mysql', true));
     }
 
+    private static function normalize_payload(array $posted_data): array {
+        $first = static function ($value): string {
+            if (is_array($value)) {
+                $value = reset($value);
+            }
+            return sanitize_text_field((string) $value);
+        };
+
+        $email_raw = sanitize_email((string) ($posted_data['email'] ?? ''));
+        $phone_raw = $first($posted_data['phone'] ?? '');
+
+        return [
+            'full_name'         => $first($posted_data['full_name'] ?? ''),
+            'email_raw'         => $email_raw,
+            'email_normalized'  => strtolower(trim($email_raw)),
+            'phone_raw'         => $phone_raw,
+            'phone_normalized'  => self::normalize_phone($phone_raw),
+            'city'              => $first($posted_data['city'] ?? ''),
+            'repeat_clients'    => $first($posted_data['repeat_clients'] ?? ''),
+            'driving_status'    => $first($posted_data['driving_status'] ?? ''),
+            'weekly_gross'      => $first($posted_data['weekly_gross'] ?? ''),
+            'invitation_code'   => $first($posted_data['invite_code'] ?? ''),
+            'submission_count'  => 1,
+            'submitted_at_gmt'  => current_time('mysql', true),
+            'raw_payload_json'  => wp_json_encode($posted_data),
+        ];
+    }
+
     private static function post_control_plane_endpoint(string $path, array $payload): array {
         $base = 'https://app.solodrive.pro/wp-json/sd/v1/control-plane/';
         $url = $base . ltrim($path, '/');
