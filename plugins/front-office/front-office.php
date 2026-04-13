@@ -929,6 +929,40 @@ private static function update_existing_prospect(int $prospect_post_id, array $p
         exit;
     }
 
+    public static function inject_cf7_redirect($response, $contact_form) {
+        if (!is_array($response)) {
+            $response = [];
+        }
+
+        if (!self::is_request_access_form($contact_form, [])) {
+            return $response;
+        }
+
+        if (!class_exists('WPCF7_Submission') || !method_exists('WPCF7_Submission', 'get_instance')) {
+            return $response;
+        }
+
+        $submission = WPCF7_Submission::get_instance();
+        if (!$submission) {
+            return $response;
+        }
+
+        $posted_data = $submission->get_posted_data();
+        if (!is_array($posted_data)) {
+            return $response;
+        }
+
+        $payload = self::normalize_payload($posted_data);
+        $prospect_post_id = self::find_existing_prospect($payload);
+
+        if ($prospect_post_id <= 0) {
+            return $response;
+        }
+
+        $response['sd_redirect_url'] = self::get_prospect_url_for_post($prospect_post_id);
+        return $response;
+    }
+
     private static function is_request_access_form($contact_form, array $posted_data): bool {
         if (!is_object($contact_form) || !method_exists($contact_form, 'id')) {
             return false;
