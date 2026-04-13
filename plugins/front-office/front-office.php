@@ -794,6 +794,87 @@ final class SD_Front_Office_Scaffold {
         error_log('SD Front Office: create_new_prospect returned = ' . $created_id);
     }
 
+    private static function create_new_prospect(array $payload): int {
+    $full_name = (string) ($payload['full_name'] ?? '');
+    $phone_normalized = (string) ($payload['phone_normalized'] ?? '');
+    $email_normalized = (string) ($payload['email_normalized'] ?? '');
+
+    $title_bits = array_filter([
+        'Prospect',
+        $full_name,
+        $phone_normalized !== '' ? $phone_normalized : $email_normalized,
+    ]);
+
+    $prospect_post_id = wp_insert_post([
+        'post_type'   => self::PROSPECT_POST_TYPE,
+        'post_status' => 'publish',
+        'post_title'  => implode(' - ', $title_bits),
+    ], true);
+
+    if (is_wp_error($prospect_post_id) || !$prospect_post_id) {
+        error_log('SD Front Office: create_new_prospect failed: ' . (is_wp_error($prospect_post_id) ? $prospect_post_id->get_error_message() : 'unknown'));
+        return 0;
+    }
+
+    update_post_meta($prospect_post_id, 'sd_prospect_id', 'prs_' . wp_generate_uuid4());
+    update_post_meta($prospect_post_id, 'sd_lifecycle_stage', 'prospect');
+    update_post_meta($prospect_post_id, 'sd_source', 'cf7_request_access');
+    update_post_meta($prospect_post_id, 'sd_created_at_gmt', current_time('mysql', true));
+    update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+    update_post_meta($prospect_post_id, 'sd_full_name', (string) ($payload['full_name'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_phone_raw', (string) ($payload['phone_raw'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_phone_normalized', (string) ($payload['phone_normalized'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_email_raw', (string) ($payload['email_raw'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_email_normalized', (string) ($payload['email_normalized'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_city', (string) ($payload['city'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_repeat_clients', (string) ($payload['repeat_clients'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_driving_status', (string) ($payload['driving_status'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_weekly_gross', (string) ($payload['weekly_gross'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_invitation_code', (string) ($payload['invitation_code'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_invitation_status', 'none');
+    update_post_meta($prospect_post_id, 'sd_review_status', 'new');
+    update_post_meta($prospect_post_id, 'sd_last_intake_channel', 'cf7');
+    update_post_meta($prospect_post_id, 'sd_last_submission_at_gmt', (string) ($payload['submitted_at_gmt'] ?? current_time('mysql', true)));
+    update_post_meta($prospect_post_id, 'sd_submission_count', (int) ($payload['submission_count'] ?? 1));
+    update_post_meta($prospect_post_id, 'sd_last_submission_payload_json', (string) ($payload['raw_payload_json'] ?? '{}'));
+    update_post_meta($prospect_post_id, 'sd_dedupe_key_email', (string) ($payload['email_normalized'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_dedupe_key_phone', (string) ($payload['phone_normalized'] ?? ''));
+    update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'STARTED');
+
+    self::ensure_prospect_defaults($prospect_post_id, get_post($prospect_post_id), false);
+
+    return (int) $prospect_post_id;
+}
+
+private static function update_existing_prospect(int $prospect_post_id, array $payload): int {
+    if ($prospect_post_id <= 0) {
+        return 0;
+    }
+
+    update_post_meta($prospect_post_id, 'sd_full_name', (string) ($payload['full_name'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_phone_raw', (string) ($payload['phone_raw'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_phone_normalized', (string) ($payload['phone_normalized'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_email_raw', (string) ($payload['email_raw'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_email_normalized', (string) ($payload['email_normalized'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_city', (string) ($payload['city'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_repeat_clients', (string) ($payload['repeat_clients'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_driving_status', (string) ($payload['driving_status'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_weekly_gross', (string) ($payload['weekly_gross'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_invitation_code', (string) ($payload['invitation_code'] ?? ''));
+    update_post_meta($prospect_post_id, 'sd_last_intake_channel', 'cf7');
+    update_post_meta($prospect_post_id, 'sd_last_submission_at_gmt', (string) ($payload['submitted_at_gmt'] ?? current_time('mysql', true)));
+    update_post_meta($prospect_post_id, 'sd_last_submission_payload_json', (string) ($payload['raw_payload_json'] ?? '{}'));
+    update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+    $existing_count = (int) get_post_meta($prospect_post_id, 'sd_submission_count', true);
+    update_post_meta($prospect_post_id, 'sd_submission_count', max(1, $existing_count + 1));
+
+    self::ensure_prospect_defaults($prospect_post_id, get_post($prospect_post_id), true);
+
+    return $prospect_post_id;
+}
+
     public static function handle_start_submit(): void {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             wp_safe_redirect(home_url('/' . self::PAGE_SLUG_START . '/'));
