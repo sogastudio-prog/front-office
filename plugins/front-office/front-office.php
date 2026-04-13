@@ -14,10 +14,12 @@
  * - Handle CF7 request-access intake
  * - Redirect to staged success screen
  *
- * Notes:
- * - Scaffold only. Review capabilities, nonce checks, invitation validation,
- *   and tenant-promotion rules before production use.
- * - Designed for a lightweight custom plugin or mu-plugin.
+ * Canonical enrollment continuity:
+ * - sd_prospect_token is the public continuity key.
+ * - /prospect/<token> is the canonical public enrollment surface.
+ * - sd_public_key and staged pages remain temporary compatibility only.
+ * - Stripe redirects are UX only.
+ * - Stripe webhooks are truth.
  */
 
 if (!defined('ABSPATH')) {
@@ -37,12 +39,16 @@ final class SD_Front_Office_Scaffold {
     private const PAGE_SLUG_CONNECT_PAYOUTS  = 'connect-payouts';
     private const PAGE_SLUG_SUCCESS          = 'success';
 
-    private const META_PUBLIC_KEY            = 'sd_public_key';
+    private const META_PUBLIC_KEY            = 'sd_public_key'; // legacy
     private const META_ACTIVATION_STATE      = 'sd_activation_state';
     private const META_STOREFRONT_URL        = 'sd_storefront_url';
     private const META_OPERATIONS_ENTRY_URL  = 'sd_operations_entry_url';
     private const META_BUSINESS_NAME         = 'sd_business_name';
     private const META_SERVICE_AREA          = 'sd_service_area';
+    private const META_PROSPECT_TOKEN       = 'sd_prospect_token';
+    private const PAGE_SLUG_PROSPECT        = 'prospect';
+    private const META_STRIPE_LAST_REFRESH_URL = 'sd_stripe_last_refresh_url';
+    private const META_STRIPE_LAST_RETURN_URL  = 'sd_stripe_last_return_url';
 
     private const ACTION_START               = 'sdfo_start';
     private const ACTION_START_PAYOUTS       = 'sdfo_start_payouts';
@@ -50,11 +56,14 @@ final class SD_Front_Office_Scaffold {
     private const META_STRIPE_ACCOUNT_ID    = 'sd_stripe_account_id';
     private const META_STRIPE_STATE         = 'sd_stripe_state';
     private const META_STRIPE_COMPLETED_GMT = 'sd_stripe_completed_gmt';
+    private const PROSPECT_PAGE_SLUG        = 'prospect';
 
     public static function bootstrap(): void {
         add_action('init', [__CLASS__, 'register_post_types']);
         add_action('init', [__CLASS__, 'register_meta_keys']);
         add_action('init', [__CLASS__, 'register_shortcodes']);
+        add_action('init', [__CLASS__, 'register_rewrite_rules']);
+        add_filter('query_vars', [__CLASS__, 'register_query_vars']);
         add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
 
         add_filter('manage_' . self::PROSPECT_POST_TYPE . '_posts_columns', [__CLASS__, 'prospect_columns']);
@@ -204,6 +213,9 @@ final class SD_Front_Office_Scaffold {
             'sd_stripe_account_id' => 'string',
             'sd_stripe_state' => 'string',
             'sd_stripe_completed_gmt' => 'string',
+            'sd_prospect_token' => 'string',
+            'sd_stripe_last_refresh_url' => 'string',
+            'sd_stripe_last_return_url' => 'string',
                     ];
 
         $tenant_meta = [
@@ -767,12 +779,18 @@ final class SD_Front_Office_Scaffold {
         error_log('SD Front Office: existing prospect id = ' . $prospect_post_id);
 
         if ($prospect_post_id > 0) {
-        self::update_existing_prospect($prospect_post_id, $payload);
-        error_log('SD Front Office: updated existing prospect');
-        return;
+            $prospect_post_id = self::update_existing_prospect($prospect_post_id, $payload);
+            self::ensure_prospect_token($prospect_post_id);
+            self::ensure_cf7_stripe_origin($prospect_post_id, $payload);
+            error_log('SD Front Office: updated existing prospect');
+            return;
         }
 
         $created_id = self::create_new_prospect($payload);
+        if ($created_id > 0) {
+            self::ensure_prospect_token($created_id);
+            self::ensure_cf7_stripe_origin($created_id, $payload);
+        }
         error_log('SD Front Office: create_new_prospect returned = ' . $created_id);
     }
 
@@ -818,27 +836,13 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_prospect_id', 'prs_' . wp_generate_uuid4());
         update_post_meta($prospect_post_id, 'sd_created_at_gmt', current_time('mysql', true));
 
-        $public_key = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
-        if ($public_key === '') {
-            $public_key = self::generate_public_key();
-            update_post_meta($prospect_post_id, self::META_PUBLIC_KEY, $public_key);
+        $prospect_token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
+        if ($prospect_token === '') {
+            $prospect_token = self::generate_prospect_token();
+            update_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, $prospect_token);
         }
 
-        update_post_meta($prospect_post_id, 'sd_full_name', $name);
-        update_post_meta($prospect_post_id, 'sd_email_raw', $email);
-        update_post_meta($prospect_post_id, 'sd_email_normalized', $email_normalized);
-        update_post_meta($prospect_post_id, 'sd_phone_raw', $mobile);
-        update_post_meta($prospect_post_id, 'sd_phone_normalized', $mobile_normalized);
-        update_post_meta($prospect_post_id, self::META_BUSINESS_NAME, $business_name);
-        update_post_meta($prospect_post_id, self::META_SERVICE_AREA, $service_area);
-        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'STARTED');
-        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
-
-        $redirect = add_query_arg(
-            'k',
-            rawurlencode($public_key),
-            home_url('/' . self::PAGE_SLUG_CONFIRM . '/')
-        );
+        $redirect = self::get_prospect_url_by_token($prospect_token);
 
         wp_safe_redirect($redirect);
         exit;
@@ -857,6 +861,47 @@ final class SD_Front_Office_Scaffold {
         add_shortcode('sdfo_confirm_state', [__CLASS__, 'shortcode_confirm_state']);
         add_shortcode('sdfo_connect_payouts_state', [__CLASS__, 'shortcode_connect_payouts_state']);
         add_shortcode('sdfo_success_state', [__CLASS__, 'shortcode_success_state']);
+        add_shortcode('sdfo_prospect_state', [__CLASS__, 'shortcode_prospect_state']);
+    }
+
+    public static function shortcode_prospect_state(): string {
+        if (self::is_editor_request()) {
+            return '<div class="sd-front-placeholder">SOLODRIVE.PRO Prospect status block</div>';
+        }
+
+        $prospect_post_id = self::require_prospect_post_id_from_token_request();
+
+        $token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
+        $state = self::get_activation_state($prospect_post_id);
+        $stripe_state = (string) get_post_meta($prospect_post_id, self::META_STRIPE_STATE, true);
+        $stripe_account_id = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
+        $storefront_url = (string) get_post_meta($prospect_post_id, self::META_STOREFRONT_URL, true);
+        $operations_entry_url = (string) get_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, true);
+
+        ob_start();
+        ?>
+        <div class="sd-front-status">
+            <span class="sd-front-status__label">Status</span>
+            <strong class="sd-front-status__value"><?php echo esc_html(self::map_public_status_label($state)); ?></strong>
+        </div>
+
+        <div class="sd-front-card">
+            <p><strong>Prospect token:</strong> <?php echo esc_html($token); ?></p>
+            <p><strong>Stripe state:</strong> <?php echo esc_html($stripe_state ?: 'not_started'); ?></p>
+            <p><strong>Stripe account:</strong> <?php echo esc_html($stripe_account_id ?: 'not_created'); ?></p>
+        </div>
+
+        <?php if ($storefront_url !== '') : ?>
+            <div class="sd-front-actions">
+                <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($storefront_url); ?>">Open your booking page</a>
+                <?php if ($operations_entry_url !== '') : ?>
+                    <a class="sd-front-btn sd-front-btn--secondary" href="<?php echo esc_url($operations_entry_url); ?>">Log in to operations</a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php
+        return (string) ob_get_clean();
     }
 
     private static function is_invite_ready_form($contact_form): bool {
@@ -869,6 +914,73 @@ final class SD_Front_Office_Scaffold {
 
     private static function generate_public_key(): string {
         return 'sdp_' . wp_generate_password(24, false, false);
+    }
+
+    private static function generate_prospect_token(): string {
+        return 'sdpst_' . wp_generate_password(24, false, false);
+    }
+
+    private static function get_prospect_token_from_request(): string {
+        $token = get_query_var('sd_prospect_token', '');
+        if (!is_string($token) || $token === '') {
+            $token = (string) ($_GET['token'] ?? '');
+        }
+        return sanitize_text_field($token);
+    }
+
+    private static function get_prospect_post_id_by_token(string $token): int {
+        if ($token === '') {
+            return 0;
+        }
+
+        $posts = get_posts([
+            'post_type' => self::PROSPECT_POST_TYPE,
+            'post_status' => 'publish',
+            'fields' => 'ids',
+            'numberposts' => 1,
+            'meta_query' => [[
+                'key' => self::META_PROSPECT_TOKEN,
+                'value' => $token,
+                'compare' => '=',
+            ]],
+            'no_found_rows' => true,
+            'suppress_filters' => false,
+        ]);
+
+        if (!empty($posts)) {
+            return (int) $posts[0];
+        }
+
+        return 0;
+    }
+
+    private static function require_prospect_post_id_from_token_request(): int {
+        $token = self::get_prospect_token_from_request();
+        $post_id = self::get_prospect_post_id_by_token($token);
+
+        if ($post_id > 0) {
+            return $post_id;
+        }
+
+        // Temporary legacy fallback
+        $legacy_key = self::get_public_key_from_request();
+        $legacy_post_id = self::get_prospect_post_id_by_public_key($legacy_key);
+
+        if ($legacy_post_id > 0) {
+            return $legacy_post_id;
+        }
+
+        wp_safe_redirect(home_url('/' . self::PAGE_SLUG_START . '/'));
+        exit;
+    }
+
+    private static function ensure_prospect_token(int $prospect_post_id): string {
+        $token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
+        if ($token === '') {
+            $token = self::generate_prospect_token();
+            update_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, $token);
+        }
+        return $token;
     }
 
     private static function get_public_key_from_request(): string {
@@ -897,6 +1009,12 @@ final class SD_Front_Office_Scaffold {
             return !empty($posts) ? (int) $posts[0] : 0;
     }
 
+    private static function ensure_cf7_stripe_origin(int $prospect_post_id, array $payload): array {
+        // shared service placeholder
+        // this is where the proven CF7-origin Stripe creation/bootstrap logic belongs
+        return [];
+    }
+
     private static function require_prospect_post_id_from_request(): int {
         $public_key = self::get_public_key_from_request();
         $post_id = self::get_prospect_post_id_by_public_key($public_key);
@@ -909,6 +1027,10 @@ final class SD_Front_Office_Scaffold {
         return $post_id;
     }
 
+    private static function get_prospect_url_by_token(string $token): string {
+        return home_url('/' . self::PAGE_SLUG_PROSPECT . '/' . rawurlencode($token) . '/');
+    }
+
     private static function get_activation_payload_for_success(int $prospect_post_id): array {
         $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
 
@@ -916,39 +1038,13 @@ final class SD_Front_Office_Scaffold {
         $storefront_url = (string) get_post_meta($prospect_post_id, self::META_STOREFRONT_URL, true);
         $operations_entry_url = (string) get_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, true);
 
-        if (
-            $prospect_id !== '' &&
-            class_exists('SD_Activation_Service') &&
-            method_exists('SD_Activation_Service', 'activate_prospect')
-        ) {
-            $result = SD_Activation_Service::activate_prospect($prospect_id);
-
-            if (is_array($result)) {
-                $state = isset($result['activation_state'])
-                    ? sanitize_text_field((string) $result['activation_state'])
-                    : $state;
-
-                $storefront_url = isset($result['storefront_url'])
-                    ? esc_url_raw((string) $result['storefront_url'])
-                    : $storefront_url;
-
-                $operations_entry_url = isset($result['operations_entry_url'])
-                    ? esc_url_raw((string) $result['operations_entry_url'])
-                    : $operations_entry_url;
-
-                if ($state !== '') {
-                    update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, $state);
-                }
-
-                if ($storefront_url !== '') {
-                    update_post_meta($prospect_post_id, self::META_STOREFRONT_URL, $storefront_url);
-                }
-
-                if ($operations_entry_url !== '') {
-                    update_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, $operations_entry_url);
-                }
-            }
-        }
+        return [
+            'prospect_id' => $prospect_id,
+            'prospect_token' => (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true),
+            'activation_state' => $state,
+            'storefront_url' => $storefront_url,
+            'operations_entry_url' => $operations_entry_url,
+        ];
 
         return [
             'prospect_id' => $prospect_id,
@@ -1008,11 +1104,9 @@ final class SD_Front_Office_Scaffold {
             return '<div class="sd-front-placeholder">SOLODRIVE.PRO Confirm block preview</div>';
         }
 
-        $prospect_post_id = self::require_prospect_post_id_from_request();
+        $prospect_post_id = self::require_prospect_post_id_from_token_request();
         $public_key = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
 
-        $payload = self::build_runtime_prospect_contract($prospect_post_id);
-        $confirm = self::post_control_plane_endpoint('confirm', $payload);
 
         if (!empty($confirm['ok'])) {
             if (!empty($confirm['stripe_account_id'])) {
@@ -1045,10 +1139,6 @@ final class SD_Front_Office_Scaffold {
 
         $state = self::get_activation_state($prospect_post_id);
 
-        if ($state === 'STARTED') {
-            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'CONFIRMED');
-            $state = 'CONFIRMED';
-        }
 
         $status_label = self::map_public_status_label($state);
         $cta_url = add_query_arg(
@@ -1086,8 +1176,8 @@ final class SD_Front_Office_Scaffold {
             return '<div class="sd-front-placeholder">SOLODRIVE.PRO Connect payouts block</div>';
         }
 
-        $prospect_post_id = self::require_prospect_post_id_from_request();
-        $public_key = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
+        $prospect_post_id = self::require_prospect_post_id_from_token_request();
+        $prospect_token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
         $stripe_account_id = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
 
         if ($stripe_account_id === '') {
@@ -1097,7 +1187,7 @@ final class SD_Front_Office_Scaffold {
 
         $cta_url = add_query_arg([
             'action' => self::ACTION_START_PAYOUTS,
-            'k'      => $public_key,
+            'token'  => $prospect_token,
         ], admin_url('admin-post.php'));
 
         ob_start();
@@ -1125,8 +1215,13 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function handle_start_payouts(): void {
-        $public_key = sanitize_text_field((string) ($_GET['k'] ?? ''));
-        $prospect_post_id = self::get_prospect_post_id_by_public_key($public_key);
+        $prospect_token = sanitize_text_field((string) ($_GET['token'] ?? ''));
+        $prospect_post_id = self::get_prospect_post_id_by_token($prospect_token);
+
+        if ($prospect_post_id <= 0) {
+            $legacy_key = sanitize_text_field((string) ($_GET['k'] ?? ''));
+            $prospect_post_id = self::get_prospect_post_id_by_public_key($legacy_key);
+        }
 
         if ($prospect_post_id <= 0) {
             wp_safe_redirect(home_url('/' . self::PAGE_SLUG_START . '/'));
@@ -1144,6 +1239,7 @@ final class SD_Front_Office_Scaffold {
             'prospect_id'      => (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true),
             'public_key'       => $public_key,
             'prospect_post_id' => $prospect_post_id,
+            'prospect_token' => (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true),
         ];
 
         $result = self::post_control_plane_endpoint('payouts-start', $payload);
@@ -1175,7 +1271,7 @@ final class SD_Front_Office_Scaffold {
             return '<div class="sd-front-placeholder">SOLODRIVE.PRO Success block</div>';
         }
 
-        $prospect_post_id = self::require_prospect_post_id_from_request();
+        $prospect_post_id = self::require_prospect_post_id_from_token_request();
         $payload = self::get_activation_payload_for_success($prospect_post_id);
 
         $state = (string) ($payload['activation_state'] ?? 'STARTED');
@@ -1371,6 +1467,17 @@ final class SD_Front_Office_Scaffold {
         return $state;
     }
 
+    private static function get_prospect_url_for_post(int $prospect_post_id): string {
+        $token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
+
+        if ($token === '') {
+            $token = self::generate_prospect_token();
+            update_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, $token);
+        }
+
+        return self::get_prospect_url_by_token($token);
+    }
+
     private static function map_public_status_label(string $state): string {
         return match ($state) {
             'STARTED'               => 'Started',
@@ -1386,6 +1493,19 @@ final class SD_Front_Office_Scaffold {
             'PARTIAL_SYNC_FAILED'   => 'Activation issue',
             default                 => 'Started',
         };
+    }
+
+    public static function register_rewrite_rules(): void {
+        add_rewrite_rule(
+            '^' . self::PAGE_SLUG_PROSPECT . '/([^/]+)/?$',
+            'index.php?pagename=' . self::PAGE_SLUG_PROSPECT . '&sd_prospect_token=$matches[1]',
+            'top'
+        );
+    }
+
+    public static function register_query_vars(array $vars): array {
+        $vars[] = 'sd_prospect_token';
+        return $vars;
     }
 
     private static function is_success_ready_payload(array $payload): bool {
@@ -1421,6 +1541,11 @@ final class SD_Front_Office_Scaffold {
         $public_key = (string) get_post_meta($post_id, self::META_PUBLIC_KEY, true);
         if ($public_key === '') {
             update_post_meta($post_id, self::META_PUBLIC_KEY, self::generate_public_key());
+        }
+
+        $prospect_token = (string) get_post_meta($post_id, self::META_PROSPECT_TOKEN, true);
+        if ($prospect_token === '') {
+            update_post_meta($post_id, self::META_PROSPECT_TOKEN, self::generate_prospect_token());
         }
 
         $created_at = (string) get_post_meta($post_id, 'sd_created_at_gmt', true);
@@ -1472,6 +1597,7 @@ final class SD_Front_Office_Scaffold {
             'phone'                  => (string) get_post_meta($prospect_post_id, 'sd_phone_raw', true),
             'business_display_name'  => (string) get_post_meta($prospect_post_id, self::META_BUSINESS_NAME, true),
             'service_area'           => (string) get_post_meta($prospect_post_id, self::META_SERVICE_AREA, true),
+            'prospect_token'         => (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true),
         ];
     }
 }
