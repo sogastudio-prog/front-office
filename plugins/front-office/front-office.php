@@ -563,27 +563,18 @@ final class SD_Front_Office_Scaffold {
             exit;
         }
 
-        $existing_post_id = self::find_existing_prospect([
-            'email_normalized' => $email_normalized,
-            'phone_normalized' => $mobile_normalized,
-        ]);
+        $prospect_post_id = wp_insert_post([
+            'post_type'   => self::PROSPECT_POST_TYPE,
+            'post_status' => 'publish',
+            'post_title'  => sprintf('Prospect - %s - %s', $name, $mobile_normalized),
+        ], true);
 
-        if ($existing_post_id > 0) {
-            $prospect_post_id = $existing_post_id;
-        } else {
-            $prospect_post_id = wp_insert_post([
-                'post_type'   => self::PROSPECT_POST_TYPE,
-                'post_status' => 'publish',
-                'post_title'  => sprintf('Prospect - %s - %s', $name, $mobile_normalized),
-            ], true);
-
-            if (is_wp_error($prospect_post_id) || !$prospect_post_id) {
-                wp_die('Unable to create prospect record.');
-            }
-
-            update_post_meta($prospect_post_id, 'sd_prospect_id', 'prs_' . wp_generate_uuid4());
-            update_post_meta($prospect_post_id, 'sd_created_at_gmt', current_time('mysql', true));
+        if (is_wp_error($prospect_post_id) || !$prospect_post_id) {
+            wp_die('Unable to create prospect record.');
         }
+
+        update_post_meta($prospect_post_id, 'sd_prospect_id', 'prs_' . wp_generate_uuid4());
+        update_post_meta($prospect_post_id, 'sd_created_at_gmt', current_time('mysql', true));
 
         $public_key = (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true);
         if ($public_key === '') {
