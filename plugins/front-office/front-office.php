@@ -71,6 +71,9 @@ final class SD_Front_Office_Scaffold {
         add_action('wpcf7_before_send_mail', [__CLASS__, 'handle_cf7_submission']);
         add_action('save_post_sd_prospect', [__CLASS__, 'ensure_prospect_defaults'], 10, 3);
         add_action('save_post_sd_tenant', [__CLASS__, 'ensure_tenant_defaults'], 10, 3);
+        add_action('add_meta_boxes_' . self::PROSPECT_POST_TYPE, [__CLASS__, 'register_prospect_debug_meta_boxes']);
+        add_action('admin_head-post.php', [__CLASS__, 'inject_prospect_debug_admin_css']);
+        add_action('admin_head-post-new.php', [__CLASS__, 'inject_prospect_debug_admin_css']);
 
         add_action('admin_post_nopriv_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
         add_action('admin_post_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
@@ -437,6 +440,245 @@ final class SD_Front_Office_Scaffold {
             echo '<option value="' . esc_attr($value) . '" ' . selected($current, $value, false) . '>' . esc_html($text) . '</option>';
         }
         echo '</select>';
+    }
+
+
+    public static function register_prospect_debug_meta_boxes(WP_Post $post): void {
+        remove_meta_box('slugdiv', self::PROSPECT_POST_TYPE, 'normal');
+
+        add_meta_box(
+            'sd-prospect-debug-panel',
+            'Prospect Debug Panel',
+            [__CLASS__, 'render_prospect_debug_panel'],
+            self::PROSPECT_POST_TYPE,
+            'normal',
+            'high'
+        );
+
+        add_meta_box(
+            'sd-prospect-debug-tools',
+            'Debug Tools',
+            [__CLASS__, 'render_prospect_debug_tools'],
+            self::PROSPECT_POST_TYPE,
+            'side',
+            'high'
+        );
+    }
+
+    public static function inject_prospect_debug_admin_css(): void {
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        if (!$screen || $screen->post_type !== self::PROSPECT_POST_TYPE) {
+            return;
+        }
+
+        echo '<style>
+'
+            . '#post-body-content{margin-bottom:12px;}
+'
+            . '#postdivrich{display:none !important;}
+'
+            . '.sd-debug-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin:12px 0 0;}
+'
+            . '.sd-debug-card{background:#fff;border:1px solid #dcdcde;border-radius:6px;padding:12px;}
+'
+            . '.sd-debug-card h3{margin:0 0 10px;font-size:13px;line-height:1.4;}
+'
+            . '.sd-debug-table{width:100%;border-collapse:collapse;}
+'
+            . '.sd-debug-table th,.sd-debug-table td{padding:6px 8px;border-top:1px solid #f0f0f1;vertical-align:top;text-align:left;font-size:12px;line-height:1.5;word-break:break-word;}
+'
+            . '.sd-debug-table tr:first-child th,.sd-debug-table tr:first-child td{border-top:0;}
+'
+            . '.sd-debug-table th{width:34%;color:#50575e;font-weight:600;}
+'
+            . '.sd-debug-pre{margin:0;max-height:420px;overflow:auto;padding:12px;background:#0f172a;color:#e2e8f0;border-radius:6px;font:12px/1.5 Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word;}
+'
+            . '.sd-debug-note{margin:0 0 10px;color:#50575e;}
+'
+            . '.sd-debug-tools-list{margin:0;padding-left:18px;}
+'
+            . '.sd-debug-tools-list li{margin:0 0 8px;}
+'
+            . '.sd-debug-badge{display:inline-block;margin:0 6px 6px 0;padding:3px 8px;border-radius:999px;background:#eef4ff;border:1px solid #c3dafe;font-size:12px;}
+'
+            . '</style>';
+    }
+
+    public static function render_prospect_debug_panel(WP_Post $post): void {
+        $post_id = (int) $post->ID;
+        $all_meta = get_post_meta($post_id);
+        $tenant_post_id = (int) get_post_meta($post_id, 'sd_promoted_to_tenant_post_id', true);
+        $tenant_edit_url = $tenant_post_id > 0 ? get_edit_post_link($tenant_post_id, '') : '';
+
+        $sections = [
+            'Core Record Identity' => [
+                'post_id' => $post_id,
+                'post_title' => $post->post_title,
+                'post_status' => $post->post_status,
+                'post_type' => $post->post_type,
+                'post_author' => (int) $post->post_author,
+                'created_gmt' => $post->post_date_gmt,
+                'modified_gmt' => $post->post_modified_gmt,
+                'sd_prospect_id' => get_post_meta($post_id, 'sd_prospect_id', true),
+                'sd_public_key' => get_post_meta($post_id, self::META_PUBLIC_KEY, true),
+                'sd_source' => get_post_meta($post_id, 'sd_source', true),
+                'sd_owner_user_id' => get_post_meta($post_id, 'sd_owner_user_id', true),
+                'sd_created_at_gmt' => get_post_meta($post_id, 'sd_created_at_gmt', true),
+                'sd_updated_at_gmt' => get_post_meta($post_id, 'sd_updated_at_gmt', true),
+            ],
+            'Lifecycle + State' => [
+                'sd_lifecycle_stage' => get_post_meta($post_id, 'sd_lifecycle_stage', true),
+                'sd_invitation_status' => get_post_meta($post_id, 'sd_invitation_status', true),
+                'sd_review_status' => get_post_meta($post_id, 'sd_review_status', true),
+                'sd_activation_state' => get_post_meta($post_id, self::META_ACTIVATION_STATE, true),
+                'sd_stripe_onboarding_status' => get_post_meta($post_id, 'sd_stripe_onboarding_status', true),
+                'sd_stripe_state' => get_post_meta($post_id, self::META_STRIPE_STATE, true),
+                'sd_billing_status' => get_post_meta($post_id, 'sd_billing_status', true),
+                'sd_priority_lane' => get_post_meta($post_id, 'sd_priority_lane', true),
+                'sd_submission_count' => get_post_meta($post_id, 'sd_submission_count', true),
+                'sd_last_intake_channel' => get_post_meta($post_id, 'sd_last_intake_channel', true),
+                'sd_last_submission_at_gmt' => get_post_meta($post_id, 'sd_last_submission_at_gmt', true),
+                'sd_last_staff_action_at_gmt' => get_post_meta($post_id, 'sd_last_staff_action_at_gmt', true),
+            ],
+            'Contact + Business' => [
+                'sd_full_name' => get_post_meta($post_id, 'sd_full_name', true),
+                'sd_phone_raw' => get_post_meta($post_id, 'sd_phone_raw', true),
+                'sd_phone_normalized' => get_post_meta($post_id, 'sd_phone_normalized', true),
+                'sd_email_raw' => get_post_meta($post_id, 'sd_email_raw', true),
+                'sd_email_normalized' => get_post_meta($post_id, 'sd_email_normalized', true),
+                'sd_business_name' => get_post_meta($post_id, self::META_BUSINESS_NAME, true),
+                'sd_service_area' => get_post_meta($post_id, self::META_SERVICE_AREA, true),
+                'sd_city' => get_post_meta($post_id, 'sd_city', true),
+                'sd_repeat_clients' => get_post_meta($post_id, 'sd_repeat_clients', true),
+                'sd_driving_status' => get_post_meta($post_id, 'sd_driving_status', true),
+                'sd_weekly_gross' => get_post_meta($post_id, 'sd_weekly_gross', true),
+                'sd_staff_notes' => get_post_meta($post_id, 'sd_staff_notes', true),
+            ],
+            'Invite + Access' => [
+                'sd_invitation_code' => get_post_meta($post_id, 'sd_invitation_code', true),
+                'sd_invited_by' => get_post_meta($post_id, 'sd_invited_by', true),
+            ],
+            'Stripe' => [
+                'sd_stripe_account_id' => get_post_meta($post_id, self::META_STRIPE_ACCOUNT_ID, true),
+                'sd_stripe_onboarding_started_at_gmt' => get_post_meta($post_id, 'sd_stripe_onboarding_started_at_gmt', true),
+                'sd_stripe_onboarding_status' => get_post_meta($post_id, 'sd_stripe_onboarding_status', true),
+                'sd_stripe_state' => get_post_meta($post_id, self::META_STRIPE_STATE, true),
+                'sd_stripe_completed_gmt' => get_post_meta($post_id, self::META_STRIPE_COMPLETED_GMT, true),
+                'sd_stripe_customer_id' => get_post_meta($post_id, 'sd_stripe_customer_id', true),
+                'sd_stripe_subscription_id' => get_post_meta($post_id, 'sd_stripe_subscription_id', true),
+                'sd_stripe_checkout_session_id' => get_post_meta($post_id, 'sd_stripe_checkout_session_id', true),
+                'sd_subscription_paid_at_gmt' => get_post_meta($post_id, 'sd_subscription_paid_at_gmt', true),
+                'sd_stripe_last_event_id' => get_post_meta($post_id, 'sd_stripe_last_event_id', true),
+                'sd_stripe_status_snapshot_json' => get_post_meta($post_id, 'sd_stripe_status_snapshot_json', true),
+            ],
+            'Tenant Handoff + Activation' => [
+                'sd_promoted_to_tenant_id' => get_post_meta($post_id, 'sd_promoted_to_tenant_id', true),
+                'sd_promoted_to_tenant_post_id' => $tenant_post_id,
+                'tenant_edit_link' => $tenant_edit_url,
+                'sd_storefront_url' => get_post_meta($post_id, self::META_STOREFRONT_URL, true),
+                'sd_operations_entry_url' => get_post_meta($post_id, self::META_OPERATIONS_ENTRY_URL, true),
+            ],
+        ];
+
+        echo '<p class="sd-debug-note">Read-only debug surface for raw prospect state, control-plane fields, Stripe continuity, and tenant handoff.</p>';
+        echo '<div class="sd-debug-grid">';
+        foreach ($sections as $title => $rows) {
+            echo '<section class="sd-debug-card">';
+            echo '<h3>' . esc_html($title) . '</h3>';
+            self::render_debug_table($rows);
+            echo '</section>';
+        }
+        echo '</div>';
+
+        echo '<div class="sd-debug-grid">';
+        echo '<section class="sd-debug-card">';
+        echo '<h3>Raw Post Object</h3>';
+        echo '<pre class="sd-debug-pre">' . esc_html(self::debug_export($post)) . '</pre>';
+        echo '</section>';
+
+        echo '<section class="sd-debug-card">';
+        echo '<h3>All Post Meta</h3>';
+        echo '<pre class="sd-debug-pre">' . esc_html(self::debug_export(self::normalize_meta_for_debug($all_meta))) . '</pre>';
+        echo '</section>';
+        echo '</div>';
+    }
+
+    public static function render_prospect_debug_tools(WP_Post $post): void {
+        $post_id = (int) $post->ID;
+        $badges = array_filter([
+            (string) get_post_meta($post_id, 'sd_lifecycle_stage', true),
+            (string) get_post_meta($post_id, 'sd_invitation_status', true),
+            (string) get_post_meta($post_id, 'sd_review_status', true),
+            (string) get_post_meta($post_id, self::META_ACTIVATION_STATE, true),
+            (string) get_post_meta($post_id, 'sd_stripe_onboarding_status', true),
+            (string) get_post_meta($post_id, self::META_STRIPE_STATE, true),
+        ]);
+
+        echo '<p class="sd-debug-note">This side panel is intentionally read-only. Use it to spot missing meta, mismatched states, and bad transitions fast.</p>';
+        if (!empty($badges)) {
+            echo '<div>';
+            foreach ($badges as $badge) {
+                echo '<span class="sd-debug-badge">' . esc_html($badge) . '</span>';
+            }
+            echo '</div>';
+        }
+
+        echo '<ul class="sd-debug-tools-list">';
+        echo '<li><strong>Post ID:</strong> ' . esc_html((string) $post_id) . '</li>';
+        echo '<li><strong>Prospect ID:</strong> ' . esc_html((string) get_post_meta($post_id, 'sd_prospect_id', true)) . '</li>';
+        echo '<li><strong>Public key:</strong> ' . esc_html((string) get_post_meta($post_id, self::META_PUBLIC_KEY, true)) . '</li>';
+        echo '<li><strong>Last updated:</strong> ' . esc_html((string) get_post_meta($post_id, 'sd_updated_at_gmt', true)) . '</li>';
+        echo '<li>Use the main panel below to inspect the raw post object and every saved meta key.</li>';
+        echo '</ul>';
+    }
+
+    private static function render_debug_table(array $rows): void {
+        echo '<table class="sd-debug-table"><tbody>';
+        foreach ($rows as $label => $value) {
+            echo '<tr>';
+            echo '<th scope="row">' . esc_html($label) . '</th>';
+            echo '<td>' . esc_html(self::stringify_debug_value($value)) . '</td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table>';
+    }
+
+    private static function stringify_debug_value($value): string {
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        if (is_scalar($value) || $value === null) {
+            $string = (string) $value;
+            return $string === '' ? '—' : $string;
+        }
+
+        return self::debug_export($value);
+    }
+
+    private static function normalize_meta_for_debug(array $all_meta): array {
+        $normalized = [];
+
+        foreach ($all_meta as $key => $values) {
+            $normalized[$key] = [];
+            foreach ((array) $values as $value) {
+                $maybe = maybe_unserialize($value);
+                if (is_string($maybe)) {
+                    $json = json_decode($maybe, true);
+                    if (json_last_error() === JSON_ERROR_NONE && (is_array($json) || is_object($json))) {
+                        $maybe = $json;
+                    }
+                }
+                $normalized[$key][] = $maybe;
+            }
+        }
+
+        ksort($normalized);
+        return $normalized;
+    }
+
+    private static function debug_export($value): string {
+        return trim(print_r($value, true));
     }
 
     public static function apply_admin_filters(WP_Query $query): void {
