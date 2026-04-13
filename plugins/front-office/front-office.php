@@ -877,16 +877,11 @@ final class SD_Front_Office_Scaffold {
         return $prospect_post_id;
     }
 
-    public static function inject_cf7_redirect($response, $contact_form) {
+    public static function inject_cf7_redirect($response, $result) {
         error_log('SD Front Office: inject_cf7_redirect fired');
 
         if (!is_array($response)) {
             $response = [];
-        }
-
-        if (!self::is_request_access_form($contact_form, [])) {
-            error_log('SD Front Office: inject_cf7_redirect skipped, wrong form');
-            return $response;
         }
 
         if (!class_exists('WPCF7_Submission') || !method_exists('WPCF7_Submission', 'get_instance')) {
@@ -897,6 +892,17 @@ final class SD_Front_Office_Scaffold {
         $submission = WPCF7_Submission::get_instance();
         if (!$submission) {
             error_log('SD Front Office: inject_cf7_redirect no submission instance');
+            return $response;
+        }
+
+        $contact_form = $submission->get_contact_form();
+        if (!is_object($contact_form) || !method_exists($contact_form, 'id')) {
+            error_log('SD Front Office: inject_cf7_redirect no contact form on submission');
+            return $response;
+        }
+
+        if ((int) $contact_form->id() !== self::REQUEST_ACCESS_FORM_ID) {
+            error_log('SD Front Office: inject_cf7_redirect skipped, wrong form id = ' . $contact_form->id());
             return $response;
         }
 
