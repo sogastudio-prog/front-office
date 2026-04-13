@@ -1204,21 +1204,6 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($post_id, 'sd_updated_at_gmt', current_time('mysql', true));
     }
 
-    private static function build_runtime_prospect_contract(int $prospect_post_id): array {
-        return [
-            'prospect_id' => (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true),
-            'public_key' => (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true),
-            'prospect_post_id' => $prospect_post_id,
-
-            'full_name' => (string) get_post_meta($prospect_post_id, 'sd_full_name', true),
-            'email' => (string) get_post_meta($prospect_post_id, 'sd_email_raw', true),
-            'phone' => (string) get_post_meta($prospect_post_id, 'sd_phone_raw', true),
-
-            'business_display_name' => (string) get_post_meta($prospect_post_id, self::META_BUSINESS_NAME, true),
-            'service_area' => (string) get_post_meta($prospect_post_id, self::META_SERVICE_AREA, true),
-        ];
-    }
-
     private static function post_control_plane_endpoint(string $path, array $payload): array {
         $base = 'https://app.solodrive.pro/wp-json/sd/v1/control-plane/';
         $url = $base . ltrim($path, '/');
