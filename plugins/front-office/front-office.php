@@ -908,12 +908,6 @@ final class SD_Front_Office_Scaffold {
         }
 
         $payload = [
-            'prospect_id' => (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true),
-            'public_key' => $public_key,
-            'prospect_post_id' => $prospect_post_id,
-        ];
-
-        $payload = [
             'prospect_id'      => (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true),
             'public_key'       => $public_key,
             'prospect_post_id' => $prospect_post_id,
@@ -1219,10 +1213,7 @@ final class SD_Front_Office_Scaffold {
 
         if (is_wp_error($response)) {
             error_log('SOLODRIVE.PRO control-plane POST failed: ' . $path . ' => ' . $response->get_error_message());
-            return [
-                'ok' => false,
-                'error' => 'request_failed',
-            ];
+            return ['ok' => false, 'error' => 'request_failed'];
         }
 
         $code = (int) wp_remote_retrieve_response_code($response);
@@ -1231,11 +1222,7 @@ final class SD_Front_Office_Scaffold {
 
         if (!is_array($json)) {
             error_log('SOLODRIVE.PRO control-plane invalid JSON: ' . $path . ' => HTTP ' . $code . ' body=' . $body);
-            return [
-                'ok' => false,
-                'error' => 'invalid_json',
-                'http_code' => $code,
-            ];
+            return ['ok' => false, 'error' => 'invalid_json', 'http_code' => $code];
         }
 
         $json['http_code'] = $code;
