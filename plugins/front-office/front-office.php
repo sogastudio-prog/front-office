@@ -878,36 +878,48 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function inject_cf7_redirect($response, $contact_form) {
+        error_log('SD Front Office: inject_cf7_redirect fired');
+
         if (!is_array($response)) {
             $response = [];
         }
 
         if (!self::is_request_access_form($contact_form, [])) {
+            error_log('SD Front Office: inject_cf7_redirect skipped, wrong form');
             return $response;
         }
 
         if (!class_exists('WPCF7_Submission') || !method_exists('WPCF7_Submission', 'get_instance')) {
+            error_log('SD Front Office: inject_cf7_redirect missing submission class');
             return $response;
         }
 
         $submission = WPCF7_Submission::get_instance();
         if (!$submission) {
+            error_log('SD Front Office: inject_cf7_redirect no submission instance');
             return $response;
         }
 
         $posted_data = $submission->get_posted_data();
         if (!is_array($posted_data)) {
+            error_log('SD Front Office: inject_cf7_redirect posted_data not array');
             return $response;
         }
 
         $payload = self::normalize_payload($posted_data);
         $prospect_post_id = self::find_existing_prospect($payload);
 
+        error_log('SD Front Office: inject_cf7_redirect matched prospect id = ' . $prospect_post_id);
+
         if ($prospect_post_id <= 0) {
             return $response;
         }
 
-        $response['sd_redirect_url'] = self::get_prospect_url_for_post($prospect_post_id);
+        $redirect_url = self::get_prospect_url_for_post($prospect_post_id);
+        $response['sd_redirect_url'] = $redirect_url;
+
+        error_log('SD Front Office: inject_cf7_redirect set sd_redirect_url = ' . $redirect_url);
+
         return $response;
     }
 
