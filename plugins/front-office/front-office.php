@@ -938,11 +938,11 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function register_shortcodes(): void {
-        add_shortcode('sdfo_start_form', [__CLASS__, 'shortcode_start_form']);
-        add_shortcode('sdfo_confirm_state', [__CLASS__, 'shortcode_confirm_state']);
-        add_shortcode('sdfo_connect_payouts_state', [__CLASS__, 'shortcode_connect_payouts_state']);
-        add_shortcode('sdfo_success_state', [__CLASS__, 'shortcode_success_state']);
-        add_shortcode('sdfo_prospect_state', [__CLASS__, 'shortcode_prospect_state']);
+     //   add_shortcode('sdfo_start_form', [__CLASS__, 'shortcode_start_form']);
+     //   add_shortcode('sdfo_confirm_state', [__CLASS__, 'shortcode_confirm_state']);
+     //   add_shortcode('sdfo_connect_payouts_state', [__CLASS__, 'shortcode_connect_payouts_state']);
+     //   add_shortcode('sdfo_success_state', [__CLASS__, 'shortcode_success_state']);
+       add_shortcode('sdfo_prospect_state', [__CLASS__, 'shortcode_prospect_state']);
     }
 
     public static function shortcode_prospect_state(): string {
