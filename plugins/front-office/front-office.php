@@ -913,6 +913,12 @@ final class SD_Front_Office_Scaffold {
             'prospect_post_id' => $prospect_post_id,
         ];
 
+        $payload = [
+            'prospect_id'      => (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true),
+            'public_key'       => $public_key,
+            'prospect_post_id' => $prospect_post_id,
+        ];
+
         $result = self::post_control_plane_endpoint('payouts-start', $payload);
 
         if (!empty($result['ok']) && !empty($result['stripe_account_id'])) {
@@ -1228,7 +1234,10 @@ final class SD_Front_Office_Scaffold {
 
         if (is_wp_error($response)) {
             error_log('SOLODRIVE.PRO control-plane POST failed: ' . $path . ' => ' . $response->get_error_message());
-            return ['ok' => false, 'error' => 'request_failed'];
+            return [
+                'ok' => false,
+                'error' => 'request_failed',
+            ];
         }
 
         $code = (int) wp_remote_retrieve_response_code($response);
@@ -1237,11 +1246,28 @@ final class SD_Front_Office_Scaffold {
 
         if (!is_array($json)) {
             error_log('SOLODRIVE.PRO control-plane invalid JSON: ' . $path . ' => HTTP ' . $code . ' body=' . $body);
-            return ['ok' => false, 'error' => 'invalid_json', 'http_code' => $code];
+            return [
+                'ok' => false,
+                'error' => 'invalid_json',
+                'http_code' => $code,
+            ];
         }
 
         $json['http_code'] = $code;
         return $json;
+    }
+
+    private static function build_runtime_prospect_contract(int $prospect_post_id): array {
+        return [
+            'prospect_id'            => (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true),
+            'public_key'             => (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true),
+            'prospect_post_id'       => $prospect_post_id,
+            'full_name'              => (string) get_post_meta($prospect_post_id, 'sd_full_name', true),
+            'email'                  => (string) get_post_meta($prospect_post_id, 'sd_email_raw', true),
+            'phone'                  => (string) get_post_meta($prospect_post_id, 'sd_phone_raw', true),
+            'business_display_name'  => (string) get_post_meta($prospect_post_id, self::META_BUSINESS_NAME, true),
+            'service_area'           => (string) get_post_meta($prospect_post_id, self::META_SERVICE_AREA, true),
+        ];
     }
 }
 
