@@ -771,7 +771,7 @@ final class SD_Front_Office_Scaffold {
         }
 
         $payload = self::normalize_payload($posted_data);
-        $payload['invitation'] = self::evaluate_invitation_code($payload['invitation_code']);
+  //      $payload['invitation'] = self::evaluate_invitation_code($payload['invitation_code']);
 
         error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
 
