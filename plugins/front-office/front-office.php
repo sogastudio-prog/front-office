@@ -837,6 +837,13 @@ final class SD_Front_Office_Scaffold {
         $resume_url = '';
         $setup_label = 'Resume setup';
 
+        if ($stripe_state === 'payments_enabled') {
+            self::maybe_promote_prospect_to_tenant($prospect_post_id);
+            $state = self::get_activation_state($prospect_post_id);
+            $storefront_url = (string) get_post_meta($prospect_post_id, self::META_STOREFRONT_URL, true);
+            $operations_entry_url = (string) get_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, true);
+        }
+
         if ($stripe_account_id === '') {
             try {
                 $stripe_account_id = self::ensure_stripe_account($prospect_post_id);
