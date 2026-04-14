@@ -71,6 +71,14 @@ final class SD_Front_Office_Scaffold {
         add_action('init', [__CLASS__, 'register_rewrite_rules']);
         add_filter('query_vars', [__CLASS__, 'register_query_vars']);
         add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
+        add_action('wp_enqueue_scripts', function () {
+            wp_enqueue_style(
+                'sd-front-css',
+                plugins_url('/../solodrive-front-css/assets/css/99-legacy-import.css', __FILE__),
+                [],
+                '1.0'
+            );
+        });
 
         if (is_admin() && class_exists('SD_Front_Office_Admin')) {
             SD_Front_Office_Admin::bootstrap();
