@@ -486,7 +486,7 @@ final class SD_Front_Office_Scaffold {
     public static function handle_stripe_webhook(WP_REST_Request $request) {
         $payload = $request->get_body();
         $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
-        $endpoint_secret = get_option('sd_stripe_webhook_secret', '');
+        $endpoint_secret = self::get_stripe_webhook_secret();
 
         if ($endpoint_secret === '') {
             error_log('SD Front Office: missing Stripe webhook secret');
@@ -540,7 +540,11 @@ final class SD_Front_Office_Scaffold {
             throw new Exception('Stripe SDK not loaded');
         }
 
-        \Stripe\Stripe::setApiKey(get_option('sd_stripe_secret_key'));
+        $stripe_secret_key = self::get_stripe_secret_key();
+        if ($stripe_secret_key === '') {
+            throw new Exception('Stripe secret key missing');
+        }
+        \Stripe\Stripe::setApiKey($stripe_secret_key);
 
         $email = get_post_meta($prospect_post_id, 'sd_email_normalized', true);
 
@@ -566,7 +570,11 @@ final class SD_Front_Office_Scaffold {
 
     public static function create_stripe_onboarding_link(int $prospect_post_id): string {
 
-        \Stripe\Stripe::setApiKey(get_option('sd_stripe_secret_key'));
+        $stripe_secret_key = self::get_stripe_secret_key();
+        if ($stripe_secret_key === '') {
+            throw new Exception('Stripe secret key missing');
+        }
+        \Stripe\Stripe::setApiKey($stripe_secret_key);
 
         $account_id = get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
 
