@@ -1191,6 +1191,22 @@ final class SD_Front_Office_Scaffold {
         return $json;
     }
 
+    private static function get_stripe_secret_key(): string {
+        if (defined('SD_FRONT_STRIPE_SECRET_KEY') && SD_FRONT_STRIPE_SECRET_KEY !== '') {
+            return SD_FRONT_STRIPE_SECRET_KEY;
+        }
+
+        return (string) get_option('sd_stripe_secret_key', '');
+    }
+
+    private static function get_stripe_webhook_secret(): string {
+        if (defined('SD_FRONT_STRIPE_WEBHOOK_SECRET') && SD_FRONT_STRIPE_WEBHOOK_SECRET !== '') {
+            return SD_FRONT_STRIPE_WEBHOOK_SECRET;
+        }
+
+        return (string) get_option('sd_stripe_webhook_secret', '');
+    }
+
     private static function build_runtime_prospect_contract(int $prospect_post_id): array {
         return [
             'prospect_id'            => (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true),
