@@ -1002,6 +1002,66 @@ body.page .request-access-form button:hover {
   margin-top: 24px;
 }
 
+.sd-front-container {
+    max-width: 640px;
+    margin: 60px auto;
+    padding: 20px;
+    text-align: center;
+}
+
+.sd-front-headline {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.sd-front-body {
+    font-size: 16px;
+    color: #555;
+}
+
+.sd-front-progress {
+    display: flex;
+    justify-content: space-between;
+    margin: 30px 0;
+    font-size: 13px;
+}
+
+.sd-step {
+    flex: 1;
+    padding: 10px;
+    border-bottom: 2px solid #ddd;
+}
+
+.sd-step.is-active {
+    border-color: #0073aa;
+    font-weight: bold;
+}
+
+.sd-step.is-complete {
+    border-color: #2ecc71;
+}
+
+.sd-front-actions {
+    margin-top: 20px;
+}
+
+.sd-front-btn {
+    display: inline-block;
+    padding: 12px 20px;
+    margin: 5px;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.sd-front-btn--primary {
+    background: #0073aa;
+    color: #fff;
+}
+
+.sd-front-btn--secondary {
+    background: #eee;
+    color: #333;
+}
 /* =====================================
    07. LEGACY / SUPPORTING UTILITY CLASSES
    ===================================== */
