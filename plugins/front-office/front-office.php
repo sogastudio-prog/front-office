@@ -532,6 +532,66 @@ final class SD_Front_Office_Scaffold {
         return new WP_REST_Response(['status' => 'ok'], 200);
     }
 
+    public static function ensure_stripe_account(int $prospect_post_id): string {
+
+        $existing = get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
+
+        if (!empty($existing)) {
+            return $existing;
+        }
+
+        if (!class_exists('\\Stripe\\Stripe')) {
+            throw new Exception('Stripe SDK not loaded');
+        }
+
+        \Stripe\Stripe::setApiKey(get_option('sd_stripe_secret_key'));
+
+        $email = get_post_meta($prospect_post_id, 'sd_email_normalized', true);
+
+        $account = \Stripe\Account::create([
+            'type' => 'express',
+            'email' => $email,
+            'capabilities' => [
+                'card_payments' => ['requested' => true],
+                'transfers' => ['requested' => true],
+            ],
+            'metadata' => [
+                'prospect_post_id' => (string)$prospect_post_id,
+                'prospect_token'   => get_post_meta($prospect_post_id, 'sd_prospect_token', true),
+            ],
+        ]);
+
+        update_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, $account->id);
+        update_post_meta($prospect_post_id, 'sd_stripe_onboarding_status', 'ACCOUNT_CREATED');
+
+        return $account->id;
+    }
+
+    public static function create_stripe_onboarding_link(int $prospect_post_id): string {
+
+        \Stripe\Stripe::setApiKey(get_option('sd_stripe_secret_key'));
+
+        $account_id = get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
+
+        if (empty($account_id)) {
+            throw new Exception('Missing Stripe account id');
+        }
+
+        $token = get_post_meta($prospect_post_id, 'sd_prospect_token', true);
+
+        $link = \Stripe\AccountLink::create([
+            'account' => $account_id,
+            'refresh_url' => home_url("/prospect/{$token}?refresh=1"),
+            'return_url'  => home_url("/prospect/{$token}?return=1"),
+            'type' => 'account_onboarding',
+        ]);
+
+        update_post_meta($prospect_post_id, 'sd_stripe_onboarding_url', $link->url);
+        update_post_meta($prospect_post_id, 'sd_stripe_onboarding_expires', $link->expires_at);
+
+        return $link->url;
+    }
+
     private static function handle_stripe_account_updated($account, string $event_id = ''): void {
         if (!is_object($account) || empty($account->id)) {
             error_log('SD Front Office: account.updated missing account object');
@@ -655,10 +715,6 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function register_shortcodes(): void {
-        add_shortcode('sdfo_start_form', [__CLASS__, 'shortcode_start_form']);
-        add_shortcode('sdfo_confirm_state', [__CLASS__, 'shortcode_confirm_state']);
-        add_shortcode('sdfo_connect_payouts_state', [__CLASS__, 'shortcode_connect_payouts_state']);
-        add_shortcode('sdfo_success_state', [__CLASS__, 'shortcode_success_state']);
         add_shortcode('sdfo_prospect_state', [__CLASS__, 'shortcode_prospect_state']);
     }
 
@@ -676,6 +732,24 @@ final class SD_Front_Office_Scaffold {
         $storefront_url = (string) get_post_meta($prospect_post_id, self::META_STOREFRONT_URL, true);
         $operations_entry_url = (string) get_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, true);
 
+        $resume_url = '';
+
+        if ($stripe_account_id !== '' && !in_array($stripe_state, ['payments_enabled', 'PAYMENTS_ENABLED'], true)) {
+            $expires = (int) get_post_meta($prospect_post_id, 'sd_stripe_onboarding_expires', true);
+            $onboarding_url = (string) get_post_meta($prospect_post_id, 'sd_stripe_onboarding_url', true);
+
+            if ($onboarding_url === '' || time() >= $expires) {
+                try {
+                    $onboarding_url = self::create_stripe_onboarding_link($prospect_post_id);
+                } catch (Throwable $e) {
+                    error_log('SD Front Office: failed to create onboarding link: ' . $e->getMessage());
+                    $onboarding_url = '';
+                }
+            }
+
+            $resume_url = $onboarding_url;
+        }
+
         ob_start();
         ?>
         <div class="sd-front-status">
@@ -688,6 +762,14 @@ final class SD_Front_Office_Scaffold {
             <p><strong>Stripe state:</strong> <?php echo esc_html($stripe_state ?: 'not_started'); ?></p>
             <p><strong>Stripe account:</strong> <?php echo esc_html($stripe_account_id ?: 'not_created'); ?></p>
         </div>
+
+        <?php if ($resume_url !== '') : ?>
+            <div class="sd-front-actions">
+                <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($resume_url); ?>">
+                    Resume setup
+                </a>
+            </div>
+        <?php endif; ?>
 
         <?php if ($storefront_url !== '') : ?>
             <div class="sd-front-actions">
@@ -878,12 +960,12 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function register_rest_routes(): void {
-    register_rest_route('wp-json/sd/v1', '/stripe-webhook', [
-        'methods'             => 'POST',
-        'callback'            => [__CLASS__, 'handle_stripe_webhook'],
-        'permission_callback' => '__return_true',
-    ]);
-}
+        register_rest_route('wp-json/sd/v1', '/stripe-webhook', [
+            'methods'             => 'POST',
+            'callback'            => [__CLASS__, 'handle_stripe_webhook'],
+            'permission_callback' => '__return_true',
+        ]);
+    }
 
     private static function is_editor_request(): bool {
         if (is_admin()) {
