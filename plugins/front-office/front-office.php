@@ -952,7 +952,7 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function register_rest_routes(): void {
-        register_rest_route('wp-json/sd/v1', '/stripe-webhook', [
+        register_rest_route('sd/v1', '/stripe-webhook', [
             'methods'             => 'POST',
             'callback'            => [__CLASS__, 'handle_stripe_webhook'],
             'permission_callback' => '__return_true',
