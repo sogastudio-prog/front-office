@@ -34,10 +34,6 @@ final class SD_Front_Office_Scaffold {
     private const SUCCESS_PAGE_SLUG  = 'request-received';
     private const REST_NAMESPACE = 'sd/v1';
     private const STRIPE_API_BASE = 'https://api.stripe.com/v1';
-    private const PAGE_SLUG_START            = 'start';
-    private const PAGE_SLUG_CONFIRM          = 'confirm';
-    private const PAGE_SLUG_CONNECT_PAYOUTS  = 'connect-payouts';
-    private const PAGE_SLUG_SUCCESS          = 'success';
 
     private const META_PUBLIC_KEY            = 'sd_public_key'; // legacy
     private const META_ACTIVATION_STATE      = 'sd_activation_state';
@@ -49,9 +45,6 @@ final class SD_Front_Office_Scaffold {
     private const PAGE_SLUG_PROSPECT        = 'prospect';
     private const META_STRIPE_LAST_REFRESH_URL = 'sd_stripe_last_refresh_url';
     private const META_STRIPE_LAST_RETURN_URL  = 'sd_stripe_last_return_url';
-
-    private const ACTION_START               = 'sdfo_start';
-    private const ACTION_START_PAYOUTS       = 'sdfo_start_payouts';
 
     private const META_STRIPE_ACCOUNT_ID    = 'sd_stripe_account_id';
     private const META_STRIPE_STATE         = 'sd_stripe_state';
@@ -84,11 +77,6 @@ final class SD_Front_Office_Scaffold {
         add_action('admin_head-post.php', [__CLASS__, 'inject_prospect_debug_admin_css']);
         add_action('admin_head-post-new.php', [__CLASS__, 'inject_prospect_debug_admin_css']);
 
-        add_action('admin_post_nopriv_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
-        add_action('admin_post_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
-
-        add_action('admin_post_nopriv_' . self::ACTION_START_PAYOUTS, [__CLASS__, 'handle_start_payouts']);
-        add_action('admin_post_' . self::ACTION_START_PAYOUTS, [__CLASS__, 'handle_start_payouts']);
         if (!is_admin()) {
             add_filter('wpcf7_feedback_response', [__CLASS__, 'inject_cf7_redirect'], 10, 2);
         }
@@ -1043,14 +1031,6 @@ final class SD_Front_Office_Scaffold {
             return $post_id;
         }
 
-        // Temporary legacy fallback
-        $legacy_key = self::get_public_key_from_request();
-        $legacy_post_id = self::get_prospect_post_id_by_public_key($legacy_key);
-
-        if ($legacy_post_id > 0) {
-            return $legacy_post_id;
-        }
-
         wp_safe_redirect(home_url('/' . self::PAGE_SLUG_START . '/'));
         exit;
     }
@@ -1122,13 +1102,6 @@ final class SD_Front_Office_Scaffold {
         return [
             'prospect_id' => $prospect_id,
             'prospect_token' => (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true),
-            'activation_state' => $state,
-            'storefront_url' => $storefront_url,
-            'operations_entry_url' => $operations_entry_url,
-        ];
-
-        return [
-            'prospect_id' => $prospect_id,
             'activation_state' => $state,
             'storefront_url' => $storefront_url,
             'operations_entry_url' => $operations_entry_url,
