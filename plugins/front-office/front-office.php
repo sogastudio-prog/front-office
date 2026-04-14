@@ -593,16 +593,8 @@ final class SD_Front_Office_Scaffold {
             return $post_id;
         }
 
-        // Temporary legacy fallback
-        $legacy_key = self::get_public_key_from_request();
-        $legacy_post_id = self::get_prospect_post_id_by_public_key($legacy_key);
-
-        if ($legacy_post_id > 0) {
-            return $legacy_post_id;
-        }
-
-        wp_safe_redirect(home_url('/' . self::PAGE_SLUG_START . '/'));
-        exit;
+        // hard fail — no redirect dependency on pages
+        wp_die('Invalid or expired link.');
     }
 
     private static function ensure_prospect_token(int $prospect_post_id): string {
@@ -644,18 +636,6 @@ final class SD_Front_Office_Scaffold {
         // shared service placeholder
         // this is where the proven CF7-origin Stripe creation/bootstrap logic belongs
         return [];
-    }
-
-    private static function require_prospect_post_id_from_request(): int {
-        $public_key = self::get_public_key_from_request();
-        $post_id = self::get_prospect_post_id_by_public_key($public_key);
-
-        if ($post_id <= 0) {
-            wp_safe_redirect(home_url('/' . self::PAGE_SLUG_START . '/'));
-            exit;
-        }
-
-        return $post_id;
     }
 
     private static function get_prospect_url_by_token(string $token): string {
