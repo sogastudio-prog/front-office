@@ -72,14 +72,6 @@ final class SD_Front_Office_Scaffold {
             SD_Front_Office_Admin::bootstrap();
         }
 
-        add_action('rest_api_init', function () {
-            register_rest_route('wp-json/sd/v1', '/stripe-webhook', [
-                'methods'  => 'POST',
-                'callback' => ['SD_Front_Office_Scaffold', 'handle_stripe_webhook'],
-                'permission_callback' => '__return_true',
-            ]);
-        });
-
         add_action('wpcf7_before_send_mail', [__CLASS__, 'handle_cf7_submission']);
         add_action('save_post_sd_prospect', [__CLASS__, 'ensure_prospect_defaults'], 10, 3);
         add_action('save_post_sd_tenant', [__CLASS__, 'ensure_tenant_defaults'], 10, 3);
