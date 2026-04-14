@@ -455,7 +455,7 @@ final class SD_Front_Office_Admin {
         return trim(print_r($value, true));
     }
 
-    private static function apply_admin_filters(WP_Query $query): void {
+    public static function apply_admin_filters(WP_Query $query): void {
         if (!is_admin() || !$query->is_main_query()) {
             return;
         }
