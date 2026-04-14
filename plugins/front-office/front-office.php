@@ -805,6 +805,38 @@ final class SD_Front_Office_Scaffold {
         return 0;
     }
 
+    private static function is_invitation_required(): bool {
+        return (bool) get_option('sd_invitation_required', 0);
+    }
+
+    private static function evaluate_invitation_code(string $code): array {
+        $code = sanitize_text_field(trim($code));
+
+        if ($code === '') {
+            return [
+                'ok' => false,
+                'status' => 'missing',
+                'code' => '',
+            ];
+        }
+
+        $valid_codes = (array) get_option('sd_valid_invitation_codes', []);
+
+        if (in_array($code, $valid_codes, true)) {
+            return [
+                'ok' => true,
+                'status' => 'valid',
+                'code' => $code,
+            ];
+        }
+
+        return [
+            'ok' => false,
+            'status' => 'invalid',
+            'code' => $code,
+        ];
+    }
+
     private static function get_activation_state(int $prospect_post_id): string {
         $state = (string) get_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, true);
 
