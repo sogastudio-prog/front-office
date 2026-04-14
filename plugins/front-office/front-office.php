@@ -728,6 +728,15 @@ final class SD_Front_Office_Scaffold {
 
         $resume_url = '';
 
+        if ($stripe_account_id === '') {
+            try {
+                self::ensure_stripe_account($prospect_post_id);
+                $resume_url = self::create_stripe_onboarding_link($prospect_post_id);
+            } catch (Throwable $e) {
+                error_log('Stripe bootstrap failed: ' . $e->getMessage());
+            }
+        }
+
         if ($stripe_account_id !== '' && !in_array($stripe_state, ['payments_enabled', 'PAYMENTS_ENABLED'], true)) {
             $expires = (int) get_post_meta($prospect_post_id, 'sd_stripe_onboarding_expires', true);
             $onboarding_url = (string) get_post_meta($prospect_post_id, 'sd_stripe_onboarding_url', true);
@@ -906,51 +915,6 @@ final class SD_Front_Office_Scaffold {
             'storefront_url' => $storefront_url,
             'operations_entry_url' => $operations_entry_url,
         ];
-    }
-
-    public static function shortcode_start_form(): string {
-        if (self::is_editor_request()) {
-            return '<div class="sd-front-placeholder">SOLODRIVE.PRO Start form block</div>';
-        }
-
-        $action_url = add_query_arg('action', self::ACTION_START, admin_url('admin-post.php'));
-
-        ob_start();
-        ?>
-        <form class="sd-front-form" method="post" action="<?php echo esc_url($action_url); ?>">
-            <?php wp_nonce_field('sdfo_start_submit', 'sdfo_nonce'); ?>
-
-            <div class="sd-front-field">
-                <label for="sd-name">Name</label>
-                <input id="sd-name" name="name" type="text" required>
-            </div>
-
-            <div class="sd-front-field">
-                <label for="sd-email">Email</label>
-                <input id="sd-email" name="email" type="email" required>
-            </div>
-
-            <div class="sd-front-field">
-                <label for="sd-mobile">Mobile</label>
-                <input id="sd-mobile" name="mobile" type="tel" required>
-            </div>
-
-            <div class="sd-front-field">
-                <label for="sd-business-name">Business / display name</label>
-                <input id="sd-business-name" name="business_display_name" type="text" required>
-            </div>
-
-            <div class="sd-front-field">
-                <label for="sd-service-area">Service area (optional)</label>
-                <input id="sd-service-area" name="service_area" type="text">
-            </div>
-
-            <div class="sd-front-form__actions">
-                <button class="sd-front-btn sd-front-btn--primary" type="submit">Continue</button>
-            </div>
-        </form>
-        <?php
-        return (string) ob_get_clean();
     }
 
     public static function register_rest_routes(): void {
