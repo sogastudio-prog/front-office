@@ -1165,6 +1165,76 @@ final class SD_Front_Office_Scaffold {
         return self::get_prospect_url_by_token($token);
     }
 
+    private static function get_public_prospect_state(int $prospect_post_id): string {
+        $activation_state = (string) get_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, true);
+        $stripe_state = (string) get_post_meta($prospect_post_id, self::META_STRIPE_STATE, true);
+        $storefront_url = (string) get_post_meta($prospect_post_id, self::META_STOREFRONT_URL, true);
+        $operations_entry_url = (string) get_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, true);
+
+        if ($storefront_url !== '' || $operations_entry_url !== '') {
+            return 'tenant_ready';
+        }
+
+        if ($activation_state === 'ACTIVATION_PROCESSING') {
+            return 'activation_processing';
+        }
+
+        if ($stripe_state === 'payments_enabled') {
+            return 'payments_enabled';
+        }
+
+        if ($stripe_state === 'payments_not_enabled') {
+            return 'payments_not_enabled';
+        }
+
+        if ($stripe_state === 'onboarding_started') {
+            return 'onboarding_started';
+        }
+
+        if ($stripe_state === 'account_created') {
+            return 'account_created';
+        }
+
+        return 'started';
+    }
+
+    private static function get_public_prospect_view_model(int $prospect_post_id): array {
+        $public_state = self::get_public_prospect_state($prospect_post_id);
+
+        return match ($public_state) {
+            'account_created', 'onboarding_started' => [
+                'headline' => 'Finish setting up payments',
+                'body' => 'Your account has been prepared. Complete Stripe onboarding to continue.',
+                'button_label' => 'Continue setup',
+            ],
+            'payments_not_enabled' => [
+                'headline' => 'Payments setup is still in progress',
+                'body' => 'Stripe is still reviewing or waiting on required information.',
+                'button_label' => 'Resume setup',
+            ],
+            'payments_enabled' => [
+                'headline' => 'Payments are connected',
+                'body' => 'Your account is connected. We are preparing the next step.',
+                'button_label' => '',
+            ],
+            'activation_processing' => [
+                'headline' => 'We are activating your account',
+                'body' => 'Your booking system is being prepared now.',
+                'button_label' => '',
+            ],
+            'tenant_ready' => [
+                'headline' => 'Your lane is ready',
+                'body' => 'Your booking page and operations access are ready.',
+                'button_label' => '',
+            ],
+            default => [
+                'headline' => 'We received your request',
+                'body' => 'Your setup page is ready. The next step is connecting payments.',
+                'button_label' => '',
+            ],
+        };
+    }
+
     private static function map_public_status_label(string $state): string {
         return match ($state) {
             'STARTED' => 'Started',
