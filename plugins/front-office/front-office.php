@@ -887,8 +887,23 @@ final class SD_Front_Office_Scaffold {
 
             <div class="sd-front-progress">
                 <div class="sd-step <?php echo $public_state !== 'started' ? 'is-complete' : 'is-active'; ?>">Request</div>
-                <div class="sd-step <?php echo in_array($public_state, ['account_created','onboarding_started','payments_not_enabled','payments_enabled','activation_processing','tenant_ready']) ? 'is-active' : ''; ?>">Payments</div>
-                <div class="sd-step <?php echo in_array($public_state, ['activation_processing','tenant_ready']) ? 'is-active' : ''; ?>">Activation</div>
+
+                <div class="sd-step <?php
+                    echo in_array($public_state, ['payments_enabled', 'activation_processing', 'tenant_ready'], true)
+                        ? 'is-complete'
+                        : (in_array($public_state, ['account_created','onboarding_started','payments_not_enabled'], true) ? 'is-active' : '');
+                ?>">
+                    Payments
+                </div>
+
+                <div class="sd-step <?php
+                    echo $public_state === 'tenant_ready'
+                        ? 'is-complete'
+                        : (in_array($public_state, ['activation_processing', 'payments_enabled'], true) ? 'is-active' : '');
+                ?>">
+                    Activation
+                </div>
+
                 <div class="sd-step <?php echo $public_state === 'tenant_ready' ? 'is-complete' : ''; ?>">Ready</div>
             </div>
 
