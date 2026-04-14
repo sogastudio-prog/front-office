@@ -727,17 +727,18 @@ final class SD_Front_Office_Scaffold {
         $operations_entry_url = (string) get_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, true);
 
         $resume_url = '';
+        $setup_label = 'Resume setup';
 
         if ($stripe_account_id === '') {
             try {
-                self::ensure_stripe_account($prospect_post_id);
+                $stripe_account_id = self::ensure_stripe_account($prospect_post_id);
                 $resume_url = self::create_stripe_onboarding_link($prospect_post_id);
+                $stripe_state = (string) get_post_meta($prospect_post_id, self::META_STRIPE_STATE, true);
+                $setup_label = 'Start setup';
             } catch (Throwable $e) {
                 error_log('Stripe bootstrap failed: ' . $e->getMessage());
             }
-        }
-
-        if ($stripe_account_id !== '' && !in_array($stripe_state, ['payments_enabled', 'PAYMENTS_ENABLED'], true)) {
+        } elseif (!in_array($stripe_state, ['payments_enabled', 'PAYMENTS_ENABLED'], true)) {
             $expires = (int) get_post_meta($prospect_post_id, 'sd_stripe_onboarding_expires', true);
             $onboarding_url = (string) get_post_meta($prospect_post_id, 'sd_stripe_onboarding_url', true);
 
@@ -769,7 +770,7 @@ final class SD_Front_Office_Scaffold {
         <?php if ($resume_url !== '') : ?>
             <div class="sd-front-actions">
                 <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($resume_url); ?>">
-                    Resume setup
+                    <?php echo esc_html($setup_label); ?>
                 </a>
             </div>
         <?php endif; ?>
