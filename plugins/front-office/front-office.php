@@ -34,7 +34,7 @@ final class SD_Front_Office_Scaffold {
     private const REQUEST_ACCESS_FORM_ID = 33;
     private const INVITE_READY_FORM_ID   = 387;
     private const SUCCESS_PAGE_SLUG  = 'request-received';
-    private const REST_NAMESPACE = 'wp-json/sd/v1';
+    private const REST_NAMESPACE = 'sd/v1';
     private const STRIPE_API_BASE = 'https://api.stripe.com/v1';
     private const PAGE_SLUG_START            = 'start';
     private const PAGE_SLUG_CONFIRM          = 'confirm';
@@ -555,6 +555,7 @@ final class SD_Front_Office_Scaffold {
 
         update_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, $account->id);
         update_post_meta($prospect_post_id, 'sd_stripe_onboarding_status', 'ACCOUNT_CREATED');
+        update_post_meta($prospect_post_id, self::META_STRIPE_STATE, 'account_created');
 
         return $account->id;
     }
@@ -580,6 +581,7 @@ final class SD_Front_Office_Scaffold {
 
         update_post_meta($prospect_post_id, 'sd_stripe_onboarding_url', $link->url);
         update_post_meta($prospect_post_id, 'sd_stripe_onboarding_expires', $link->expires_at);
+        update_post_meta($prospect_post_id, self::META_STRIPE_STATE, 'onboarding_started');
 
         return $link->url;
     }
