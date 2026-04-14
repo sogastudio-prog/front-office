@@ -72,6 +72,14 @@ final class SD_Front_Office_Scaffold {
             SD_Front_Office_Admin::bootstrap();
         }
 
+        add_action('rest_api_init', function () {
+            register_rest_route('sd/v1', '/stripe-webhook', [
+                'methods'  => 'POST',
+                'callback' => ['SD_Front_Office_Scaffold', 'handle_stripe_webhook'],
+                'permission_callback' => '__return_true',
+            ]);
+        });
+
         add_action('wpcf7_before_send_mail', [__CLASS__, 'handle_cf7_submission']);
         add_action('save_post_sd_prospect', [__CLASS__, 'ensure_prospect_defaults'], 10, 3);
         add_action('save_post_sd_tenant', [__CLASS__, 'ensure_tenant_defaults'], 10, 3);
@@ -479,12 +487,86 @@ final class SD_Front_Office_Scaffold {
         return $response;
     }
 
+    public static function handle_stripe_webhook($request) {
+
+        $payload = $request->get_body();
+        $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
+        $endpoint_secret = get_option('sd_stripe_webhook_secret');
+
+        try {
+            $event = \Stripe\Webhook::constructEvent(
+                $payload,
+                $sig_header,
+                $endpoint_secret
+            );
+        } catch (\Throwable $e) {
+            error_log('Stripe webhook signature failed: ' . $e->getMessage());
+            return new \WP_REST_Response(['error' => 'invalid signature'], 400);
+        }
+
+        // Idempotency (important)
+        $event_id = $event->id;
+        if (self::has_processed_event($event_id)) {
+            return new \WP_REST_Response(['status' => 'duplicate'], 200);
+        }
+
+        switch ($event->type) {
+
+            case 'account.updated':
+                self::handle_account_updated($event->data->object);
+                break;
+
+            default:
+                // ignore noise
+                break;
+        }
+
+        self::mark_event_processed($event_id);
+
+        return new \WP_REST_Response(['status' => 'ok'], 200);
+    }
+
+    private static function handle_account_updated($account) {
+
+        $acct_id = $account->id;
+
+        $prospect_id = self::find_prospect_by_stripe_account_id($acct_id);
+
+        if ($prospect_id <= 0) {
+            error_log("Stripe webhook: no prospect for account {$acct_id}");
+            return;
+        }
+
+        update_post_meta($prospect_id, 'sd_stripe_charges_enabled', $account->charges_enabled ? '1' : '0');
+        update_post_meta($prospect_id, 'sd_stripe_payouts_enabled', $account->payouts_enabled ? '1' : '0');
+        update_post_meta($prospect_id, 'sd_stripe_details_submitted', $account->details_submitted ? '1' : '0');
+
+        update_post_meta($prospect_id, 'sd_stripe_requirements_currently_due_json', wp_json_encode($account->requirements->currently_due ?? []));
+        update_post_meta($prospect_id, 'sd_stripe_requirements_past_due_json', wp_json_encode($account->requirements->past_due ?? []));
+        update_post_meta($prospect_id, 'sd_stripe_disabled_reason', $account->requirements->disabled_reason ?? '');
+
+        update_post_meta($prospect_id, 'sd_stripe_status_snapshot_json', wp_json_encode($account));
+
+        // Promotion trigger (your locked rule)
+        if (!empty($account->charges_enabled)) {
+            update_post_meta($prospect_id, 'sd_stripe_onboarding_status', 'PAYMENTS_ENABLED');
+        }
+    }
+
     private static function is_request_access_form($contact_form, array $posted_data): bool {
         if (!is_object($contact_form) || !method_exists($contact_form, 'id')) {
             return false;
         }
 
         return (int) $contact_form->id() === self::REQUEST_ACCESS_FORM_ID;
+    }
+
+    private static function has_processed_event(string $event_id): bool {
+        return (bool) get_option('sd_stripe_event_' . $event_id);
+    }
+
+    private static function mark_event_processed(string $event_id): void {
+        update_option('sd_stripe_event_' . $event_id, 1, false);
     }
 
     public static function register_shortcodes(): void {
