@@ -27,6 +27,10 @@ if (!defined('ABSPATH')) {
 }
 
 require_once plugin_dir_path(__FILE__) . 'includes/admin/admin-front-office.php';
+$front_office_autoload = plugin_dir_path(__FILE__) . 'vendor/autoload.php';
+if (file_exists($front_office_autoload)) {
+    require_once $front_office_autoload;
+}
 
 final class SD_Front_Office_Scaffold {
     private const PROSPECT_POST_TYPE = 'sd_prospect';
