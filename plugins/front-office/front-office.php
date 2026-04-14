@@ -762,7 +762,12 @@ final class SD_Front_Office_Scaffold {
         }
 
         $payload = self::normalize_payload($posted_data);
-        //      $payload['invitation'] = self::evaluate_invitation_code($payload['invitation_code']);
+        $payload['invitation'] = self::evaluate_invitation_code($payload['invitation_code']);
+
+        if (self::is_invitation_required() && empty($payload['invitation']['ok'])) {
+            error_log('SD Front Office: invitation required and not valid');
+            return;
+        }
 
         error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
 
@@ -823,7 +828,9 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_driving_status', (string) ($payload['driving_status'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_weekly_gross', (string) ($payload['weekly_gross'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_invitation_code', (string) ($payload['invitation_code'] ?? ''));
-        update_post_meta($prospect_post_id, 'sd_invitation_status', 'none');
+        $invitation = $payload['invitation'] ?? ['status' => 'none', 'code' => ''];
+        update_post_meta($prospect_post_id, 'sd_invitation_code', (string) ($invitation['code'] ?? ''));
+        update_post_meta($prospect_post_id, 'sd_invitation_status', (string) ($invitation['status'] ?? 'none'));
         update_post_meta($prospect_post_id, 'sd_review_status', 'new');
         update_post_meta($prospect_post_id, 'sd_last_intake_channel', 'cf7');
         update_post_meta($prospect_post_id, 'sd_last_submission_at_gmt', (string) ($payload['submitted_at_gmt'] ?? current_time('mysql', true)));
@@ -852,7 +859,9 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_repeat_clients', (string) ($payload['repeat_clients'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_driving_status', (string) ($payload['driving_status'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_weekly_gross', (string) ($payload['weekly_gross'] ?? ''));
-        update_post_meta($prospect_post_id, 'sd_invitation_code', (string) ($payload['invitation_code'] ?? ''));
+        $invitation = $payload['invitation'] ?? ['status' => 'none', 'code' => ''];
+        update_post_meta($prospect_post_id, 'sd_invitation_code', (string) ($invitation['code'] ?? ''));
+        update_post_meta($prospect_post_id, 'sd_invitation_status', (string) ($invitation['status'] ?? 'none'));
         update_post_meta($prospect_post_id, 'sd_last_intake_channel', 'cf7');
         update_post_meta($prospect_post_id, 'sd_last_submission_at_gmt', (string) ($payload['submitted_at_gmt'] ?? current_time('mysql', true)));
         update_post_meta($prospect_post_id, 'sd_last_submission_payload_json', (string) ($payload['raw_payload_json'] ?? '{}'));
@@ -868,7 +877,16 @@ final class SD_Front_Office_Scaffold {
 
     public static function inject_cf7_redirect($response, $result) {
         error_log('SD Front Office: inject_cf7_redirect fired');
+        if (self::is_invitation_required()) {
+            $payload = self::normalize_payload($posted_data);
+            $invitation = self::evaluate_invitation_code($payload['invitation_code']);
 
+            if (empty($invitation['ok'])) {
+                $response['status'] = 'validation_failed';
+                $response['message'] = 'An invitation code is required.';
+                return $response;
+            }
+        }
         if (!is_array($response)) {
             $response = [];
         }
@@ -1308,6 +1326,40 @@ final class SD_Front_Office_Scaffold {
             'submission_count'  => 1,
             'submitted_at_gmt'  => current_time('mysql', true),
             'raw_payload_json'  => wp_json_encode($posted_data),
+        ];
+    }
+
+    private static function is_invitation_required(): bool {
+        return (bool) get_option('sd_invitation_required', 0);
+    }
+
+    private static function evaluate_invitation_code(string $code): array {
+        $code = sanitize_text_field(trim($code));
+
+        if ($code === '') {
+            return [
+                'ok' => false,
+                'status' => 'missing',
+                'code' => '',
+            ];
+        }
+
+        // Placeholder rule for now.
+        // Replace with real lookup later.
+        $valid_codes = (array) get_option('sd_valid_invitation_codes', []);
+
+        if (in_array($code, $valid_codes, true)) {
+            return [
+                'ok' => true,
+                'status' => 'valid',
+                'code' => $code,
+            ];
+        }
+
+        return [
+            'ok' => false,
+            'status' => 'invalid',
+            'code' => $code,
         ];
     }
 
