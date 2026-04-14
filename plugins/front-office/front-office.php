@@ -827,7 +827,6 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_repeat_clients', (string) ($payload['repeat_clients'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_driving_status', (string) ($payload['driving_status'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_weekly_gross', (string) ($payload['weekly_gross'] ?? ''));
-        update_post_meta($prospect_post_id, 'sd_invitation_code', (string) ($payload['invitation_code'] ?? ''));
         $invitation = $payload['invitation'] ?? ['status' => 'none', 'code' => ''];
         update_post_meta($prospect_post_id, 'sd_invitation_code', (string) ($invitation['code'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_invitation_status', (string) ($invitation['status'] ?? 'none'));
@@ -877,16 +876,7 @@ final class SD_Front_Office_Scaffold {
 
     public static function inject_cf7_redirect($response, $result) {
         error_log('SD Front Office: inject_cf7_redirect fired');
-        if (self::is_invitation_required()) {
-            $payload = self::normalize_payload($posted_data);
-            $invitation = self::evaluate_invitation_code($payload['invitation_code']);
 
-            if (empty($invitation['ok'])) {
-                $response['status'] = 'validation_failed';
-                $response['message'] = 'An invitation code is required.';
-                return $response;
-            }
-        }
         if (!is_array($response)) {
             $response = [];
         }
@@ -917,6 +907,17 @@ final class SD_Front_Office_Scaffold {
         if (!is_array($posted_data)) {
             error_log('SD Front Office: inject_cf7_redirect posted_data not array');
             return $response;
+        }
+
+                if (self::is_invitation_required()) {
+            $payload = self::normalize_payload($posted_data);
+            $invitation = self::evaluate_invitation_code($payload['invitation_code']);
+
+            if (empty($invitation['ok'])) {
+                $response['status'] = 'validation_failed';
+                $response['message'] = 'An invitation code is required.';
+                return $response;
+            }
         }
 
         $payload = self::normalize_payload($posted_data);
