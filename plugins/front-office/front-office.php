@@ -68,16 +68,13 @@ final class SD_Front_Office_Scaffold {
         add_filter('query_vars', [__CLASS__, 'register_query_vars']);
         add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
 
-        if (is_admin()) {
+        if (is_admin() && class_exists('SD_Front_Office_Admin')) {
             SD_Front_Office_Admin::bootstrap();
         }
 
         add_action('wpcf7_before_send_mail', [__CLASS__, 'handle_cf7_submission']);
         add_action('save_post_sd_prospect', [__CLASS__, 'ensure_prospect_defaults'], 10, 3);
         add_action('save_post_sd_tenant', [__CLASS__, 'ensure_tenant_defaults'], 10, 3);
-        add_action('add_meta_boxes_' . self::PROSPECT_POST_TYPE, [__CLASS__, 'register_prospect_debug_meta_boxes']);
-        add_action('admin_head-post.php', [__CLASS__, 'inject_prospect_debug_admin_css']);
-        add_action('admin_head-post-new.php', [__CLASS__, 'inject_prospect_debug_admin_css']);
 
         add_action('admin_post_nopriv_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
         add_action('admin_post_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
@@ -273,41 +270,6 @@ final class SD_Front_Office_Scaffold {
         return sanitize_text_field((string)$value);
     }
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
     public static function handle_cf7_submission($contact_form): void {
         error_log('SD Front Office: handler fired');
 
@@ -454,16 +416,11 @@ final class SD_Front_Office_Scaffold {
         return $prospect_post_id;
     }
 
-    public static function inject_cf7_redirect($response, $contact_form) {
+    public static function inject_cf7_redirect($response, $result) {
         error_log('SD Front Office: inject_cf7_redirect fired');
 
         if (!is_array($response)) {
             $response = [];
-        }
-
-        if (!self::is_request_access_form($contact_form, [])) {
-            error_log('SD Front Office: inject_cf7_redirect skipped, wrong form');
-            return $response;
         }
 
         if (!class_exists('WPCF7_Submission') || !method_exists('WPCF7_Submission', 'get_instance')) {
@@ -477,10 +434,32 @@ final class SD_Front_Office_Scaffold {
             return $response;
         }
 
+        $contact_form = $submission->get_contact_form();
+        if (!is_object($contact_form) || !method_exists($contact_form, 'id')) {
+            error_log('SD Front Office: inject_cf7_redirect no contact form on submission');
+            return $response;
+        }
+
+        if ((int) $contact_form->id() !== self::REQUEST_ACCESS_FORM_ID) {
+            error_log('SD Front Office: inject_cf7_redirect skipped, wrong form id = ' . $contact_form->id());
+            return $response;
+        }
+
         $posted_data = $submission->get_posted_data();
         if (!is_array($posted_data)) {
             error_log('SD Front Office: inject_cf7_redirect posted_data not array');
             return $response;
+        }
+
+        if (self::is_invitation_required()) {
+            $payload = self::normalize_payload($posted_data);
+            $invitation = self::evaluate_invitation_code($payload['invitation_code']);
+
+            if (empty($invitation['ok'])) {
+                $response['status'] = 'validation_failed';
+                $response['message'] = 'An invitation code is required.';
+                return $response;
+            }
         }
 
         $payload = self::normalize_payload($posted_data);

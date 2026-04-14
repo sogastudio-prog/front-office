@@ -27,6 +27,10 @@ final class SD_Front_Office_Admin {
         add_action('manage_' . self::TENANT_POST_TYPE . '_posts_custom_column', [__CLASS__, 'render_tenant_column'], 10, 2);
         add_filter('manage_edit-' . self::TENANT_POST_TYPE . '_sortable_columns', [__CLASS__, 'tenant_sortable_columns']);
 
+        add_action('add_meta_boxes_' . self::PROSPECT_POST_TYPE, [__CLASS__, 'register_prospect_debug_meta_boxes']);
+        add_action('admin_head-post.php', [__CLASS__, 'inject_prospect_debug_admin_css']);
+        add_action('admin_head-post-new.php', [__CLASS__, 'inject_prospect_debug_admin_css']);
+
         add_action('restrict_manage_posts', [__CLASS__, 'admin_filters']);
         add_action('pre_get_posts', [__CLASS__, 'apply_admin_filters']);
 
@@ -35,7 +39,7 @@ final class SD_Front_Office_Admin {
         add_action('admin_head-post-new.php', [__CLASS__, 'inject_prospect_debug_admin_css']);
     }
 
-public static function prospect_columns(array $columns): array {
+    public static function prospect_columns(array $columns): array {
         unset($columns['date']);
         return [
             'cb' => $columns['cb'] ?? '<input type="checkbox" />',
@@ -53,7 +57,7 @@ public static function prospect_columns(array $columns): array {
         ];
     }
 
-public static function tenant_columns(array $columns): array {
+    public static function tenant_columns(array $columns): array {
         unset($columns['date']);
         return [
             'cb' => $columns['cb'] ?? '<input type="checkbox" />',
@@ -70,7 +74,7 @@ public static function tenant_columns(array $columns): array {
         ];
     }
 
-public static function render_prospect_column(string $column, int $post_id): void {
+    public static function render_prospect_column(string $column, int $post_id): void {
         switch ($column) {
             case 'prospect_id':
                 echo esc_html((string) get_post_meta($post_id, 'sd_prospect_id', true));
@@ -107,7 +111,7 @@ public static function render_prospect_column(string $column, int $post_id): voi
         }
     }
 
-public static function render_tenant_column(string $column, int $post_id): void {
+    public static function render_tenant_column(string $column, int $post_id): void {
         switch ($column) {
             case 'tenant_id':
                 echo esc_html((string) get_post_meta($post_id, 'sd_tenant_id', true));
@@ -141,19 +145,19 @@ public static function render_tenant_column(string $column, int $post_id): void 
         }
     }
 
-public static function prospect_sortable_columns(array $columns): array {
+    public static function prospect_sortable_columns(array $columns): array {
         $columns['updated'] = 'updated';
         $columns['lifecycle'] = 'lifecycle';
         return $columns;
     }
 
-public static function tenant_sortable_columns(array $columns): array {
+    public static function tenant_sortable_columns(array $columns): array {
         $columns['updated'] = 'updated';
         $columns['status'] = 'status';
         return $columns;
     }
 
-public static function admin_filters(string $post_type): void {
+    public static function admin_filters(string $post_type): void {
         if ($post_type === self::PROSPECT_POST_TYPE) {
             self::render_select_filter('sd_lifecycle_stage', 'Lifecycle', [
                 'prospect' => 'Prospect',
@@ -201,7 +205,7 @@ public static function admin_filters(string $post_type): void {
         }
     }
 
-private static function render_select_filter(string $key, string $label, array $options): void {
+    private static function render_select_filter(string $key, string $label, array $options): void {
         $current = isset($_GET[$key]) ? sanitize_text_field(wp_unslash($_GET[$key])) : '';
         echo '<select name="' . esc_attr($key) . '">';
         echo '<option value="">' . esc_html($label) . '</option>';
@@ -211,7 +215,7 @@ private static function render_select_filter(string $key, string $label, array $
         echo '</select>';
     }
 
-public static function register_prospect_debug_meta_boxes(WP_Post $post): void {
+    public static function register_prospect_debug_meta_boxes(WP_Post $post): void {
         remove_meta_box('slugdiv', self::PROSPECT_POST_TYPE, 'normal');
 
         add_meta_box(
@@ -233,7 +237,7 @@ public static function register_prospect_debug_meta_boxes(WP_Post $post): void {
         );
     }
 
-public static function inject_prospect_debug_admin_css(): void {
+    public static function inject_prospect_debug_admin_css(): void {
         $screen = function_exists('get_current_screen') ? get_current_screen() : null;
         if (!$screen || $screen->post_type !== self::PROSPECT_POST_TYPE) {
             return;
@@ -272,7 +276,7 @@ public static function inject_prospect_debug_admin_css(): void {
             . '</style>';
     }
 
-public static function render_prospect_debug_panel(WP_Post $post): void {
+    public static function render_prospect_debug_panel(WP_Post $post): void {
         $post_id = (int) $post->ID;
         $all_meta = get_post_meta($post_id);
         $tenant_post_id = (int) get_post_meta($post_id, 'sd_promoted_to_tenant_post_id', true);
@@ -372,7 +376,7 @@ public static function render_prospect_debug_panel(WP_Post $post): void {
         echo '</div>';
     }
 
-public static function render_prospect_debug_tools(WP_Post $post): void {
+    public static function render_prospect_debug_tools(WP_Post $post): void {
         $post_id = (int) $post->ID;
         $badges = array_filter([
             (string) get_post_meta($post_id, 'sd_lifecycle_stage', true),
@@ -402,7 +406,7 @@ public static function render_prospect_debug_tools(WP_Post $post): void {
         echo '</ul>';
     }
 
-private static function render_debug_table(array $rows): void {
+    private static function render_debug_table(array $rows): void {
         echo '<table class="sd-debug-table"><tbody>';
         foreach ($rows as $label => $value) {
             echo '<tr>';
@@ -413,7 +417,7 @@ private static function render_debug_table(array $rows): void {
         echo '</tbody></table>';
     }
 
-private static function stringify_debug_value($value): string {
+    private static function stringify_debug_value($value): string {
         if (is_bool($value)) {
             return $value ? 'true' : 'false';
         }
@@ -426,7 +430,7 @@ private static function stringify_debug_value($value): string {
         return self::debug_export($value);
     }
 
-private static function normalize_meta_for_debug(array $all_meta): array {
+    private static function normalize_meta_for_debug(array $all_meta): array {
         $normalized = [];
 
         foreach ($all_meta as $key => $values) {
@@ -447,11 +451,11 @@ private static function normalize_meta_for_debug(array $all_meta): array {
         return $normalized;
     }
 
-private static function debug_export($value): string {
+    private static function debug_export($value): string {
         return trim(print_r($value, true));
     }
 
-public static function apply_admin_filters(WP_Query $query): void {
+    private static function apply_admin_filters(WP_Query $query): void {
         if (!is_admin() || !$query->is_main_query()) {
             return;
         }
