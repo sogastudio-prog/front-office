@@ -27,24 +27,25 @@ if (!defined('ABSPATH')) {
 }
 
 final class SD_Front_Office_Scaffold {
-    private const PROSPECT_POST_TYPE = 'sd_prospect';
-    private const TENANT_POST_TYPE   = 'sd_tenant';
-    private const REQUEST_ACCESS_FORM_ID = 33;
-    private const INVITE_READY_FORM_ID   = 387;
-    private const SUCCESS_PAGE_SLUG  = 'request-received';
-    private const REST_NAMESPACE = 'sd/v1';
-    private const STRIPE_API_BASE = 'https://api.stripe.com/v1';
+    private const PROSPECT_POST_TYPE        = 'sd_prospect';
+    private const TENANT_POST_TYPE          = 'sd_tenant';
+    private const REQUEST_ACCESS_FORM_ID    = 33;
+    private const INVITE_READY_FORM_ID      = 387;
+    private const SUCCESS_PAGE_SLUG         = 'request-received';
+    private const REST_NAMESPACE            = 'sd/v1';
+    private const STRIPE_API_BASE           = 'https://api.stripe.com/v1';
 
-    private const META_PUBLIC_KEY            = 'sd_public_key'; // legacy
-    private const META_ACTIVATION_STATE      = 'sd_activation_state';
-    private const META_STOREFRONT_URL        = 'sd_storefront_url';
-    private const META_OPERATIONS_ENTRY_URL  = 'sd_operations_entry_url';
-    private const META_BUSINESS_NAME         = 'sd_business_name';
-    private const META_SERVICE_AREA          = 'sd_service_area';
-    private const META_PROSPECT_TOKEN       = 'sd_prospect_token';
-    private const PAGE_SLUG_PROSPECT        = 'prospect';
-    private const META_STRIPE_LAST_REFRESH_URL = 'sd_stripe_last_refresh_url';
-    private const META_STRIPE_LAST_RETURN_URL  = 'sd_stripe_last_return_url';
+    private const META_PUBLIC_KEY               = 'sd_public_key'; // legacy
+    private const META_ACTIVATION_STATE         = 'sd_activation_state';
+    private const META_STOREFRONT_URL           = 'sd_storefront_url';
+    private const META_OPERATIONS_ENTRY_URL     = 'sd_operations_entry_url';
+    private const META_BUSINESS_NAME            = 'sd_business_name';
+    private const META_SERVICE_AREA             = 'sd_service_area';
+    private const META_PROSPECT_TOKEN           = 'sd_prospect_token';
+    private const PAGE_SLUG_PROSPECT            = 'prospect';
+    private const PAGE_SLUG_REQUEST_ACCESS      = 'request-access';
+    private const META_STRIPE_LAST_REFRESH_URL  = 'sd_stripe_last_refresh_url';
+    private const META_STRIPE_LAST_RETURN_URL   = 'sd_stripe_last_return_url';
 
     private const META_STRIPE_ACCOUNT_ID    = 'sd_stripe_account_id';
     private const META_STRIPE_STATE         = 'sd_stripe_state';
@@ -1031,7 +1032,7 @@ final class SD_Front_Office_Scaffold {
             return $post_id;
         }
 
-        wp_safe_redirect(home_url('/' . self::PAGE_SLUG_START . '/'));
+        wp_safe_redirect(home_url('/' . self::PAGE_SLUG_REQUEST_ACCESS . '/'));
         exit;
     }
 
@@ -1080,12 +1081,12 @@ final class SD_Front_Office_Scaffold {
         $public_key = self::get_public_key_from_request();
         $post_id = self::get_prospect_post_id_by_public_key($public_key);
 
-        if ($post_id <= 0) {
-            wp_safe_redirect(home_url('/' . self::PAGE_SLUG_START . '/'));
-            exit;
+        if ($post_id > 0) {
+            return $post_id;
         }
 
-        return $post_id;
+        wp_safe_redirect(home_url('/' . self::PAGE_SLUG_REQUEST_ACCESS . '/'));
+        exit;
     }
 
     private static function get_prospect_url_by_token(string $token): string {
