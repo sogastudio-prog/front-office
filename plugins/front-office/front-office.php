@@ -870,35 +870,55 @@ final class SD_Front_Office_Scaffold {
         }
 
         ob_start();
+        $view = self::get_public_prospect_view_model($prospect_post_id);
+        $public_state = self::get_public_prospect_state($prospect_post_id);
         ?>
-        <div class="sd-front-status">
-            <span class="sd-front-status__label">Status</span>
-            <strong class="sd-front-status__value"><?php echo esc_html(self::map_public_status_label($state)); ?></strong>
-        </div>
 
-        <div class="sd-front-card">
-            <p><strong>Prospect token:</strong> <?php echo esc_html($token); ?></p>
-            <p><strong>Stripe state:</strong> <?php echo esc_html($stripe_state ?: 'not_started'); ?></p>
-            <p><strong>Stripe account:</strong> <?php echo esc_html($stripe_account_id ?: 'not_created'); ?></p>
-        </div>
+        <div class="sd-front-container">
 
-        <?php if ($resume_url !== '') : ?>
-            <div class="sd-front-actions">
-                <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($resume_url); ?>">
-                    <?php echo esc_html($setup_label); ?>
-                </a>
+            <div class="sd-front-hero">
+                <h1 class="sd-front-headline">
+                    <?php echo esc_html($view['headline']); ?>
+                </h1>
+                <p class="sd-front-body">
+                    <?php echo esc_html($view['body']); ?>
+                </p>
             </div>
-        <?php endif; ?>
 
-        <?php if ($storefront_url !== '') : ?>
-            <div class="sd-front-actions">
-                <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($storefront_url); ?>">Open your booking page</a>
-                <?php if ($operations_entry_url !== '') : ?>
-                    <a class="sd-front-btn sd-front-btn--secondary" href="<?php echo esc_url($operations_entry_url); ?>">Log in to operations</a>
-                <?php endif; ?>
+            <div class="sd-front-progress">
+                <div class="sd-step <?php echo $public_state !== 'started' ? 'is-complete' : 'is-active'; ?>">Request</div>
+                <div class="sd-step <?php echo in_array($public_state, ['account_created','onboarding_started','payments_not_enabled','payments_enabled','activation_processing','tenant_ready']) ? 'is-active' : ''; ?>">Payments</div>
+                <div class="sd-step <?php echo in_array($public_state, ['activation_processing','tenant_ready']) ? 'is-active' : ''; ?>">Activation</div>
+                <div class="sd-step <?php echo $public_state === 'tenant_ready' ? 'is-complete' : ''; ?>">Ready</div>
             </div>
-        <?php endif; ?>
 
+            <?php if ($resume_url !== '' && $view['button_label'] !== '') : ?>
+                <div class="sd-front-actions">
+                    <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($resume_url); ?>">
+                        <?php echo esc_html($view['button_label']); ?>
+                    </a>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($storefront_url !== '') : ?>
+                <div class="sd-front-actions">
+                    <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($storefront_url); ?>">
+                        Open your booking page
+                    </a>
+
+                    <?php if ($operations_entry_url !== '') : ?>
+                        <a class="sd-front-btn sd-front-btn--secondary" href="<?php echo esc_url($operations_entry_url); ?>">
+                            Log in to operations
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="sd-front-footer">
+                <small>This page will update automatically as your setup progresses.</small>
+            </div>
+
+        </div>
         <?php
         return (string) ob_get_clean();
     }
