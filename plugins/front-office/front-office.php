@@ -675,6 +675,102 @@ final class SD_Front_Office_Scaffold {
         if ($charges_enabled) {
             update_post_meta($prospect_post_id, self::META_STRIPE_COMPLETED_GMT, current_time('mysql', true));
         }
+        if ($charges_enabled) {
+            self::maybe_promote_prospect_to_tenant($prospect_post_id);
+        }
+    }
+
+    private static function maybe_promote_prospect_to_tenant(int $prospect_post_id): void {
+        if ($prospect_post_id <= 0) {
+            return;
+        }
+
+        $existing_tenant_id = (string) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_id', true);
+        $existing_tenant_post_id = (int) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', true);
+
+        if ($existing_tenant_id !== '' || $existing_tenant_post_id > 0) {
+            return;
+        }
+
+        $stripe_account_id = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
+        if ($stripe_account_id === '') {
+            error_log('SD Front Office: promotion skipped, missing stripe account id for prospect_post_id=' . $prospect_post_id);
+            return;
+        }
+
+        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'ACTIVATION_PROCESSING');
+
+        $result = self::promote_prospect_to_tenant($prospect_post_id);
+
+        if (empty($result['ok'])) {
+            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'ACTIVATION_FAILED');
+            error_log('SD Front Office: promotion failed for prospect_post_id=' . $prospect_post_id . ' error=' . wp_json_encode($result));
+            return;
+        }
+
+        $tenant_id = (string) ($result['tenant_id'] ?? '');
+        $tenant_post_id = (int) ($result['tenant_post_id'] ?? 0);
+        $storefront_url = (string) ($result['storefront_url'] ?? '');
+        $operations_entry_url = (string) ($result['operations_entry_url'] ?? '');
+
+        if ($tenant_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_promoted_to_tenant_id', $tenant_id);
+        }
+
+        if ($tenant_post_id > 0) {
+            update_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', $tenant_post_id);
+        }
+
+        if ($storefront_url !== '') {
+            update_post_meta($prospect_post_id, self::META_STOREFRONT_URL, $storefront_url);
+        }
+
+        if ($operations_entry_url !== '') {
+            update_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, $operations_entry_url);
+        }
+
+        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'TENANT_READY');
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+    }
+
+    private static function promote_prospect_to_tenant(int $prospect_post_id): array {
+        $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
+        $prospect_token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
+        $full_name = (string) get_post_meta($prospect_post_id, 'sd_full_name', true);
+        $email = (string) get_post_meta($prospect_post_id, 'sd_email_raw', true);
+        $phone = (string) get_post_meta($prospect_post_id, 'sd_phone_raw', true);
+        $business_name = (string) get_post_meta($prospect_post_id, self::META_BUSINESS_NAME, true);
+        $service_area = (string) get_post_meta($prospect_post_id, self::META_SERVICE_AREA, true);
+        $city = (string) get_post_meta($prospect_post_id, 'sd_city', true);
+        $stripe_account_id = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
+        $stripe_state = (string) get_post_meta($prospect_post_id, self::META_STRIPE_STATE, true);
+        $billing_status = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
+        $stripe_customer_id = (string) get_post_meta($prospect_post_id, 'sd_stripe_customer_id', true);
+        $stripe_subscription_id = (string) get_post_meta($prospect_post_id, 'sd_stripe_subscription_id', true);
+
+        $payload = [
+            'prospect_id' => $prospect_id,
+            'prospect_post_id' => $prospect_post_id,
+            'prospect_token' => $prospect_token,
+            'full_name' => $full_name,
+            'email' => $email,
+            'phone' => $phone,
+            'business_display_name' => $business_name !== '' ? $business_name : $full_name,
+            'service_area' => $service_area !== '' ? $service_area : $city,
+            'stripe_account_id' => $stripe_account_id,
+            'stripe_state' => $stripe_state,
+            'billing_status' => $billing_status,
+            'stripe_customer_id' => $stripe_customer_id,
+            'stripe_subscription_id' => $stripe_subscription_id,
+        ];
+
+        $response = self::post_control_plane_endpoint('promote-prospect', $payload);
+
+        if (!is_array($response)) {
+            return ['ok' => false, 'error' => 'invalid_response'];
+        }
+
+        return $response;
     }
 
     private static function handle_account_updated($account) {
@@ -1064,18 +1160,11 @@ final class SD_Front_Office_Scaffold {
 
     private static function map_public_status_label(string $state): string {
         return match ($state) {
-            'STARTED'               => 'Started',
-            'CONFIRMED'             => 'Confirmed',
-            'PAYOUTS_CONNECTED'     => 'Payouts connected',
-            'TENANT_CREATING'       => 'Payouts connected',
-            'TENANT_READY'          => 'Payouts connected',
-            'STOREFRONT_READY'      => 'Payouts connected',
-            'FRONTEND_SYNC_PENDING' => 'Payouts connected',
-            'OPERATIONS_READY'      => 'Payouts connected',
-            'ACTIVATION_COMPLETE'   => 'Booking page live',
-            'ACTIVATION_FAILED'     => 'Activation issue',
-            'PARTIAL_SYNC_FAILED'   => 'Activation issue',
-            default                 => 'Started',
+            'STARTED' => 'Started',
+            'ACTIVATION_PROCESSING' => 'Activation processing',
+            'TENANT_READY' => 'Tenant ready',
+            'ACTIVATION_FAILED' => 'Activation issue',
+            default => 'Started',
         };
     }
 
