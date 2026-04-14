@@ -1220,10 +1220,16 @@ final class SD_Front_Office_Scaffold {
 
         if ($activation_state === 'ACTIVATION_PROCESSING') {
             return 'activation_processing';
+            if (in_array($public_state, ['payments_enabled', 'activation_processing'], true)) {
+                echo '<script>setTimeout(() => location.reload(), 6000);</script>';
+            }
         }
 
         if ($stripe_state === 'payments_enabled') {
             return 'payments_enabled';
+            if (in_array($public_state, ['payments_enabled', 'activation_processing'], true)) {
+                echo '<script>setTimeout(() => location.reload(), 6000);</script>';
+            }
         }
 
         if ($stripe_state === 'payments_not_enabled') {
@@ -1245,46 +1251,65 @@ final class SD_Front_Office_Scaffold {
         $public_state = self::get_public_prospect_state($prospect_post_id);
 
         return match ($public_state) {
+
+            // Stripe not started yet
+            'started' => [
+                'headline' => 'Connect your payments',
+                'body' => 'Your setup page is ready. The next step is connecting payments through Stripe.',
+                'button_label' => 'Start setup',
+            ],
+
+            // Account exists, onboarding not finished
             'account_created', 'onboarding_started' => [
                 'headline' => 'Finish setting up payments',
-                'body' => 'Your account has been prepared. Complete Stripe onboarding to continue.',
+                'body' => 'Your account has been created. Complete Stripe onboarding to continue.',
                 'button_label' => 'Continue setup',
             ],
+
+            // Stripe needs more info or is reviewing
             'payments_not_enabled' => [
                 'headline' => 'Payments setup is still in progress',
-                'body' => 'Stripe is still reviewing or waiting on required information.',
+                'body' => 'Stripe is reviewing your account or waiting on required information.',
                 'button_label' => 'Resume setup',
             ],
+
+            // Stripe complete → system now working
             'payments_enabled' => [
                 'headline' => 'Payments are connected',
-                'body' => 'Your account is connected. We are preparing the next step.',
+                'body' => 'Your account is ready. We’re activating your booking system now.',
                 'button_label' => '',
             ],
+
+            // Backend provisioning
             'activation_processing' => [
-                'headline' => 'We are activating your account',
-                'body' => 'Your booking system is being prepared now.',
+                'headline' => 'We’re activating your account',
+                'body' => 'Your booking system is being prepared. This usually takes a few seconds.',
                 'button_label' => '',
             ],
+
+            // Done
             'tenant_ready' => [
                 'headline' => 'Your lane is ready',
-                'body' => 'Your booking page and operations access are ready.',
+                'body' => 'Your booking page and operations access are now available.',
                 'button_label' => '',
             ],
+
+            // Fallback
             default => [
                 'headline' => 'We received your request',
                 'body' => 'Your setup page is ready. The next step is connecting payments.',
-                'button_label' => '',
+                'button_label' => 'Start setup',
             ],
         };
     }
 
     private static function map_public_status_label(string $state): string {
         return match ($state) {
-            'STARTED' => 'Started',
-            'ACTIVATION_PROCESSING' => 'Activation processing',
-            'TENANT_READY' => 'Tenant ready',
-            'ACTIVATION_FAILED' => 'Activation issue',
-            default => 'Started',
+            'STARTED' => 'Request received',
+            'ACTIVATION_PROCESSING' => 'Activating your account',
+            'TENANT_READY' => 'Ready',
+            'ACTIVATION_FAILED' => 'Setup issue',
+            default => 'Request received',
         };
     }
 
