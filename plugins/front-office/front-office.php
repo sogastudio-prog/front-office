@@ -34,7 +34,7 @@ final class SD_Front_Office_Scaffold {
     private const REQUEST_ACCESS_FORM_ID = 33;
     private const INVITE_READY_FORM_ID   = 387;
     private const SUCCESS_PAGE_SLUG  = 'request-received';
-    private const REST_NAMESPACE = 'sd/v1';
+    private const REST_NAMESPACE = 'wp-json/sd/v1';
     private const STRIPE_API_BASE = 'https://api.stripe.com/v1';
     private const PAGE_SLUG_START            = 'start';
     private const PAGE_SLUG_CONFIRM          = 'confirm';
@@ -73,7 +73,7 @@ final class SD_Front_Office_Scaffold {
         }
 
         add_action('rest_api_init', function () {
-            register_rest_route('sd/v1', '/stripe-webhook', [
+            register_rest_route('wp-json/sd/v1', '/stripe-webhook', [
                 'methods'  => 'POST',
                 'callback' => ['SD_Front_Office_Scaffold', 'handle_stripe_webhook'],
                 'permission_callback' => '__return_true',
@@ -487,43 +487,128 @@ final class SD_Front_Office_Scaffold {
         return $response;
     }
 
-    public static function handle_stripe_webhook($request) {
-
+    public static function handle_stripe_webhook(WP_REST_Request $request) {
         $payload = $request->get_body();
         $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
-        $endpoint_secret = get_option('sd_stripe_webhook_secret');
+        $endpoint_secret = get_option('sd_stripe_webhook_secret', '');
+
+        if ($endpoint_secret === '') {
+            error_log('SD Front Office: missing Stripe webhook secret');
+            return new WP_REST_Response(['error' => 'missing webhook secret'], 500);
+        }
 
         try {
+            if (!class_exists('\\Stripe\\Webhook')) {
+                throw new Exception('Stripe PHP SDK not loaded');
+            }
+
             $event = \Stripe\Webhook::constructEvent(
                 $payload,
                 $sig_header,
                 $endpoint_secret
             );
-        } catch (\Throwable $e) {
-            error_log('Stripe webhook signature failed: ' . $e->getMessage());
-            return new \WP_REST_Response(['error' => 'invalid signature'], 400);
+        } catch (Throwable $e) {
+            error_log('SD Front Office: Stripe webhook signature failed: ' . $e->getMessage());
+            return new WP_REST_Response(['error' => 'invalid signature'], 400);
         }
 
-        // Idempotency (important)
-        $event_id = $event->id;
-        if (self::has_processed_event($event_id)) {
-            return new \WP_REST_Response(['status' => 'duplicate'], 200);
+        $event_id = (string) ($event->id ?? '');
+        if ($event_id !== '' && get_option('sd_stripe_event_' . $event_id)) {
+            return new WP_REST_Response(['status' => 'duplicate'], 200);
         }
 
-        switch ($event->type) {
-
+        switch ((string) $event->type) {
             case 'account.updated':
-                self::handle_account_updated($event->data->object);
+                self::handle_stripe_account_updated($event->data->object ?? null, $event_id);
                 break;
-
             default:
-                // ignore noise
                 break;
         }
 
-        self::mark_event_processed($event_id);
+        if ($event_id !== '') {
+            update_option('sd_stripe_event_' . $event_id, 1, false);
+        }
 
-        return new \WP_REST_Response(['status' => 'ok'], 200);
+        return new WP_REST_Response(['status' => 'ok'], 200);
+    }
+
+    private static function handle_stripe_account_updated($account, string $event_id = ''): void {
+        if (!is_object($account) || empty($account->id)) {
+            error_log('SD Front Office: account.updated missing account object');
+            return;
+        }
+
+        $acct_id = (string) $account->id;
+
+        $posts = get_posts([
+            'post_type'      => self::PROSPECT_POST_TYPE,
+            'post_status'    => 'publish',
+            'fields'         => 'ids',
+            'numberposts'    => 1,
+            'meta_query'     => [[
+                'key'     => self::META_STRIPE_ACCOUNT_ID,
+                'value'   => $acct_id,
+                'compare' => '=',
+            ]],
+            'no_found_rows'    => true,
+            'suppress_filters' => false,
+        ]);
+
+        $prospect_post_id = !empty($posts) ? (int) $posts[0] : 0;
+        if ($prospect_post_id <= 0) {
+            error_log('SD Front Office: no prospect found for Stripe account ' . $acct_id);
+            return;
+        }
+
+        $charges_enabled = !empty($account->charges_enabled);
+        $payouts_enabled = !empty($account->payouts_enabled);
+        $details_submitted = !empty($account->details_submitted);
+
+        $requirements = is_object($account->requirements ?? null) ? $account->requirements : null;
+
+        update_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, $acct_id);
+        update_post_meta($prospect_post_id, 'sd_stripe_last_event_id', $event_id);
+        update_post_meta($prospect_post_id, 'sd_stripe_status_snapshot_json', wp_json_encode($account));
+        update_post_meta($prospect_post_id, 'sd_stripe_charges_enabled', $charges_enabled ? '1' : '0');
+        update_post_meta($prospect_post_id, 'sd_stripe_payouts_enabled', $payouts_enabled ? '1' : '0');
+        update_post_meta($prospect_post_id, 'sd_stripe_details_submitted', $details_submitted ? '1' : '0');
+        update_post_meta($prospect_post_id, self::META_STRIPE_STATE, $charges_enabled ? 'payments_enabled' : 'payments_not_enabled');
+
+        update_post_meta(
+            $prospect_post_id,
+            'sd_stripe_requirements_currently_due_json',
+            wp_json_encode($requirements->currently_due ?? [])
+        );
+        update_post_meta(
+            $prospect_post_id,
+            'sd_stripe_requirements_past_due_json',
+            wp_json_encode($requirements->past_due ?? [])
+        );
+        update_post_meta(
+            $prospect_post_id,
+            'sd_stripe_requirements_eventually_due_json',
+            wp_json_encode($requirements->eventually_due ?? [])
+        );
+        update_post_meta(
+            $prospect_post_id,
+            'sd_stripe_requirements_pending_verification_json',
+            wp_json_encode($requirements->pending_verification ?? [])
+        );
+        update_post_meta(
+            $prospect_post_id,
+            'sd_stripe_disabled_reason',
+            (string) ($requirements->disabled_reason ?? '')
+        );
+
+        update_post_meta(
+            $prospect_post_id,
+            'sd_stripe_onboarding_status',
+            $charges_enabled ? 'PAYMENTS_ENABLED' : 'PAYMENTS_NOT_ENABLED'
+        );
+
+        if ($charges_enabled) {
+            update_post_meta($prospect_post_id, self::META_STRIPE_COMPLETED_GMT, current_time('mysql', true));
+        }
     }
 
     private static function handle_account_updated($account) {
@@ -793,8 +878,12 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function register_rest_routes(): void {
-        // Temporary no-op to prevent fatal while funnel wiring is stabilized.
-    }
+    register_rest_route('wp-json/sd/v1', '/stripe-webhook', [
+        'methods'             => 'POST',
+        'callback'            => [__CLASS__, 'handle_stripe_webhook'],
+        'permission_callback' => '__return_true',
+    ]);
+}
 
     private static function is_editor_request(): bool {
         if (is_admin()) {
