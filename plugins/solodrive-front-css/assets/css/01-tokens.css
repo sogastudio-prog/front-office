@@ -148,3 +148,28 @@
   padding-bottom: 96px;
   text-align: left;
 }
+
+/* =====================================
+   PATH GRID
+   ===================================== */
+
+.sd-path-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.sd-path-item {
+  padding: 20px;
+  border: 1px solid var(--sd-border);
+  border-radius: 12px;
+  background: #fff;
+  transition: all 0.2s ease;
+}
+
+.sd-path-item:hover {
+  border-color: var(--sd-accent);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+  transform: translateY(-2px);
+}
