@@ -204,10 +204,6 @@ final class SD_Front_Office_Scaffold {
             'sd_last_submission_at_gmt' => 'string',
             'sd_submission_count' => 'integer',
             'sd_last_submission_payload_json' => 'string',
-            'sd_city' => 'string',
-            'sd_repeat_clients' => 'string',
-            'sd_driving_status' => 'string',
-            'sd_weekly_gross' => 'string',
             'sd_public_key' => 'string',
             'sd_activation_state' => 'string',
             'sd_business_name' => 'string',
@@ -374,16 +370,11 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_source', 'cf7_request_access');
         update_post_meta($prospect_post_id, 'sd_created_at_gmt', current_time('mysql', true));
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
-
         update_post_meta($prospect_post_id, 'sd_full_name', (string) ($payload['full_name'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_phone_raw', (string) ($payload['phone_raw'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_phone_normalized', (string) ($payload['phone_normalized'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_email_raw', (string) ($payload['email_raw'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_email_normalized', (string) ($payload['email_normalized'] ?? ''));
-        update_post_meta($prospect_post_id, 'sd_city', (string) ($payload['city'] ?? ''));
-        update_post_meta($prospect_post_id, 'sd_repeat_clients', (string) ($payload['repeat_clients'] ?? ''));
-        update_post_meta($prospect_post_id, 'sd_driving_status', (string) ($payload['driving_status'] ?? ''));
-        update_post_meta($prospect_post_id, 'sd_weekly_gross', (string) ($payload['weekly_gross'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_invitation_code', (string) ($payload['invitation_code'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_invitation_status', 'none');
         update_post_meta($prospect_post_id, 'sd_review_status', 'new');
@@ -410,10 +401,6 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_phone_normalized', (string) ($payload['phone_normalized'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_email_raw', (string) ($payload['email_raw'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_email_normalized', (string) ($payload['email_normalized'] ?? ''));
-        update_post_meta($prospect_post_id, 'sd_city', (string) ($payload['city'] ?? ''));
-        update_post_meta($prospect_post_id, 'sd_repeat_clients', (string) ($payload['repeat_clients'] ?? ''));
-        update_post_meta($prospect_post_id, 'sd_driving_status', (string) ($payload['driving_status'] ?? ''));
-        update_post_meta($prospect_post_id, 'sd_weekly_gross', (string) ($payload['weekly_gross'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_invitation_code', (string) ($payload['invitation_code'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_last_intake_channel', 'cf7');
         update_post_meta($prospect_post_id, 'sd_last_submission_at_gmt', (string) ($payload['submitted_at_gmt'] ?? current_time('mysql', true)));
@@ -1391,10 +1378,6 @@ final class SD_Front_Office_Scaffold {
             'email_normalized'  => strtolower(trim($email_raw)),
             'phone_raw'         => $phone_raw,
             'phone_normalized'  => self::normalize_phone($phone_raw),
-            'city'              => $first($posted_data['city'] ?? ''),
-            'repeat_clients'    => $first($posted_data['repeat_clients'] ?? ''),
-            'driving_status'    => $first($posted_data['driving_status'] ?? ''),
-            'weekly_gross'      => $first($posted_data['weekly_gross'] ?? ''),
             'invitation_code'   => $first($posted_data['invite_code'] ?? ''),
             'submission_count'  => 1,
             'submitted_at_gmt'  => current_time('mysql', true),
