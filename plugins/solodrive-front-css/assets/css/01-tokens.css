@@ -126,7 +126,7 @@
 
 /* Soft sections (subtle separation) */
 .sd-section--soft {
-  background: #f7f8fa;
+  background: #f1f3f5;
   border-top: 1px solid #eef1f4;
   border-bottom: 1px solid #eef1f4;
 }
@@ -139,7 +139,7 @@
 
 /* Accent section (CHOOSE YOUR PATH) */
 .sd-section--accent {
-  background: #f3f4f6;
+  background: #eef2f7;
 }
 
 /* CTA section */
@@ -178,4 +178,12 @@
   .sd-path-grid {
     grid-template-columns: 1fr;
   }
+}
+.sd-section {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.sd-section {
+  max-width: 720px;
+  margin: 0 auto;
 }
