@@ -21,6 +21,8 @@ function sd_front_css_enqueue_assets() {
 	$files = array(
 		'01-tokens.css',
 		'02-base.css',
+		'03-shell.css',
+		'04-components.css',
 		'05-front-flow.css',
 
 		'07-footer.css',
