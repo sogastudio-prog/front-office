@@ -173,3 +173,9 @@
   box-shadow: 0 6px 18px rgba(0,0,0,0.05);
   transform: translateY(-2px);
 }
+
+@media (max-width: 768px) {
+  .sd-path-grid {
+    grid-template-columns: 1fr;
+  }
+}
