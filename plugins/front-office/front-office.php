@@ -33,41 +33,41 @@ if (file_exists($front_office_autoload)) {
 }
 
 final class SD_Front_Office_Scaffold {
-    private const PROSPECT_POST_TYPE = 'sd_prospect';
-    private const TENANT_POST_TYPE   = 'sd_tenant';
-    private const REQUEST_ACCESS_FORM_ID = 33;
-    private const INVITE_READY_FORM_ID   = 387;
-    private const SUCCESS_PAGE_SLUG  = 'request-received';
-    private const REST_NAMESPACE = 'sd/v1';
-    private const STRIPE_API_BASE = 'https://api.stripe.com/v1';
-    private const PAGE_SLUG_START            = 'start';
-    private const PAGE_SLUG_CONFIRM          = 'confirm';
-    private const PAGE_SLUG_CONNECT_PAYOUTS  = 'connect-payouts';
-    private const PAGE_SLUG_SUCCESS          = 'success';
-    private const ACTION_CREATE_ACCOUNT = 'sdfo_create_account';
+    private const PROSPECT_POST_TYPE            = 'sd_prospect';
+    private const TENANT_POST_TYPE              = 'sd_tenant';
+    private const REQUEST_ACCESS_FORM_ID        = 33;
+    private const SUCCESS_PAGE_SLUG             = 'request-received';
+    private const REST_NAMESPACE                = 'sd/v1';
+    private const STRIPE_API_BASE               = 'https://api.stripe.com/v1';
+    private const PAGE_SLUG_START               = 'start';
+    private const PAGE_SLUG_CONFIRM             = 'confirm';
+    private const PAGE_SLUG_CONNECT_PAYOUTS     = 'connect-payouts';
+    private const PAGE_SLUG_SUCCESS             = 'success';
+    private const ACTION_CREATE_ACCOUNT         = 'sdfo_create_account';
 
-    private const STAGE_INTAKE_CAPTURED = 'INTAKE_CAPTURED';
-    private const STAGE_ACCOUNT_PENDING = 'ACCOUNT_PENDING';
-    private const STAGE_ACCOUNT_CREATED = 'ACCOUNT_CREATED';
-    private const STAGE_SLUG_PENDING    = 'SLUG_PENDING';
-    private const META_PUBLIC_KEY            = 'sd_public_key'; // legacy
-    private const META_ACTIVATION_STATE      = 'sd_activation_state';
-    private const META_STOREFRONT_URL        = 'sd_storefront_url';
-    private const META_OPERATIONS_ENTRY_URL  = 'sd_operations_entry_url';
-    private const META_BUSINESS_NAME         = 'sd_business_name';
-    private const META_SERVICE_AREA          = 'sd_service_area';
-    private const META_PROSPECT_TOKEN       = 'sd_prospect_token';
-    private const PAGE_SLUG_PROSPECT        = 'prospect';
-    private const META_STRIPE_LAST_REFRESH_URL = 'sd_stripe_last_refresh_url';
-    private const META_STRIPE_LAST_RETURN_URL  = 'sd_stripe_last_return_url';
-
-    private const ACTION_START               = 'sdfo_start';
-    private const ACTION_START_PAYOUTS       = 'sdfo_start_payouts';
-
-    private const META_STRIPE_ACCOUNT_ID    = 'sd_stripe_account_id';
-    private const META_STRIPE_STATE         = 'sd_stripe_state';
-    private const META_STRIPE_COMPLETED_GMT = 'sd_stripe_completed_gmt';
-    private const PROSPECT_PAGE_SLUG        = 'prospect';
+    private const STAGE_INTAKE_CAPTURED         = 'INTAKE_CAPTURED';
+    private const STAGE_ACCOUNT_PENDING         = 'ACCOUNT_PENDING';
+    private const STAGE_ACCOUNT_CREATED         = 'ACCOUNT_CREATED';
+    private const STAGE_SLUG_PENDING            = 'SLUG_PENDING';
+    private const META_PUBLIC_KEY               = 'sd_public_key'; // legacy
+    private const META_ACTIVATION_STATE         = 'sd_activation_state';
+    private const META_STOREFRONT_URL           = 'sd_storefront_url';
+    private const META_OPERATIONS_ENTRY_URL     = 'sd_operations_entry_url';
+    private const META_BUSINESS_NAME            = 'sd_business_name';
+    private const META_SERVICE_AREA             = 'sd_service_area';
+    private const META_PROSPECT_TOKEN           = 'sd_prospect_token';
+    private const PAGE_SLUG_PROSPECT            = 'prospect';
+    private const META_STRIPE_LAST_REFRESH_URL  = 'sd_stripe_last_refresh_url';
+    private const META_STRIPE_LAST_RETURN_URL   = 'sd_stripe_last_return_url';
+    private const ACTION_RESERVE_SLUG           = 'sdfo_reserve_slug';
+    private const ACTION_START                  = 'sdfo_start';
+    private const ACTION_START_PAYOUTS          = 'sdfo_start_payouts';
+    private const STAGE_SLUG_RESERVED           = 'SLUG_RESERVED';
+    private const STAGE_CHECKOUT_PENDING        = 'CHECKOUT_PENDING';
+    private const META_STRIPE_ACCOUNT_ID        = 'sd_stripe_account_id';
+    private const META_STRIPE_STATE             = 'sd_stripe_state';
+    private const META_STRIPE_COMPLETED_GMT     = 'sd_stripe_completed_gmt';
+    private const PROSPECT_PAGE_SLUG            = 'prospect';
 
     public static function bootstrap(): void {
         add_action('init', [__CLASS__, 'register_post_types']);
@@ -88,7 +88,8 @@ final class SD_Front_Office_Scaffold {
         if (is_admin() && class_exists('SD_Front_Office_Admin')) {
             SD_Front_Office_Admin::bootstrap();
         }
-
+        add_action('admin_post_nopriv_' . self::ACTION_RESERVE_SLUG, [__CLASS__, 'handle_slug_reservation_submit']);
+        add_action('admin_post_' . self::ACTION_RESERVE_SLUG, [__CLASS__, 'handle_slug_reservation_submit']);
         add_action('wpcf7_before_send_mail', [__CLASS__, 'handle_cf7_submission']);
         add_action('save_post_sd_prospect', [__CLASS__, 'ensure_prospect_defaults'], 10, 3);
         add_action('save_post_sd_tenant', [__CLASS__, 'ensure_tenant_defaults'], 10, 3);
@@ -222,6 +223,9 @@ final class SD_Front_Office_Scaffold {
             'sd_prospect_token' => 'string',
             'sd_stripe_last_refresh_url' => 'string',
             'sd_stripe_last_return_url' => 'string',
+            'sd_requested_slug' => 'string',
+            'sd_reserved_slug'  => 'string',
+            'sd_slug_status'    => 'string',
                     ];
 
         $tenant_meta = [
@@ -744,6 +748,8 @@ final class SD_Front_Office_Scaffold {
 
     private static function render_account_creation(int $prospect_post_id): string {
         $token = self::ensure_prospect_token($prospect_post_id);
+        $full_name = (string) get_post_meta($prospect_post_id, 'sd_full_name', true);
+        $email = (string) get_post_meta($prospect_post_id, 'sd_email_raw', true);
 
         $error_code = isset($_GET['acct_err'])
             ? sanitize_text_field((string) $_GET['acct_err'])
@@ -776,12 +782,24 @@ final class SD_Front_Office_Scaffold {
 
                 <div class="sd-front-field">
                     <label>Full Name</label>
-                    <input type="text" name="full_name" required>
+                    <input
+                        type="text"
+                        name="full_name"
+                        value="<?php echo esc_attr($full_name); ?>"
+                        autocomplete="name"
+                        required
+                    >
                 </div>
 
                 <div class="sd-front-field">
                     <label>Email</label>
-                    <input type="email" name="email" required>
+                    <input
+                        type="email"
+                        name="email"
+                        value="<?php echo esc_attr($email); ?>"
+                        autocomplete="email"
+                        required
+                    >
                 </div>
 
                 <div class="sd-front-field">
@@ -828,13 +846,13 @@ final class SD_Front_Office_Scaffold {
             case self::STAGE_SLUG_PENDING:
                 return self::render_slug_reservation($prospect_post_id);
 
-            case 'SLUG_RESERVED':
-            case 'CHECKOUT_PENDING':
+            case self::STAGE_SLUG_RESERVED:
+            case self::STAGE_CHECKOUT_PENDING:
                 return self::render_checkout($prospect_post_id);
 
-            case 'SUBSCRIPTION_PAID':
-            case 'TENANT_PROVISIONING':
-            case 'TENANT_INACTIVE':
+            case self::STAGE_SUBSCRIPTION_PAID:
+            case self::STAGE_TENANT_PROVISIONING:
+            case self::STAGE_TENANT_INACTIVE:
                 return self::render_provisioning_state($prospect_post_id);
 
             case 'CONNECT_PENDING':
@@ -850,6 +868,40 @@ final class SD_Front_Office_Scaffold {
 
     private static function render_slug_reservation(int $prospect_post_id): string {
         $token = self::ensure_prospect_token($prospect_post_id);
+        $reserved_slug = (string) get_post_meta($prospect_post_id, 'sd_reserved_slug', true);
+        $requested_slug = (string) get_post_meta($prospect_post_id, 'sd_requested_slug', true);
+        $slug_status = (string) get_post_meta($prospect_post_id, 'sd_slug_status', true);
+
+        $error_code = isset($_GET['slug_err']) ? sanitize_text_field((string) $_GET['slug_err']) : '';
+        $message = self::map_slug_error_message($error_code);
+
+        if ($reserved_slug !== '') {
+            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_RESERVED);
+
+            ob_start();
+            ?>
+            <div class="sd-front-container">
+                <div class="sd-front-hero">
+                    <h1 class="sd-front-headline">Your storefront name is reserved</h1>
+                    <p class="sd-front-body">
+                        Your future storefront will live at:
+                    </p>
+                    <p class="sd-front-body">
+                        <strong><?php echo esc_html('app.solodrive.pro/t/' . $reserved_slug); ?></strong>
+                    </p>
+                </div>
+
+                <div class="sd-front-actions">
+                    <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url(self::get_prospect_url_for_post($prospect_post_id)); ?>">
+                        Continue to checkout
+                    </a>
+                </div>
+            </div>
+            <?php
+            return (string) ob_get_clean();
+        }
+
+        $value = $requested_slug !== '' ? $requested_slug : '';
 
         ob_start();
         ?>
@@ -857,29 +909,76 @@ final class SD_Front_Office_Scaffold {
             <div class="sd-front-hero">
                 <h1 class="sd-front-headline">Choose your storefront name</h1>
                 <p class="sd-front-body">
-                    Your account is ready. Slug reservation is the next step.
+                    Pick the name that will appear in your future storefront URL.
                 </p>
             </div>
 
-            <div class="sd-front-actions">
-                <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url(self::get_prospect_url_by_token($token)); ?>">
-                    Continue
-                </a>
-            </div>
+            <?php if ($message !== '') : ?>
+                <div class="sd-front-alert sd-front-alert--error">
+                    <?php echo esc_html($message); ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="sd-front-form">
+                <input type="hidden" name="action" value="<?php echo esc_attr(self::ACTION_RESERVE_SLUG); ?>">
+                <input type="hidden" name="prospect_token" value="<?php echo esc_attr($token); ?>">
+                <?php wp_nonce_field('sdfo_reserve_slug_' . $prospect_post_id, 'sdfo_slug_nonce'); ?>
+
+                <div class="sd-front-field">
+                    <label for="sd-storefront-slug">Storefront Name</label>
+                    <input
+                        type="text"
+                        id="sd-storefront-slug"
+                        name="requested_slug"
+                        value="<?php echo esc_attr($value); ?>"
+                        autocomplete="off"
+                        required
+                    >
+                </div>
+
+                <p class="sd-front-body">
+                    Preview: <strong>app.solodrive.pro/t/<span><?php echo esc_html($value !== '' ? $value : 'your-name'); ?></span></strong>
+                </p>
+
+                <div class="sd-front-actions">
+                    <button type="submit" class="sd-front-btn sd-front-btn--primary">
+                        Reserve Name
+                    </button>
+                </div>
+            </form>
         </div>
         <?php
         return (string) ob_get_clean();
     }
 
     private static function render_checkout(int $prospect_post_id): string {
+        $reserved_slug = (string) get_post_meta($prospect_post_id, 'sd_reserved_slug', true);
+
+        if ($reserved_slug === '') {
+            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_PENDING);
+            return self::render_slug_reservation($prospect_post_id);
+        }
+
+        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_CHECKOUT_PENDING);
+
         ob_start();
         ?>
         <div class="sd-front-container">
             <div class="sd-front-hero">
-                <h1 class="sd-front-headline">Checkout coming next</h1>
+                <h1 class="sd-front-headline">Ready for checkout</h1>
                 <p class="sd-front-body">
-                    Your storefront reservation is complete. Subscription checkout will be wired here next.
+                    Your storefront name <strong><?php echo esc_html($reserved_slug); ?></strong> is reserved.
+                    Stripe Checkout plugs in here next.
                 </p>
+                <p class="sd-front-body">
+                    Future storefront: <strong><?php echo esc_html('app.solodrive.pro/t/' . $reserved_slug); ?></strong>
+                </p>
+            </div>
+
+            <div class="sd-front-actions">
+                <button type="button" class="sd-front-btn sd-front-btn--primary" disabled>
+                    Checkout coming next
+                </button>
             </div>
         </div>
         <?php
@@ -914,6 +1013,53 @@ final class SD_Front_Office_Scaffold {
         </div>
         <?php
         return (string) ob_get_clean();
+        }
+
+        public static function handle_slug_reservation_submit(): void {
+        $token = isset($_POST['prospect_token']) ? sanitize_text_field((string) $_POST['prospect_token']) : '';
+        $prospect_post_id = self::get_prospect_post_id_by_token($token);
+
+        if ($prospect_post_id <= 0) {
+            wp_die('Invalid or expired link.');
+        }
+
+        if (
+            !isset($_POST['sdfo_slug_nonce']) ||
+            !wp_verify_nonce((string) $_POST['sdfo_slug_nonce'], 'sdfo_reserve_slug_' . $prospect_post_id)
+        ) {
+            self::redirect_slug_error($prospect_post_id, 'invalid_request');
+        }
+
+        $owner_user_id = (int) get_post_meta($prospect_post_id, 'sd_owner_user_id', true);
+        if ($owner_user_id <= 0) {
+            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_ACCOUNT_PENDING);
+            wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
+            exit;
+        }
+
+        $candidate = isset($_POST['requested_slug']) ? (string) $_POST['requested_slug'] : '';
+        $normalized = self::normalize_slug_candidate($candidate);
+
+        update_post_meta($prospect_post_id, 'sd_requested_slug', $normalized);
+
+        if (!self::is_valid_slug_candidate($normalized)) {
+            update_post_meta($prospect_post_id, 'sd_slug_status', 'invalid');
+            self::redirect_slug_error($prospect_post_id, 'invalid_slug');
+        }
+
+        if (!self::is_slug_available($normalized, $prospect_post_id)) {
+            update_post_meta($prospect_post_id, 'sd_slug_status', 'unavailable');
+            self::redirect_slug_error($prospect_post_id, 'slug_taken');
+        }
+
+        update_post_meta($prospect_post_id, 'sd_requested_slug', $normalized);
+        update_post_meta($prospect_post_id, 'sd_reserved_slug', $normalized);
+        update_post_meta($prospect_post_id, 'sd_slug_status', 'reserved');
+        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_RESERVED);
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+        wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
+        exit;
     }
 
     private static function render_ready_state(int $prospect_post_id): string {
@@ -1055,6 +1201,91 @@ final class SD_Front_Office_Scaffold {
         </div>
         <?php
         return (string) ob_get_clean();
+        }
+
+        private static function normalize_slug_candidate(string $value): string {
+        $value = strtolower(trim($value));
+        $value = preg_replace('/[^a-z0-9\-]+/', '-', $value);
+        $value = preg_replace('/\-+/', '-', (string) $value);
+        $value = trim((string) $value, '-');
+        return sanitize_title($value);
+    }
+
+    private static function is_valid_slug_candidate(string $slug): bool {
+        if ($slug === '') {
+            return false;
+        }
+
+        if (strlen($slug) < 3 || strlen($slug) > 40) {
+            return false;
+        }
+
+        if (!preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug)) {
+            return false;
+        }
+
+        $reserved = [
+            'app', 'admin', 'api', 'www', 'solodrive', 'operator', 'operations',
+            'support', 'help', 'billing', 'stripe', 'login', 'signup', 'prospect',
+            'tenant', 'dashboard', 'settings'
+        ];
+
+        return !in_array($slug, $reserved, true);
+    }
+
+    private static function is_slug_available(string $slug, int $current_prospect_post_id = 0): bool {
+        $prospects = get_posts([
+            'post_type'      => self::PROSPECT_POST_TYPE,
+            'post_status'    => 'publish',
+            'fields'         => 'ids',
+            'numberposts'    => 1,
+            'post__not_in'   => $current_prospect_post_id > 0 ? [$current_prospect_post_id] : [],
+            'meta_query'     => [[
+                'key'     => 'sd_reserved_slug',
+                'value'   => $slug,
+                'compare' => '=',
+            ]],
+            'no_found_rows'    => true,
+            'suppress_filters' => false,
+        ]);
+
+        if (!empty($prospects)) {
+            return false;
+        }
+
+        $tenants = get_posts([
+            'post_type'      => self::TENANT_POST_TYPE,
+            'post_status'    => 'publish',
+            'fields'         => 'ids',
+            'numberposts'    => 1,
+            'meta_query'     => [[
+                'key'     => 'sd_slug',
+                'value'   => $slug,
+                'compare' => '=',
+            ]],
+            'no_found_rows'    => true,
+            'suppress_filters' => false,
+        ]);
+
+        return empty($tenants);
+    }
+
+    private static function redirect_slug_error(int $prospect_post_id, string $code): void {
+        $url = add_query_arg(
+            ['slug_err' => rawurlencode($code)],
+            self::get_prospect_url_for_post($prospect_post_id)
+        );
+        wp_safe_redirect($url);
+        exit;
+    }
+
+    private static function map_slug_error_message(string $code): string {
+        return match ($code) {
+            'invalid_request' => 'We could not verify your request. Please try again.',
+            'invalid_slug'    => 'Use 3-40 lowercase letters, numbers, or single hyphens.',
+            'slug_taken'      => 'That storefront name is already taken.',
+            default           => '',
+        };
     }
 
     public static function handle_account_creation_submit(): void {
@@ -1095,7 +1326,7 @@ final class SD_Front_Office_Scaffold {
 
         $existing_owner_user_id = (int) get_post_meta($prospect_post_id, 'sd_owner_user_id', true);
         if ($existing_owner_user_id > 0) {
-            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_ACCOUNT_CREATED);
+            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_PENDING);
             update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_ACCOUNT_CREATED);
             wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
             exit;
@@ -1113,7 +1344,7 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_full_name', $full_name);
         update_post_meta($prospect_post_id, 'sd_email_raw', $email);
         update_post_meta($prospect_post_id, 'sd_email_normalized', strtolower(trim($email)));
-        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_ACCOUNT_CREATED);
+        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_PENDING);
         update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_ACCOUNT_CREATED);
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
 
