@@ -59,3 +59,52 @@
   font-size: 14px;
   color: #6b7280;
 }
+
+/* =====================================
+   LIGHT SECTION BACKGROUND
+   ===================================== */
+
+.sd-section--light {
+  background: #f3f4f6;
+}
+/* =====================================
+   PAGE SYSTEM
+   ===================================== */
+
+.sd-page {
+  width: 100%;
+}
+
+/* Sections control vertical rhythm */
+.sd-section {
+  padding: 64px 24px;
+}
+
+/* Hero gets more breathing room */
+.sd-section--hero {
+  padding-top: 80px;
+  padding-bottom: 40px;
+}
+
+/* Form section tighter to connect to hero */
+.sd-section--form {
+  padding-top: 0;
+  padding-bottom: 64px;
+}
+
+/* Content sections */
+.sd-section--content {
+  padding-top: 32px;
+  padding-bottom: 64px;
+}
+
+/* Container controls width */
+.sd-container {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* Optional: wider container when needed */
+.sd-container--wide {
+  max-width: 960px;
+}
