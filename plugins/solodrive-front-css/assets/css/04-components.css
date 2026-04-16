@@ -323,3 +323,55 @@
   margin-top: 26px;
   color: var(--sd-text-muted);
 }
+/* =====================================
+   PATCH — SD CARD SHOULD LOOK LIKE A CARD
+   ===================================== */
+
+.sd-card,
+.wp-block-group.sd-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  padding: 32px;
+  overflow: hidden;
+}
+
+/* Gutenberg constrained groups can make cards feel flat */
+.wp-block-group.sd-card.is-layout-constrained {
+  max-width: 100%;
+}
+
+/* Kill inherited block spacing weirdness inside cards */
+.sd-card > * {
+  max-width: none;
+}
+
+.sd-card > *:first-child {
+  margin-top: 0;
+}
+
+.sd-card > *:last-child {
+  margin-bottom: 0;
+}
+
+.sd-card .wp-block-contact-form-7-contact-form-selector,
+.sd-card .wpcf7,
+.sd-card form {
+  max-width: none;
+}
+
+/* Stronger intro treatment */
+.sd-card-intro {
+  margin: 0 0 24px;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--sd-text);
+}
+
+/* Slight separation between intro and form */
+.sd-card-intro + .wp-block-contact-form-7-contact-form-selector,
+.sd-card-intro + .wpcf7 {
+  margin-top: 4px;
+}
