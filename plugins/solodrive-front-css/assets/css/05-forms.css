@@ -1,0 +1,437 @@
+/* =====================================
+   SOLODRIVE FORMS
+   CF7 + account creation + confirmation states
+   ===================================== */
+
+/* Form wrapper */
+.sd-form,
+.wpcf7 form,
+.sd-account-form,
+.sd-confirm-form {
+  display: block;
+  width: 100%;
+}
+
+/* Field groups */
+.sd-field,
+.wpcf7 form p {
+  margin: 0 0 22px;
+}
+
+.wpcf7 form p:last-of-type {
+  margin-bottom: 0;
+}
+
+/* Kill accidental extra spacing from WP/autop */
+.wpcf7 form br {
+  display: none;
+}
+
+/* Labels */
+.sd-form label,
+.wpcf7 form label,
+.sd-account-form label,
+.sd-confirm-form label {
+  display: block;
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--sd-text);
+}
+
+/* Inputs baseline */
+.sd-form input[type="text"],
+.sd-form input[type="email"],
+.sd-form input[type="tel"],
+.sd-form input[type="password"],
+.sd-form input[type="url"],
+.sd-form input[type="search"],
+.sd-form input[type="number"],
+.sd-form input[type="date"],
+.sd-form textarea,
+.sd-form select,
+.wpcf7 input[type="text"],
+.wpcf7 input[type="email"],
+.wpcf7 input[type="tel"],
+.wpcf7 input[type="password"],
+.wpcf7 input[type="url"],
+.wpcf7 input[type="search"],
+.wpcf7 input[type="number"],
+.wpcf7 input[type="date"],
+.wpcf7 textarea,
+.wpcf7 select,
+.sd-account-form input[type="text"],
+.sd-account-form input[type="email"],
+.sd-account-form input[type="tel"],
+.sd-account-form input[type="password"],
+.sd-account-form textarea,
+.sd-account-form select,
+.sd-confirm-form input[type="text"],
+.sd-confirm-form input[type="email"],
+.sd-confirm-form input[type="tel"],
+.sd-confirm-form input[type="password"],
+.sd-confirm-form textarea,
+.sd-confirm-form select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  margin: 0;
+  padding: 11px 13px;
+  border: 1px solid var(--sd-border-strong);
+  border-radius: var(--sd-radius-sm);
+  background: #ffffff;
+  box-shadow: none;
+  color: var(--sd-text);
+  font-size: 15px;
+  line-height: 1.4;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Textareas */
+.sd-form textarea,
+.wpcf7 textarea,
+.sd-account-form textarea,
+.sd-confirm-form textarea {
+  min-height: 120px;
+  height: auto;
+  resize: vertical;
+}
+
+/* Select */
+.sd-form select,
+.wpcf7 select,
+.sd-account-form select,
+.sd-confirm-form select {
+  padding-right: 40px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--sd-text-muted) 50%),
+    linear-gradient(135deg, var(--sd-text-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 2px),
+    calc(100% - 12px) calc(50% - 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+/* Placeholder */
+.sd-form input::placeholder,
+.sd-form textarea::placeholder,
+.wpcf7 input::placeholder,
+.wpcf7 textarea::placeholder,
+.sd-account-form input::placeholder,
+.sd-account-form textarea::placeholder,
+.sd-confirm-form input::placeholder,
+.sd-confirm-form textarea::placeholder {
+  color: #9aa3af;
+  opacity: 1;
+}
+
+/* Focus */
+.sd-form input:focus,
+.sd-form textarea:focus,
+.sd-form select:focus,
+.wpcf7 input:focus,
+.wpcf7 textarea:focus,
+.wpcf7 select:focus,
+.sd-account-form input:focus,
+.sd-account-form textarea:focus,
+.sd-account-form select:focus,
+.sd-confirm-form input:focus,
+.sd-confirm-form textarea:focus,
+.sd-confirm-form select:focus {
+  border-color: var(--sd-accent);
+  box-shadow: 0 0 0 3px var(--sd-focus);
+  outline: none;
+  background: #ffffff;
+}
+
+/* Helper / note text */
+.sd-form .sd-note,
+.wpcf7 .sd-note,
+.wpcf7 .wpcf7-form-control-wrap + .sd-note,
+.wpcf7 .wpcf7-not-valid-tip + .sd-note,
+.sd-account-form .sd-note,
+.sd-confirm-form .sd-note {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--sd-text-muted);
+}
+
+/* CF7 wrappers */
+.wpcf7-form-control-wrap {
+  display: block;
+  width: 100%;
+}
+
+/* Hide spinner / ajax artifacts when empty */
+.wpcf7-spinner:empty {
+  display: none;
+}
+
+/* Submit row */
+.sd-form .sd-form-actions,
+.wpcf7 form .sd-form-actions,
+.sd-account-form .sd-form-actions,
+.sd-confirm-form .sd-form-actions {
+  margin-top: 24px;
+}
+
+/* CF7 submit button */
+.wpcf7 input[type="submit"],
+.wpcf7 button[type="submit"],
+.sd-form button[type="submit"],
+.sd-form input[type="submit"],
+.sd-account-form button[type="submit"],
+.sd-account-form input[type="submit"],
+.sd-confirm-form button[type="submit"],
+.sd-confirm-form input[type="submit"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: var(--sd-radius-sm);
+  background: var(--sd-accent);
+  color: #ffffff;
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.wpcf7 input[type="submit"]:hover,
+.wpcf7 button[type="submit"]:hover,
+.sd-form button[type="submit"]:hover,
+.sd-form input[type="submit"]:hover,
+.sd-account-form button[type="submit"]:hover,
+.sd-account-form input[type="submit"]:hover,
+.sd-confirm-form button[type="submit"]:hover,
+.sd-confirm-form input[type="submit"]:hover {
+  background: var(--sd-accent-hover);
+  transform: translateY(-1px);
+}
+
+.wpcf7 input[type="submit"]:focus-visible,
+.wpcf7 button[type="submit"]:focus-visible,
+.sd-form button[type="submit"]:focus-visible,
+.sd-form input[type="submit"]:focus-visible,
+.sd-account-form button[type="submit"]:focus-visible,
+.sd-account-form input[type="submit"]:focus-visible,
+.sd-confirm-form button[type="submit"]:focus-visible,
+.sd-confirm-form input[type="submit"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--sd-focus);
+}
+
+/* Optional full-width action */
+.sd-form--block-actions input[type="submit"],
+.sd-form--block-actions button[type="submit"],
+.sd-account-form.sd-form--block-actions button[type="submit"],
+.sd-confirm-form.sd-form--block-actions button[type="submit"] {
+  width: 100%;
+}
+
+/* Validation messages */
+.wpcf7 .wpcf7-not-valid-tip,
+.sd-form .sd-error,
+.sd-account-form .sd-error,
+.sd-confirm-form .sd-error {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #b42318;
+}
+
+/* Invalid fields */
+.wpcf7 form .wpcf7-not-valid,
+.sd-form .is-invalid,
+.sd-account-form .is-invalid,
+.sd-confirm-form .is-invalid {
+  border-color: #d92d20 !important;
+  box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.10) !important;
+}
+
+/* Response output */
+.wpcf7 form .wpcf7-response-output,
+.sd-form .sd-form-message,
+.sd-account-form .sd-form-message,
+.sd-confirm-form .sd-form-message {
+  margin: 20px 0 0;
+  padding: 12px 14px;
+  border-radius: var(--sd-radius-sm);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* Success */
+.wpcf7 form.sent .wpcf7-response-output,
+.sd-form .sd-form-message--success,
+.sd-account-form .sd-form-message--success,
+.sd-confirm-form .sd-form-message--success {
+  border: 1px solid #b7e4c7;
+  background: #f2fbf5;
+  color: #1f5130;
+}
+
+/* Error */
+.wpcf7 form.invalid .wpcf7-response-output,
+.wpcf7 form.unaccepted .wpcf7-response-output,
+.wpcf7 form.failed .wpcf7-response-output,
+.wpcf7 form.aborted .wpcf7-response-output,
+.sd-form .sd-form-message--error,
+.sd-account-form .sd-form-message--error,
+.sd-confirm-form .sd-form-message--error {
+  border: 1px solid #f3c7c7;
+  background: #fff5f5;
+  color: #8a1c1c;
+}
+
+/* Processing state */
+.wpcf7 form.submitting input[type="submit"],
+.wpcf7 form.submitting button[type="submit"],
+.sd-form.is-submitting input[type="submit"],
+.sd-form.is-submitting button[type="submit"] {
+  opacity: 0.75;
+  cursor: wait;
+  transform: none;
+}
+
+/* Checkbox / radio cleanup */
+.sd-form input[type="checkbox"],
+.sd-form input[type="radio"],
+.wpcf7 input[type="checkbox"],
+.wpcf7 input[type="radio"],
+.sd-account-form input[type="checkbox"],
+.sd-account-form input[type="radio"],
+.sd-confirm-form input[type="checkbox"],
+.sd-confirm-form input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  margin: 0 8px 0 0;
+  vertical-align: middle;
+  accent-color: var(--sd-accent);
+  box-shadow: none;
+}
+
+.wpcf7-list-item {
+  margin: 0 16px 8px 0;
+}
+
+/* Confirmation / account creation cards */
+.sd-auth-card,
+.sd-confirm-card {
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-md);
+  box-shadow: var(--sd-shadow-md);
+  padding: 32px;
+}
+
+.sd-auth-card__title,
+.sd-confirm-card__title {
+  margin: 0 0 10px;
+  font-size: 34px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--sd-text);
+}
+
+.sd-auth-card__intro,
+.sd-confirm-card__intro {
+  margin: 0 0 24px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--sd-text-soft);
+}
+
+/* A simple step list */
+.sd-steps {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.sd-steps li {
+  margin-bottom: 10px;
+  color: var(--sd-text-soft);
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .wpcf7 form p,
+  .sd-field {
+    margin-bottom: 20px;
+  }
+
+  .sd-auth-card,
+  .sd-confirm-card {
+    padding: 22px;
+    border-radius: 10px;
+  }
+
+  .sd-auth-card__title,
+  .sd-confirm-card__title {
+    font-size: 28px;
+  }
+
+  .sd-form input[type="text"],
+  .sd-form input[type="email"],
+  .sd-form input[type="tel"],
+  .sd-form input[type="password"],
+  .sd-form input[type="url"],
+  .sd-form input[type="search"],
+  .sd-form input[type="number"],
+  .sd-form input[type="date"],
+  .sd-form textarea,
+  .sd-form select,
+  .wpcf7 input[type="text"],
+  .wpcf7 input[type="email"],
+  .wpcf7 input[type="tel"],
+  .wpcf7 input[type="password"],
+  .wpcf7 input[type="url"],
+  .wpcf7 input[type="search"],
+  .wpcf7 input[type="number"],
+  .wpcf7 input[type="date"],
+  .wpcf7 textarea,
+  .wpcf7 select,
+  .sd-account-form input[type="text"],
+  .sd-account-form input[type="email"],
+  .sd-account-form input[type="tel"],
+  .sd-account-form input[type="password"],
+  .sd-account-form textarea,
+  .sd-account-form select,
+  .sd-confirm-form input[type="text"],
+  .sd-confirm-form input[type="email"],
+  .sd-confirm-form input[type="tel"],
+  .sd-confirm-form input[type="password"],
+  .sd-confirm-form textarea,
+  .sd-confirm-form select {
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .sd-form textarea,
+  .wpcf7 textarea,
+  .sd-account-form textarea,
+  .sd-confirm-form textarea {
+    min-height: 110px;
+    height: auto;
+  }
+}

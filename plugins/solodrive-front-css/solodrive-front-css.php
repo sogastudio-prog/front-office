@@ -23,11 +23,11 @@ function sd_front_css_enqueue_assets() {
 		'02-base.css',
 		'03-shell.css',
 		'04-components.css',
-		'05-front-flow.css',
+		'05-forms.css',
 
 		'07-footer.css',
 
-		'99-legacy-import.css',
+		//'99-legacy-import.css',
 	);
 
 	$deps = array();
