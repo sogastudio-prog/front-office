@@ -391,7 +391,6 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_last_submission_payload_json', (string) ($payload['raw_payload_json'] ?? '{}'));
         update_post_meta($prospect_post_id, 'sd_dedupe_key_email', (string) ($payload['email_normalized'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_dedupe_key_phone', (string) ($payload['phone_normalized'] ?? ''));
-        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'STARTED');
 
         self::ensure_prospect_defaults($prospect_post_id, get_post($prospect_post_id), false);
 
@@ -416,6 +415,11 @@ final class SD_Front_Office_Scaffold {
         $current_stage = (string) get_post_meta($prospect_post_id, 'sd_lifecycle_stage', true);
         if ($current_stage === '') {
             update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_INTAKE_CAPTURED);
+        }
+        $owner_user_id = (int) get_post_meta($prospect_post_id, 'sd_owner_user_id', true);
+        if ($owner_user_id <= 0) {
+            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_INTAKE_CAPTURED);
+            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_ACCOUNT_PENDING);
         }
         $existing_count = (int) get_post_meta($prospect_post_id, 'sd_submission_count', true);
         update_post_meta($prospect_post_id, 'sd_submission_count', max(1, $existing_count + 1));
@@ -745,8 +749,7 @@ final class SD_Front_Office_Scaffold {
         $email = (string) get_post_meta($prospect_post_id, 'sd_email_raw', true);
         $phone = (string) get_post_meta($prospect_post_id, 'sd_phone_raw', true);
         $business_name = (string) get_post_meta($prospect_post_id, self::META_BUSINESS_NAME, true);
-        $service_area = (string) get_post_meta($prospect_post_id, self::META_SERVICE_AREA, true);
-        $city = (string) get_post_meta($prospect_post_id, 'sd_city', true);
+
         $stripe_account_id = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
         $stripe_state = (string) get_post_meta($prospect_post_id, self::META_STRIPE_STATE, true);
         $billing_status = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
@@ -761,7 +764,7 @@ final class SD_Front_Office_Scaffold {
             'email' => $email,
             'phone' => $phone,
             'business_display_name' => $business_name !== '' ? $business_name : $full_name,
-            'service_area' => $service_area !== '' ? $service_area : $city,
+            'service_area' => $service_area,
             'stripe_account_id' => $stripe_account_id,
             'stripe_state' => $stripe_state,
             'billing_status' => $billing_status,
@@ -811,6 +814,26 @@ final class SD_Front_Office_Scaffold {
         }
 
         return (int) $contact_form->id() === self::REQUEST_ACCESS_FORM_ID;
+    }
+
+    private static function render_slug_reservation(int $prospect_post_id): string {
+        return '<div class="sd-front-container"><h1>Slug selection coming next.</h1></div>';
+    }
+
+    private static function render_checkout(int $prospect_post_id): string {
+        return '<div class="sd-front-container"><h1>Checkout coming next.</h1></div>';
+    }
+
+    private static function render_provisioning_state(int $prospect_post_id): string {
+        return '<div class="sd-front-container"><h1>Provisioning in progress.</h1></div>';
+    }
+
+    private static function render_stripe_connect(int $prospect_post_id): string {
+        return '<div class="sd-front-container"><h1>Stripe Connect coming next.</h1></div>';
+    }
+
+    private static function render_ready_state(int $prospect_post_id): string {
+        return '<div class="sd-front-container"><h1>Your account is ready.</h1></div>';
     }
 
     private static function has_processed_event(string $event_id): bool {
@@ -871,8 +894,6 @@ final class SD_Front_Office_Scaffold {
             default:
                 return '<div>Unknown state</div>';
         }
-        $resume_url = '';
-        $setup_label = 'Resume setup';
 
         if ($stripe_state === 'payments_enabled') {
             self::maybe_promote_prospect_to_tenant($prospect_post_id);
