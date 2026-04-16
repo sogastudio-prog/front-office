@@ -742,6 +742,70 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
     }
 
+    private static function render_account_creation(int $prospect_post_id): string {
+        $token = self::ensure_prospect_token($prospect_post_id);
+
+        $error_code = isset($_GET['acct_err'])
+            ? sanitize_text_field((string) $_GET['acct_err'])
+            : '';
+
+        $error_message = $error_code !== ''
+            ? self::map_account_error_message($error_code)
+            : '';
+
+        ob_start();
+        ?>
+        <div class="sd-front-container">
+            <div class="sd-front-hero">
+                <h1 class="sd-front-headline">Create your account</h1>
+                <p class="sd-front-body">
+                    You're one step away from setting up your SoloDrive storefront.
+                </p>
+            </div>
+
+            <?php if ($error_message !== '') : ?>
+                <div class="sd-front-error">
+                    <?php echo esc_html($error_message); ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="sd-front-form">
+                <input type="hidden" name="action" value="<?php echo esc_attr(self::ACTION_CREATE_ACCOUNT); ?>">
+                <input type="hidden" name="prospect_token" value="<?php echo esc_attr($token); ?>">
+                <?php wp_nonce_field('sdfo_create_account_' . $prospect_post_id, 'sdfo_account_nonce'); ?>
+
+                <div class="sd-front-field">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" required>
+                </div>
+
+                <div class="sd-front-field">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+
+                <div class="sd-front-field">
+                    <label>Password</label>
+                    <input type="password" name="password" required>
+                </div>
+
+                <div class="sd-front-field">
+                    <label>Confirm Password</label>
+                    <input type="password" name="password_confirm" required>
+                </div>
+
+                <div class="sd-front-actions">
+                    <button type="submit" class="sd-front-btn sd-front-btn--primary">
+                        Create Account
+                    </button>
+                </div>
+            </form>
+        </div>
+        <?php
+
+        return (string) ob_get_clean();
+    }
+
     public static function shortcode_prospect_state(): string {
         if (self::is_editor_request()) {
             return '<div class="sd-front-placeholder">SOLODRIVE.PRO Prospect status block</div>';
