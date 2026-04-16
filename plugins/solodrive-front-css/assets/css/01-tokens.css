@@ -40,3 +40,22 @@
   --sd-space-4: 32px;
   --sd-space-5: 40px;
 }
+
+/* =====================================
+   FORM / CARD TYPOGRAPHY HIERARCHY
+   ===================================== */
+
+.sd-card-intro {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.sd-card .wpcf7 label {
+  font-weight: 500;
+}
+
+.sd-card .sd-note {
+  font-size: 14px;
+  color: #6b7280;
+}
