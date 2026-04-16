@@ -172,6 +172,23 @@
   width: 100%;
 }
 
+.wpcf7 p {
+  margin: 0 0 20px;
+}
+
+.wpcf7 p:empty {
+  display: none;
+}
+
+.wpcf7 br {
+  display: none;
+}
+
+.wpcf7 label + .wpcf7-form-control-wrap {
+  display: block;
+  margin-top: 8px;
+}
+
 /* Hide spinner / ajax artifacts when empty */
 .wpcf7-spinner:empty {
   display: none;
