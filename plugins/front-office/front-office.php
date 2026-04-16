@@ -742,6 +742,148 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
     }
 
+    public static function shortcode_prospect_state(): string {
+        if (self::is_editor_request()) {
+            return '<div class="sd-front-placeholder">SOLODRIVE.PRO Prospect status block</div>';
+        }
+
+        $prospect_post_id = self::require_prospect_post_id_from_token_request();
+
+        $lifecycle = (string) get_post_meta($prospect_post_id, 'sd_lifecycle_stage', true);
+        if ($lifecycle === '') {
+            $lifecycle = self::STAGE_INTAKE_CAPTURED;
+            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', $lifecycle);
+        }
+
+        switch ($lifecycle) {
+            case self::STAGE_INTAKE_CAPTURED:
+            case self::STAGE_ACCOUNT_PENDING:
+                return self::render_account_creation($prospect_post_id);
+
+            case self::STAGE_ACCOUNT_CREATED:
+            case self::STAGE_SLUG_PENDING:
+                return self::render_slug_reservation($prospect_post_id);
+
+            case 'SLUG_RESERVED':
+            case 'CHECKOUT_PENDING':
+                return self::render_checkout($prospect_post_id);
+
+            case 'SUBSCRIPTION_PAID':
+            case 'TENANT_PROVISIONING':
+            case 'TENANT_INACTIVE':
+                return self::render_provisioning_state($prospect_post_id);
+
+            case 'CONNECT_PENDING':
+                return self::render_stripe_connect($prospect_post_id);
+
+            case 'ACTIVATED':
+                return self::render_ready_state($prospect_post_id);
+
+            default:
+                return '<div class="sd-front-container"><h1>Unknown state</h1></div>';
+        }
+    }
+
+    private static function render_slug_reservation(int $prospect_post_id): string {
+        $token = self::ensure_prospect_token($prospect_post_id);
+
+        ob_start();
+        ?>
+        <div class="sd-front-container">
+            <div class="sd-front-hero">
+                <h1 class="sd-front-headline">Choose your storefront name</h1>
+                <p class="sd-front-body">
+                    Your account is ready. Slug reservation is the next step.
+                </p>
+            </div>
+
+            <div class="sd-front-actions">
+                <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url(self::get_prospect_url_by_token($token)); ?>">
+                    Continue
+                </a>
+            </div>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    private static function render_checkout(int $prospect_post_id): string {
+        ob_start();
+        ?>
+        <div class="sd-front-container">
+            <div class="sd-front-hero">
+                <h1 class="sd-front-headline">Checkout coming next</h1>
+                <p class="sd-front-body">
+                    Your storefront reservation is complete. Subscription checkout will be wired here next.
+                </p>
+            </div>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    private static function render_provisioning_state(int $prospect_post_id): string {
+        ob_start();
+        ?>
+        <div class="sd-front-container">
+            <div class="sd-front-hero">
+                <h1 class="sd-front-headline">Provisioning in progress</h1>
+                <p class="sd-front-body">
+                    Your tenant is being prepared.
+                </p>
+            </div>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    private static function render_stripe_connect(int $prospect_post_id): string {
+        ob_start();
+        ?>
+        <div class="sd-front-container">
+            <div class="sd-front-hero">
+                <h1 class="sd-front-headline">Connect Stripe</h1>
+                <p class="sd-front-body">
+                    Stripe Connect will be launched from this step.
+                </p>
+            </div>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    private static function render_ready_state(int $prospect_post_id): string {
+        $storefront_url = (string) get_post_meta($prospect_post_id, self::META_STOREFRONT_URL, true);
+        $operations_entry_url = (string) get_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, true);
+
+        ob_start();
+        ?>
+        <div class="sd-front-container">
+            <div class="sd-front-hero">
+                <h1 class="sd-front-headline">Your account is ready</h1>
+                <p class="sd-front-body">
+                    Your storefront and operations access are available.
+                </p>
+            </div>
+
+            <?php if ($storefront_url !== '') : ?>
+                <div class="sd-front-actions">
+                    <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($storefront_url); ?>">
+                        Open your booking page
+                    </a>
+
+                    <?php if ($operations_entry_url !== '') : ?>
+                        <a class="sd-front-btn sd-front-btn--secondary" href="<?php echo esc_url($operations_entry_url); ?>">
+                            Log in to operations
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
     private static function promote_prospect_to_tenant(int $prospect_post_id): array {
         $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
         $prospect_token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
