@@ -151,3 +151,22 @@
   color: var(--sd-text-muted);
   line-height: 1.5;
 }
+
+.sd-card {
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-md);
+  box-shadow: var(--sd-shadow-md);
+  padding: 32px;
+}
+
+.sd-card--tight {
+  padding: 24px;
+}
+
+.sd-card-intro {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--sd-text);
+  margin-bottom: 24px;
+}
