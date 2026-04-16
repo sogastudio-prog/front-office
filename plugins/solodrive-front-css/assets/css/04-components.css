@@ -1,0 +1,153 @@
+/* =====================================
+   SOLODRIVE COMPONENTS
+   Cards, buttons, notes, dividers
+   ===================================== */
+
+/* Card */
+.sd-card {
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-md);
+  box-shadow: var(--sd-shadow-md);
+  padding: 32px;
+}
+
+.sd-card--tight {
+  padding: 24px;
+}
+
+.sd-card--soft {
+  background: var(--sd-surface);
+  box-shadow: var(--sd-shadow-sm);
+}
+
+.sd-card > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Card intro / opener */
+.sd-card-intro {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--sd-text);
+  margin-bottom: 24px;
+}
+
+/* Divider */
+.sd-divider {
+  border: 0;
+  border-top: 1px solid var(--sd-border);
+  margin: 40px 0 24px;
+}
+
+/* Buttons */
+.sd-button,
+.sd-button .wp-element-button,
+.wp-block-button__link.sd-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: var(--sd-radius-sm);
+  background: var(--sd-accent);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: none;
+}
+
+.sd-button:hover,
+.sd-button:focus,
+.sd-button .wp-element-button:hover,
+.wp-block-button__link.sd-button:hover {
+  background: var(--sd-accent-hover);
+  color: #ffffff;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.sd-button:focus-visible,
+.sd-button .wp-element-button:focus-visible,
+.wp-block-button__link.sd-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--sd-focus);
+}
+
+/* Secondary button */
+.sd-button--secondary {
+  background: transparent;
+  color: var(--sd-text);
+  border: 1px solid var(--sd-border-strong);
+}
+
+.sd-button--secondary:hover,
+.sd-button--secondary:focus {
+  background: #ffffff;
+  color: var(--sd-text);
+  border-color: var(--sd-border-strong);
+}
+
+/* Full-width button */
+.sd-button--block {
+  display: flex;
+  width: 100%;
+}
+
+/* Notes / helper text / meta blocks */
+.sd-note {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--sd-text-muted);
+}
+
+.sd-note--strong {
+  color: var(--sd-text-soft);
+}
+
+/* Simple callout */
+.sd-callout {
+  padding: 16px 18px;
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm);
+  background: var(--sd-surface);
+  color: var(--sd-text-soft);
+}
+
+/* Simple path/choice tile */
+.sd-tile {
+  display: block;
+  padding: 16px 18px;
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm);
+  background: var(--sd-surface);
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.sd-tile:hover {
+  border-color: var(--sd-border-strong);
+  box-shadow: var(--sd-shadow-sm);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.sd-tile__title {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sd-text);
+  margin-bottom: 6px;
+}
+
+.sd-tile__meta {
+  display: block;
+  font-size: 14px;
+  color: var(--sd-text-muted);
+  line-height: 1.5;
+}
