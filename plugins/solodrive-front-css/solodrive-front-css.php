@@ -20,7 +20,7 @@ function sd_front_css_enqueue_assets() {
 
 	$files = array(
 		'01-tokens.css',
-		'02-base.css',
+		'02-front-public.css',
 		'03-astra-overrides.css',
 		'04-site-pages.css',
 		'05-front-flow.css',
