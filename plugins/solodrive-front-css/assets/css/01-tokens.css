@@ -108,3 +108,43 @@
 .sd-container--wide {
   max-width: 960px;
 }
+
+/* =====================================
+   HOMEPAGE SECTION SYSTEM
+   ===================================== */
+
+/* Default */
+.sd-section {
+  padding: 72px 24px;
+}
+
+/* Hero */
+.sd-section--hero {
+  padding-top: 96px;
+  padding-bottom: 56px;
+}
+
+/* Soft sections (subtle separation) */
+.sd-section--soft {
+  background: #f7f8fa;
+  border-top: 1px solid #eef1f4;
+  border-bottom: 1px solid #eef1f4;
+}
+
+/* Content sections */
+.sd-section--content {
+  padding-top: 64px;
+  padding-bottom: 64px;
+}
+
+/* Accent section (CHOOSE YOUR PATH) */
+.sd-section--accent {
+  background: #f3f4f6;
+}
+
+/* CTA section */
+.sd-section--cta {
+  padding-top: 80px;
+  padding-bottom: 96px;
+  text-align: left;
+}
