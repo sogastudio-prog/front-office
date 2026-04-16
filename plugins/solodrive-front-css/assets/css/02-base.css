@@ -71,3 +71,70 @@ input, button {
 .wp-block-group {
   margin: 0;
 }
+
+/* =====================================
+   ADDENDUM — BASE SAFETY / ASTRA RESET
+   ===================================== */
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+.wp-site-blocks {
+  overflow-x: clip;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Keep old hidden helper harmless if it still exists in markup */
+.sd-hp {
+  display: none !important;
+}
+
+/* Astra/Gutenberg default constrained spacing is too aggressive */
+.entry-content > .wp-block-group,
+.entry-content > .wp-block-columns,
+.entry-content > .wp-block-cover {
+  padding-top: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+  padding-left: 0;
+}
+
+/* Keep article shells from fighting the SoloDrive shell */
+.entry-content,
+.ast-container {
+  max-width: none;
+}
+
+blockquote {
+  border-left: 2px solid var(--sd-border);
+  padding-left: 16px;
+  margin: 32px 0;
+  font-style: italic;
+  color: var(--sd-text);
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--sd-border);
+  margin: 48px 0;
+}

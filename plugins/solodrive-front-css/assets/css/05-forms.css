@@ -452,3 +452,72 @@
     height: auto;
   }
 }
+
+/* =====================================
+   ADDENDUM — CF7 CLEANUP + CHOICE INPUTS
+   ===================================== */
+
+/* CF7 still emits paragraph wrappers and <br> noise */
+.wpcf7 p {
+  margin: 0 0 20px;
+}
+
+.wpcf7 p:empty {
+  display: none;
+}
+
+.wpcf7 br {
+  display: none;
+}
+
+.wpcf7 label + .wpcf7-form-control-wrap {
+  display: block;
+  margin-top: 8px;
+}
+
+/* Helper paragraph directly under a field */
+.wpcf7 p + p.sd-note,
+.wpcf7 p .sd-note {
+  margin-top: 8px;
+}
+
+/* Radio / checkbox cleanup from legacy */
+.wpcf7 form .wpcf7-radio,
+.wpcf7 form .wpcf7-checkbox {
+  display: flex;
+  gap: 24px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.wpcf7-list-item {
+  margin: 0;
+}
+
+.wpcf7-list-item label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.wpcf7 input[type="radio"],
+.wpcf7 input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--sd-accent);
+}
+
+.wpcf7 .wpcf7-acceptance {
+  margin-top: 24px;
+}
+
+/* Better spacing for submit row */
+.wpcf7 input[type="submit"].has-spinner {
+  margin-right: 0;
+}
+
+.wpcf7-spinner {
+  vertical-align: middle;
+}

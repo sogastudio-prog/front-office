@@ -24,8 +24,9 @@ function sd_front_css_enqueue_assets() {
 		'03-shell.css',
 		'04-components.css',
 		'05-forms.css',
-
+		'06-pages.css',
 		'07-footer.css',
+		'08-responsive.css',
 
 		//'99-legacy-import.css',
 	);

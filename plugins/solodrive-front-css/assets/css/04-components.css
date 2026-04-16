@@ -152,6 +152,11 @@
   line-height: 1.5;
 }
 
+/* =====================================
+   ADDENDUM — MISSING COMPONENT PRIMITIVES
+   ===================================== */
+
+/* Core card — this was effectively still living in legacy */
 .sd-card {
   background: var(--sd-surface);
   border: 1px solid var(--sd-border);
@@ -164,9 +169,157 @@
   padding: 24px;
 }
 
+.sd-card > *:last-child {
+  margin-bottom: 0;
+}
+
 .sd-card-intro {
   font-size: 16px;
   line-height: 1.7;
   color: var(--sd-text);
   margin-bottom: 24px;
+}
+
+/* Ordered step list */
+.sd-steps {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.sd-steps li {
+  margin-bottom: 10px;
+  color: var(--sd-text-soft);
+}
+
+/* Front-of-flow card surfaces for confirmation / account creation */
+.sd-front-container,
+.sd-auth-card,
+.sd-confirm-card {
+  max-width: 720px;
+  margin: 56px auto;
+  padding: 32px 24px;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--sd-border);
+  border-radius: 18px;
+  box-shadow: var(--sd-shadow-md);
+}
+
+.sd-front-hero {
+  margin-bottom: 24px;
+}
+
+.sd-front-headline,
+.sd-auth-card__title,
+.sd-confirm-card__title {
+  font-size: clamp(32px, 5vw, 44px);
+  line-height: 1.08;
+  margin: 0 0 14px;
+  letter-spacing: -0.02em;
+  color: var(--sd-text);
+}
+
+.sd-front-body,
+.sd-auth-card__intro,
+.sd-confirm-card__intro {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--sd-text-soft);
+  margin: 0 auto;
+  max-width: 42rem;
+}
+
+/* Progress pills */
+.sd-front-progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 30px 0 18px;
+  font-size: 14px;
+}
+
+.sd-step {
+  padding: 12px 10px;
+  border: 1px solid var(--sd-border);
+  border-radius: 999px;
+  color: var(--sd-text-muted);
+  background: #ffffff;
+}
+
+.sd-step.is-active {
+  border-color: var(--sd-accent);
+  color: var(--sd-accent);
+  font-weight: 600;
+}
+
+.sd-step.is-complete {
+  border-color: #2ecc71;
+  color: #1f7a43;
+  background: #f3fcf6;
+  font-weight: 600;
+}
+
+.sd-front-processing {
+  margin: 18px 0 8px;
+  color: var(--sd-text-soft);
+}
+
+.sd-spinner {
+  margin: 0 auto 10px;
+  width: 24px;
+  height: 24px;
+  border: 3px solid #ddd;
+  border-top-color: var(--sd-accent);
+  border-radius: 50%;
+  animation: sd-spin 0.9s linear infinite;
+}
+
+@keyframes sd-spin {
+  to { transform: rotate(360deg); }
+}
+
+.sd-front-actions {
+  margin-top: 20px;
+}
+
+.sd-front-btn {
+  display: inline-block;
+  min-height: 48px;
+  padding: 12px 20px;
+  margin: 5px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.sd-front-btn--primary {
+  background: var(--sd-accent);
+  color: #fff;
+  border: 1px solid var(--sd-accent);
+}
+
+.sd-front-btn--primary:hover,
+.sd-front-btn--primary:focus {
+  background: var(--sd-accent-hover);
+  border-color: var(--sd-accent-hover);
+  color: #fff;
+  text-decoration: none;
+}
+
+.sd-front-btn--secondary {
+  background: #fff;
+  color: var(--sd-text);
+  border: 1px solid var(--sd-border);
+}
+
+.sd-front-btn--secondary:hover,
+.sd-front-btn--secondary:focus {
+  border-color: var(--sd-text);
+  color: var(--sd-text);
+  text-decoration: none;
+}
+
+.sd-front-footer {
+  margin-top: 26px;
+  color: var(--sd-text-muted);
 }
