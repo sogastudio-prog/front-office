@@ -375,3 +375,63 @@
 .sd-card-intro + .wpcf7 {
   margin-top: 4px;
 }
+
+/* =====================================
+   EXIT SIGN CARD (Hero Visual)
+   ===================================== */
+
+.sd-exit-sign {
+  background: var(--sd-exit-green);
+  color: #fff;
+  border-radius: 14px;
+  padding: 24px 28px;
+  max-width: 320px;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.08),
+    inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.sd-exit-sign__label {
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+
+.sd-exit-sign__main {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.sd-exit-sign__arrow {
+  margin-top: 12px;
+  font-size: 20px;
+  opacity: 0.9;
+}
+
+/* Placement */
+
+.sd-hero {
+  position: relative;
+}
+
+.sd-hero__visual {
+  position: absolute;
+  right: 0;
+  top: 40px;
+}
+
+@media (max-width: 1024px) {
+  .sd-hero__visual {
+    position: static;
+    margin-top: 24px;
+  }
+
+  .sd-exit-sign {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
