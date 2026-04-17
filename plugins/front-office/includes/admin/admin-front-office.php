@@ -156,26 +156,6 @@ final class SD_Front_Office_Admin {
         echo '<input type="text" class="regular-text" name="sd_default_subscription_display_price" value="' . esc_attr($value) . '" />';
     }
 
-    public static function sanitize_price_id($value): string {
-        $value = sanitize_text_field((string) $value);
-
-        if ($value === '') {
-            return '';
-        }
-
-        if (!str_starts_with($value, 'price_')) {
-            add_settings_error(
-                'sd_default_stripe_subscription_price_id',
-                'invalid_price_id',
-                'Stripe price ID must start with price_.'
-            );
-
-            return (string) get_option('sd_default_stripe_subscription_price_id', '');
-        }
-
-        return $value;
-    }
-
     public static function render_price_id_field(): void {
         $value = (string) get_option('sd_default_stripe_subscription_price_id', '');
         echo '<input type="text" class="regular-text" name="sd_default_stripe_subscription_price_id" value="' . esc_attr($value) . '" />';
