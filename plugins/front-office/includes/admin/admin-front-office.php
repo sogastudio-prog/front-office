@@ -156,21 +156,6 @@ final class SD_Front_Office_Admin {
         echo '<input type="text" class="regular-text" name="sd_default_subscription_display_price" value="' . esc_attr($value) . '" />';
     }
 
-    public static function render_price_id_field(): void {
-        $value = (string) get_option('sd_default_stripe_subscription_price_id', '');
-        echo '<input type="text" class="regular-text" name="sd_default_stripe_subscription_price_id" value="' . esc_attr($value) . '" />';
-    }
-
-    public static function render_plan_label_field(): void {
-        $value = (string) get_option('sd_default_subscription_plan_label', '');
-        echo '<input type="text" class="regular-text" name="sd_default_subscription_plan_label" value="' . esc_attr($value) . '" />';
-    }
-
-    public static function render_display_price_field(): void {
-        $value = (string) get_option('sd_default_subscription_display_price', '');
-        echo '<input type="text" class="regular-text" name="sd_default_subscription_display_price" value="' . esc_attr($value) . '" />';
-    }
-
     public static function prospect_columns(array $columns): array {
         unset($columns['date']);
         return [
