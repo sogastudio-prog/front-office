@@ -68,6 +68,14 @@ final class SD_Front_Office_Scaffold {
     private const META_STRIPE_STATE             = 'sd_stripe_state';
     private const META_STRIPE_COMPLETED_GMT     = 'sd_stripe_completed_gmt';
     private const PROSPECT_PAGE_SLUG            = 'prospect';
+    private const ACTION_START_CHECKOUT         = 'sdfo_start_checkout';
+    private const STAGE_SUBSCRIPTION_PAID       = 'SUBSCRIPTION_PAID';
+    private const STAGE_TENANT_PROVISIONING     = 'TENANT_PROVISIONING';
+    private const STAGE_TENANT_INACTIVE         = 'TENANT_INACTIVE';
+
+    private const BILLING_CHECKOUT_PENDING      = 'CHECKOUT_PENDING';
+    private const BILLING_SUBSCRIPTION_PAID     = 'SUBSCRIPTION_PAID';
+    private const BILLING_SUBSCRIPTION_FAILED   = 'SUBSCRIPTION_FAILED';
 
     public static function bootstrap(): void {
         add_action('init', [__CLASS__, 'register_post_types']);
@@ -97,7 +105,8 @@ final class SD_Front_Office_Scaffold {
         add_action('admin_post_' . self::ACTION_CREATE_ACCOUNT, [__CLASS__, 'handle_account_creation_submit']);
         add_action('admin_post_nopriv_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
         add_action('admin_post_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
-
+        add_action('admin_post_nopriv_' . self::ACTION_START_CHECKOUT, [__CLASS__, 'handle_start_checkout']);
+        add_action('admin_post_' . self::ACTION_START_CHECKOUT, [__CLASS__, 'handle_start_checkout']);
         add_action('admin_post_nopriv_' . self::ACTION_START_PAYOUTS, [__CLASS__, 'handle_start_payouts']);
         add_action('admin_post_' . self::ACTION_START_PAYOUTS, [__CLASS__, 'handle_start_payouts']);
         if (!is_admin()) {
@@ -830,6 +839,7 @@ final class SD_Front_Office_Scaffold {
         }
 
         $prospect_post_id = self::require_prospect_post_id_from_token_request();
+        self::maybe_finalize_checkout_success($prospect_post_id);
 
         $lifecycle = (string) get_post_meta($prospect_post_id, 'sd_lifecycle_stage', true);
         if ($lifecycle === '') {
@@ -953,6 +963,9 @@ final class SD_Front_Office_Scaffold {
 
     private static function render_checkout(int $prospect_post_id): string {
         $reserved_slug = (string) get_post_meta($prospect_post_id, 'sd_reserved_slug', true);
+        $checkout_session_id = (string) get_post_meta($prospect_post_id, 'sd_stripe_checkout_session_id', true);
+        $billing_status = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
+        $token = self::ensure_prospect_token($prospect_post_id);
 
         if ($reserved_slug === '') {
             update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_PENDING);
@@ -961,6 +974,9 @@ final class SD_Front_Office_Scaffold {
 
         update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_CHECKOUT_PENDING);
 
+        $error_code = isset($_GET['checkout_err']) ? sanitize_text_field((string) $_GET['checkout_err']) : '';
+        $message = self::map_checkout_error_message($error_code);
+
         ob_start();
         ?>
         <div class="sd-front-container">
@@ -968,21 +984,156 @@ final class SD_Front_Office_Scaffold {
                 <h1 class="sd-front-headline">Ready for checkout</h1>
                 <p class="sd-front-body">
                     Your storefront name <strong><?php echo esc_html($reserved_slug); ?></strong> is reserved.
-                    Stripe Checkout plugs in here next.
                 </p>
                 <p class="sd-front-body">
                     Future storefront: <strong><?php echo esc_html('app.solodrive.pro/t/' . $reserved_slug); ?></strong>
                 </p>
             </div>
 
-            <div class="sd-front-actions">
-                <button type="button" class="sd-front-btn sd-front-btn--primary" disabled>
-                    Checkout coming next
-                </button>
-            </div>
+            <?php if ($message !== '') : ?>
+                <div class="sd-front-alert sd-front-alert--error">
+                    <?php echo esc_html($message); ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="sd-front-form">
+                <input type="hidden" name="action" value="<?php echo esc_attr(self::ACTION_START_CHECKOUT); ?>">
+                <input type="hidden" name="prospect_token" value="<?php echo esc_attr($token); ?>">
+                <?php wp_nonce_field('sdfo_start_checkout_' . $prospect_post_id, 'sdfo_checkout_nonce'); ?>
+
+                <div class="sd-front-actions">
+                    <button type="submit" class="sd-front-btn sd-front-btn--primary">
+                        Continue to checkout
+                    </button>
+                </div>
+            </form>
+
+            <?php if ($checkout_session_id !== '') : ?>
+                <p class="sd-front-body">
+                    Checkout session: <strong><?php echo esc_html($checkout_session_id); ?></strong>
+                </p>
+            <?php endif; ?>
+
+            <?php if ($billing_status !== '') : ?>
+                <p class="sd-front-body">
+                    Billing status: <strong><?php echo esc_html($billing_status); ?></strong>
+                </p>
+            <?php endif; ?>
         </div>
         <?php
         return (string) ob_get_clean();
+    }
+
+    public static function handle_start_checkout(): void {
+        $token = isset($_POST['prospect_token']) ? sanitize_text_field((string) $_POST['prospect_token']) : '';
+        $prospect_post_id = self::get_prospect_post_id_by_token($token);
+
+        if ($prospect_post_id <= 0) {
+            wp_die('Invalid or expired link.');
+        }
+
+        if (
+            !isset($_POST['sdfo_checkout_nonce']) ||
+            !wp_verify_nonce((string) $_POST['sdfo_checkout_nonce'], 'sdfo_start_checkout_' . $prospect_post_id)
+        ) {
+            self::redirect_checkout_error($prospect_post_id, 'invalid_request');
+        }
+
+        $owner_user_id = (int) get_post_meta($prospect_post_id, 'sd_owner_user_id', true);
+        $reserved_slug = (string) get_post_meta($prospect_post_id, 'sd_reserved_slug', true);
+
+        if ($owner_user_id <= 0) {
+            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_ACCOUNT_PENDING);
+            wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
+            exit;
+        }
+
+        if ($reserved_slug === '') {
+            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_PENDING);
+            wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
+            exit;
+        }
+
+        $session = self::create_stripe_checkout_session($prospect_post_id);
+        if (empty($session['ok'])) {
+            self::redirect_checkout_error($prospect_post_id, (string) ($session['error'] ?? 'checkout_failed'));
+        }
+
+        update_post_meta($prospect_post_id, 'sd_stripe_checkout_session_id', (string) $session['session_id']);
+        update_post_meta($prospect_post_id, 'sd_billing_status', self::BILLING_CHECKOUT_PENDING);
+        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_CHECKOUT_PENDING);
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+        wp_safe_redirect((string) $session['url']);
+        exit;
+    }
+
+    private static function create_stripe_checkout_session(int $prospect_post_id): array {
+        if (!class_exists('\\Stripe\\Stripe') || !class_exists('\\Stripe\\Checkout\\Session')) {
+            return ['ok' => false, 'error' => 'stripe_sdk_missing'];
+        }
+
+        $stripe_secret_key = self::get_stripe_secret_key();
+        if ($stripe_secret_key === '') {
+            return ['ok' => false, 'error' => 'stripe_secret_missing'];
+        }
+
+        $price_id = self::get_stripe_subscription_price_id();
+        if ($price_id === '') {
+            return ['ok' => false, 'error' => 'stripe_price_missing'];
+        }
+
+        $email = (string) get_post_meta($prospect_post_id, 'sd_email_normalized', true);
+        $prospect_token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
+        $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
+        $reserved_slug = (string) get_post_meta($prospect_post_id, 'sd_reserved_slug', true);
+
+        try {
+            \Stripe\Stripe::setApiKey($stripe_secret_key);
+
+            $success_url = add_query_arg(
+                ['checkout' => 'success', 'session_id' => '{CHECKOUT_SESSION_ID}'],
+                self::get_prospect_url_for_post($prospect_post_id)
+            );
+
+            $cancel_url = add_query_arg(
+                ['checkout' => 'cancel'],
+                self::get_prospect_url_for_post($prospect_post_id)
+            );
+
+            $session = \Stripe\Checkout\Session::create([
+                'mode' => 'subscription',
+                'customer_email' => $email !== '' ? $email : null,
+                'line_items' => [[
+                    'price' => $price_id,
+                    'quantity' => 1,
+                ]],
+                'success_url' => $success_url,
+                'cancel_url' => $cancel_url,
+                'metadata' => [
+                    'prospect_post_id' => (string) $prospect_post_id,
+                    'prospect_id'      => $prospect_id,
+                    'prospect_token'   => $prospect_token,
+                    'reserved_slug'    => $reserved_slug,
+                ],
+                'subscription_data' => [
+                    'metadata' => [
+                        'prospect_post_id' => (string) $prospect_post_id,
+                        'prospect_id'      => $prospect_id,
+                        'reserved_slug'    => $reserved_slug,
+                    ],
+                ],
+            ]);
+
+            return [
+                'ok' => true,
+                'session_id' => (string) $session->id,
+                'url' => (string) $session->url,
+            ];
+        } catch (Throwable $e) {
+            error_log('SD Front Office: Stripe Checkout session create failed: ' . $e->getMessage());
+            return ['ok' => false, 'error' => 'checkout_failed'];
+        }
     }
 
     private static function render_provisioning_state(int $prospect_post_id): string {
@@ -1094,6 +1245,53 @@ final class SD_Front_Office_Scaffold {
         return (string) ob_get_clean();
     }
 
+    private static function maybe_finalize_checkout_success(int $prospect_post_id): void {
+        $checkout_flag = isset($_GET['checkout']) ? sanitize_text_field((string) $_GET['checkout']) : '';
+        $session_id = isset($_GET['session_id']) ? sanitize_text_field((string) $_GET['session_id']) : '';
+
+        if ($checkout_flag !== 'success' || $session_id === '') {
+            return;
+        }
+
+        $existing_paid = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
+        if ($existing_paid === self::BILLING_SUBSCRIPTION_PAID) {
+            return;
+        }
+
+        if (!class_exists('\\Stripe\\Stripe') || !class_exists('\\Stripe\\Checkout\\Session')) {
+            return;
+        }
+
+        $stripe_secret_key = self::get_stripe_secret_key();
+        if ($stripe_secret_key === '') {
+            return;
+        }
+
+        try {
+            \Stripe\Stripe::setApiKey($stripe_secret_key);
+
+            $session = \Stripe\Checkout\Session::retrieve($session_id, []);
+            if (!$session || (string) $session->payment_status !== 'paid') {
+                return;
+            }
+
+            $subscription_id = isset($session->subscription) ? (string) $session->subscription : '';
+            $customer_id = isset($session->customer) ? (string) $session->customer : '';
+
+            update_post_meta($prospect_post_id, 'sd_stripe_checkout_session_id', (string) $session_id);
+            update_post_meta($prospect_post_id, 'sd_stripe_customer_id', $customer_id);
+            update_post_meta($prospect_post_id, 'sd_stripe_subscription_id', $subscription_id);
+            update_post_meta($prospect_post_id, 'sd_billing_status', self::BILLING_SUBSCRIPTION_PAID);
+            update_post_meta($prospect_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
+            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SUBSCRIPTION_PAID);
+            update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+            self::maybe_provision_inactive_tenant($prospect_post_id);
+        } catch (Throwable $e) {
+            error_log('SD Front Office: checkout success verify failed: ' . $e->getMessage());
+        }
+    }
+
     private static function promote_prospect_to_tenant(int $prospect_post_id): array {
         $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
         $prospect_token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
@@ -1116,7 +1314,6 @@ final class SD_Front_Office_Scaffold {
             'email' => $email,
             'phone' => $phone,
             'business_display_name' => $business_name !== '' ? $business_name : $full_name,
-            'service_area' => $service_area,
             'stripe_account_id' => $stripe_account_id,
             'stripe_state' => $stripe_state,
             'billing_status' => $billing_status,
@@ -1131,6 +1328,56 @@ final class SD_Front_Office_Scaffold {
         }
 
         return $response;
+    }
+
+    private static function maybe_provision_inactive_tenant(int $prospect_post_id): void {
+        $existing_tenant_post_id = (int) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', true);
+        if ($existing_tenant_post_id > 0) {
+            return;
+        }
+
+        $billing_status = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
+        $reserved_slug = (string) get_post_meta($prospect_post_id, 'sd_reserved_slug', true);
+        $full_name = (string) get_post_meta($prospect_post_id, 'sd_full_name', true);
+        $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
+
+        if ($billing_status !== self::BILLING_SUBSCRIPTION_PAID || $reserved_slug === '') {
+            return;
+        }
+
+        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_TENANT_PROVISIONING);
+
+        $tenant_post_id = wp_insert_post([
+            'post_type'   => self::TENANT_POST_TYPE,
+            'post_status' => 'publish',
+            'post_title'  => 'Tenant - ' . $reserved_slug,
+        ], true);
+
+        if (is_wp_error($tenant_post_id) || !$tenant_post_id) {
+            error_log('SD Front Office: tenant provision failed for prospect_post_id=' . $prospect_post_id);
+            return;
+        }
+
+        $tenant_id = 'tnt_' . wp_generate_uuid4();
+
+        update_post_meta($tenant_post_id, 'sd_tenant_id', $tenant_id);
+        update_post_meta($tenant_post_id, 'sd_slug', $reserved_slug);
+        update_post_meta($tenant_post_id, 'sd_status', 'inactive');
+        update_post_meta($tenant_post_id, 'sd_origin_prospect_id', $prospect_id);
+        update_post_meta($tenant_post_id, 'sd_origin_prospect_post_id', $prospect_post_id);
+        update_post_meta($tenant_post_id, 'sd_billing_status', self::BILLING_SUBSCRIPTION_PAID);
+        update_post_meta($tenant_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
+        update_post_meta($tenant_post_id, 'sd_provisioning_status', 'inactive_ready');
+        update_post_meta($tenant_post_id, 'sd_created_at_gmt', current_time('mysql', true));
+        update_post_meta($tenant_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+        $storefront_url = 'https://app.solodrive.pro/t/' . rawurlencode($reserved_slug);
+
+        update_post_meta($prospect_post_id, 'sd_promoted_to_tenant_id', $tenant_id);
+        update_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', (int) $tenant_post_id);
+        update_post_meta($prospect_post_id, self::META_STOREFRONT_URL, $storefront_url);
+        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_TENANT_INACTIVE);
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
     }
 
     private static function handle_account_updated($account) {
@@ -1928,6 +2175,34 @@ final class SD_Front_Office_Scaffold {
         }
 
         return (string) get_option('sd_stripe_webhook_secret', '');
+    }
+
+    private static function redirect_checkout_error(int $prospect_post_id, string $code): void {
+        $url = add_query_arg(
+            ['checkout_err' => rawurlencode($code)],
+            self::get_prospect_url_for_post($prospect_post_id)
+        );
+        wp_safe_redirect($url);
+        exit;
+    }
+
+    private static function map_checkout_error_message(string $code): string {
+        return match ($code) {
+            'invalid_request'      => 'We could not verify your request. Please try again.',
+            'stripe_sdk_missing'   => 'Stripe is not available right now.',
+            'stripe_secret_missing'=> 'Stripe secret key is missing.',
+            'stripe_price_missing' => 'Subscription price is not configured.',
+            'checkout_failed'      => 'We could not start checkout right now.',
+            default                => '',
+        };
+    }
+
+    private static function get_stripe_subscription_price_id(): string {
+        if (defined('SD_FRONT_STRIPE_SUBSCRIPTION_PRICE_ID') && SD_FRONT_STRIPE_SUBSCRIPTION_PRICE_ID !== '') {
+            return SD_FRONT_STRIPE_SUBSCRIPTION_PRICE_ID;
+        }
+
+        return (string) get_option('sd_stripe_subscription_price_id', '');
     }
 
     private static function build_runtime_prospect_contract(int $prospect_post_id): array {
