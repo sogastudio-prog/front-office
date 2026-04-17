@@ -1609,8 +1609,6 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_ACCOUNT_CREATED);
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
 
-        wp_set_current_user($user_id);
-        wp_set_auth_cookie($user_id, true);
 
         wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
         exit;
