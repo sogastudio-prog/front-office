@@ -187,3 +187,59 @@
   max-width: 720px;
   margin: 0 auto;
 }
+
+.sd-card--tight {
+  padding: 20px;
+}
+
+/* =====================================
+   THE LOOP SECTION
+   ===================================== */
+
+.sd-loop-section {
+  padding-top: 56px;
+  padding-bottom: 72px;
+}
+
+.sd-loop-section .sd-loop-kicker {
+  margin-bottom: 8px;
+}
+
+.sd-loop-section .sd-loop-subhead {
+  margin-bottom: 24px;
+}
+
+.sd-loop-section .sd-loop-graphic-wrap {
+  margin-top: 20px;
+  margin-bottom: 8px;
+}
+
+.sd-loop-section .sd-loop-graphic-wrap img,
+.sd-loop-section .sd-loop-graphic-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.sd-loop-section .sd-loop-note {
+  margin-top: 16px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--sd-text-soft);
+}
+
+@media (max-width: 768px) {
+  .sd-loop-section {
+    padding-top: 40px;
+    padding-bottom: 56px;
+  }
+
+  .sd-loop-section .sd-loop-subhead {
+    margin-bottom: 18px;
+  }
+
+  .sd-loop-section .sd-loop-graphic-wrap {
+    margin-top: 16px;
+  }
+}
