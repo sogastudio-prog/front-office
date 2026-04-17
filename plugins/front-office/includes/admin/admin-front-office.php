@@ -37,6 +37,210 @@ final class SD_Front_Office_Admin {
         add_action('add_meta_boxes_' . self::PROSPECT_POST_TYPE, [__CLASS__, 'register_prospect_debug_meta_boxes']);
         add_action('admin_head-post.php', [__CLASS__, 'inject_prospect_debug_admin_css']);
         add_action('admin_head-post-new.php', [__CLASS__, 'inject_prospect_debug_admin_css']);
+
+        add_action('admin_menu', [__CLASS__, 'register_settings_page']);
+        add_action('admin_init', [__CLASS__, 'register_settings']);
+    }
+
+    public static function register_settings(): void {
+        // --- Checkout Pricing (DEFAULT PUBLIC PROFILE) ---
+        register_setting('sd_front_office_settings', 'sd_default_stripe_subscription_price_id', [
+            'type' => 'string',
+            'sanitize_callback' => [__CLASS__, 'sanitize_price_id'],
+            'default' => '',
+        ]);
+
+        register_setting('sd_front_office_settings', 'sd_default_subscription_plan_label', [
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => '',
+        ]);
+
+        register_setting('sd_front_office_settings', 'sd_default_subscription_display_price', [
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => '',
+        ]);
+
+        add_settings_section(
+            'sd_front_office_pricing',
+            'Checkout Pricing',
+            '__return_false',
+            'sd-front-office-settings'
+        );
+
+        add_settings_field(
+            'sd_default_stripe_subscription_price_id',
+            'Default Stripe Price ID',
+            [__CLASS__, 'render_price_id_field'],
+            'sd-front-office-settings',
+            'sd_front_office_pricing'
+        );
+
+        add_settings_field(
+            'sd_default_subscription_plan_label',
+            'Plan Label',
+            [__CLASS__, 'render_plan_label_field'],
+            'sd-front-office-settings',
+            'sd_front_office_pricing'
+        );
+
+        add_settings_field(
+            'sd_default_subscription_display_price',
+            'Display Price',
+            [__CLASS__, 'render_display_price_field'],
+            'sd-front-office-settings',
+            'sd_front_office_pricing'
+        );
+    }
+
+    public static function register_settings_page(): void {
+        add_submenu_page(
+            'edit.php?post_type=' . self::PROSPECT_POST_TYPE,
+            'Front Office Settings',
+            'Settings',
+            'manage_options',
+            'sd-front-office-settings',
+            [__CLASS__, 'render_settings_page']
+        );
+    }
+
+    public static function register_settings(): void {
+        register_setting('sd_front_office_settings', 'sd_default_stripe_subscription_price_id', [
+            'type' => 'string',
+            'sanitize_callback' => [__CLASS__, 'sanitize_price_id'],
+            'default' => '',
+        ]);
+
+        register_setting('sd_front_office_settings', 'sd_default_subscription_plan_label', [
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => '',
+        ]);
+
+        register_setting('sd_front_office_settings', 'sd_default_subscription_display_price', [
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => '',
+        ]);
+
+        add_settings_section(
+            'sd_front_office_pricing',
+            'Checkout Pricing',
+            '__return_false',
+            'sd-front-office-settings'
+        );
+
+        add_settings_field(
+            'sd_default_stripe_subscription_price_id',
+            'Default Stripe Price ID',
+            [__CLASS__, 'render_price_id_field'],
+            'sd-front-office-settings',
+            'sd_front_office_pricing'
+        );
+
+        add_settings_field(
+            'sd_default_subscription_plan_label',
+            'Plan Label',
+            [__CLASS__, 'render_plan_label_field'],
+            'sd-front-office-settings',
+            'sd_front_office_pricing'
+        );
+
+        add_settings_field(
+            'sd_default_subscription_display_price',
+            'Display Price',
+            [__CLASS__, 'render_display_price_field'],
+            'sd-front-office-settings',
+            'sd_front_office_pricing'
+        );
+    }
+
+    public static function render_settings_page(): void {
+        ?>
+        <div class="wrap">
+            <h1>Front Office Settings</h1>
+
+            <form method="post" action="options.php">
+                <?php
+                settings_fields('sd_front_office_settings');
+                do_settings_sections('sd-front-office-settings');
+                submit_button();
+                ?>
+            </form>
+        </div>
+        <?php
+    }
+
+    public static function sanitize_price_id($value): string {
+        $value = sanitize_text_field((string) $value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (!str_starts_with($value, 'price_')) {
+            add_settings_error(
+                'sd_default_stripe_subscription_price_id',
+                'invalid_price_id',
+                'Stripe price ID must start with price_.'
+            );
+
+            return (string) get_option('sd_default_stripe_subscription_price_id', '');
+        }
+
+        return $value;
+    }
+
+    public static function render_price_id_field(): void {
+        $value = (string) get_option('sd_default_stripe_subscription_price_id', '');
+        echo '<input type="text" class="regular-text" name="sd_default_stripe_subscription_price_id" value="' . esc_attr($value) . '" />';
+        echo '<p class="description">Used for public checkout when no invite pricing profile applies.</p>';
+    }
+
+    public static function render_plan_label_field(): void {
+        $value = (string) get_option('sd_default_subscription_plan_label', '');
+        echo '<input type="text" class="regular-text" name="sd_default_subscription_plan_label" value="' . esc_attr($value) . '" />';
+    }
+
+    public static function render_display_price_field(): void {
+        $value = (string) get_option('sd_default_subscription_display_price', '');
+        echo '<input type="text" class="regular-text" name="sd_default_subscription_display_price" value="' . esc_attr($value) . '" />';
+    }
+
+    public static function sanitize_price_id($value): string {
+        $value = sanitize_text_field((string) $value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (!str_starts_with($value, 'price_')) {
+            add_settings_error(
+                'sd_default_stripe_subscription_price_id',
+                'invalid_price_id',
+                'Stripe price ID must start with price_.'
+            );
+
+            return (string) get_option('sd_default_stripe_subscription_price_id', '');
+        }
+
+        return $value;
+    }
+
+    public static function render_price_id_field(): void {
+        $value = (string) get_option('sd_default_stripe_subscription_price_id', '');
+        echo '<input type="text" class="regular-text" name="sd_default_stripe_subscription_price_id" value="' . esc_attr($value) . '" />';
+    }
+
+    public static function render_plan_label_field(): void {
+        $value = (string) get_option('sd_default_subscription_plan_label', '');
+        echo '<input type="text" class="regular-text" name="sd_default_subscription_plan_label" value="' . esc_attr($value) . '" />';
+    }
+
+    public static function render_display_price_field(): void {
+        $value = (string) get_option('sd_default_subscription_display_price', '');
+        echo '<input type="text" class="regular-text" name="sd_default_subscription_display_price" value="' . esc_attr($value) . '" />';
     }
 
     public static function prospect_columns(array $columns): array {

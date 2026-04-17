@@ -235,6 +235,10 @@ final class SD_Front_Office_Scaffold {
             'sd_requested_slug' => 'string',
             'sd_reserved_slug'  => 'string',
             'sd_slug_status'    => 'string',
+            'sd_pricing_profile_source' => 'string',
+            'sd_pricing_profile_id' => 'string',
+            'sd_resolved_stripe_price_id' => 'string',
+            'sd_resolved_plan_label' => 'string',
                     ];
 
         $tenant_meta = [
@@ -1073,12 +1077,22 @@ final class SD_Front_Office_Scaffold {
             return ['ok' => false, 'error' => 'stripe_sdk_missing'];
         }
 
+        update_post_meta($prospect_post_id, 'sd_pricing_profile_source', (string) ($pricing['profile_source'] ?? 'default'));
+        update_post_meta($prospect_post_id, 'sd_pricing_profile_id', (string) ($pricing['profile_id'] ?? 'default_public'));
+        update_post_meta($prospect_post_id, 'sd_resolved_stripe_price_id', $price_id);
+        update_post_meta($prospect_post_id, 'sd_resolved_plan_label', (string) ($pricing['plan_label'] ?? ''));
+            
         $stripe_secret_key = self::get_stripe_secret_key();
         if ($stripe_secret_key === '') {
             return ['ok' => false, 'error' => 'stripe_secret_missing'];
         }
 
-        $price_id = self::get_stripe_subscription_price_id();
+        $price_id = $pricing = self::resolve_checkout_pricing_for_prospect($prospect_post_id);
+        if (empty($pricing['ok'])) {
+            return ['ok' => false, 'error' => (string) ($pricing['error'] ?? 'stripe_price_missing')];
+        }
+
+        $price_id = (string) $pricing['stripe_price_id'];;
         if ($price_id === '') {
             return ['ok' => false, 'error' => 'stripe_price_missing'];
         }
@@ -2161,6 +2175,44 @@ final class SD_Front_Office_Scaffold {
         return $json;
     }
 
+    private static function resolve_checkout_pricing_for_prospect(int $prospect_post_id): array {
+        $invite_code = (string) get_post_meta($prospect_post_id, 'sd_invitation_code', true);
+
+        // Future hook: invite-profile resolution
+        if ($invite_code !== '') {
+            $invite_profile = self::resolve_invite_pricing_profile($invite_code, $prospect_post_id);
+            if (!empty($invite_profile['ok'])) {
+                return $invite_profile;
+            }
+        }
+
+        $default_price_id = (string) get_option('sd_default_stripe_subscription_price_id', '');
+        $default_plan_label = (string) get_option('sd_default_subscription_plan_label', '');
+        $default_display_price = (string) get_option('sd_default_subscription_display_price', '');
+
+        if ($default_price_id === '') {
+            return [
+                'ok' => false,
+                'error' => 'stripe_price_missing',
+            ];
+        }
+
+        return [
+            'ok' => true,
+            'profile_source' => 'default',
+            'profile_id' => 'default_public',
+            'stripe_price_id' => $default_price_id,
+            'plan_label' => $default_plan_label,
+            'display_price' => $default_display_price,
+        ];
+    }
+
+    private static function resolve_invite_pricing_profile(string $invite_code, int $prospect_post_id): array {
+        // Stub for future invite-profile resolution.
+        // Current doctrine: unresolved invite pricing falls through to default public pricing.
+        return ['ok' => false, 'error' => 'invite_profile_unresolved'];
+    }
+
     private static function get_stripe_secret_key(): string {
         if (defined('SD_FRONT_STRIPE_SECRET_KEY') && SD_FRONT_STRIPE_SECRET_KEY !== '') {
             return SD_FRONT_STRIPE_SECRET_KEY;
@@ -2197,13 +2249,6 @@ final class SD_Front_Office_Scaffold {
         };
     }
 
-    private static function get_stripe_subscription_price_id(): string {
-        if (defined('SD_FRONT_STRIPE_SUBSCRIPTION_PRICE_ID') && SD_FRONT_STRIPE_SUBSCRIPTION_PRICE_ID !== '') {
-            return SD_FRONT_STRIPE_SUBSCRIPTION_PRICE_ID;
-        }
-
-        return (string) get_option('sd_stripe_subscription_price_id', '');
-    }
 
     private static function build_runtime_prospect_contract(int $prospect_post_id): array {
         return [
