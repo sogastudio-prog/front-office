@@ -42,58 +42,6 @@ final class SD_Front_Office_Admin {
         add_action('admin_init', [__CLASS__, 'register_settings']);
     }
 
-    public static function register_settings(): void {
-        // --- Checkout Pricing (DEFAULT PUBLIC PROFILE) ---
-        register_setting('sd_front_office_settings', 'sd_default_stripe_subscription_price_id', [
-            'type' => 'string',
-            'sanitize_callback' => [__CLASS__, 'sanitize_price_id'],
-            'default' => '',
-        ]);
-
-        register_setting('sd_front_office_settings', 'sd_default_subscription_plan_label', [
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
-            'default' => '',
-        ]);
-
-        register_setting('sd_front_office_settings', 'sd_default_subscription_display_price', [
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
-            'default' => '',
-        ]);
-
-        add_settings_section(
-            'sd_front_office_pricing',
-            'Checkout Pricing',
-            '__return_false',
-            'sd-front-office-settings'
-        );
-
-        add_settings_field(
-            'sd_default_stripe_subscription_price_id',
-            'Default Stripe Price ID',
-            [__CLASS__, 'render_price_id_field'],
-            'sd-front-office-settings',
-            'sd_front_office_pricing'
-        );
-
-        add_settings_field(
-            'sd_default_subscription_plan_label',
-            'Plan Label',
-            [__CLASS__, 'render_plan_label_field'],
-            'sd-front-office-settings',
-            'sd_front_office_pricing'
-        );
-
-        add_settings_field(
-            'sd_default_subscription_display_price',
-            'Display Price',
-            [__CLASS__, 'render_display_price_field'],
-            'sd-front-office-settings',
-            'sd_front_office_pricing'
-        );
-    }
-
     public static function register_settings_page(): void {
         add_submenu_page(
             'edit.php?post_type=' . self::PROSPECT_POST_TYPE,
