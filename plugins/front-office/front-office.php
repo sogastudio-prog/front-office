@@ -1424,6 +1424,51 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
         update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'TENANT_INACTIVE');            
         error_log('SD Front Office: provisioning completed. tenant_id=' . $tenant_id . ' tenant_post_id=' . $tenant_post_id . ' storefront_url=' . $storefront_url);
+        self::provision_runtime_operator_access($prospect_post_id, $tenant_post_id);
+    }
+
+    private static function provision_runtime_operator_access(int $prospect_post_id, int $tenant_post_id): void {
+        $email = (string) get_post_meta($prospect_post_id, 'sd_email_normalized', true);
+        $full_name = (string) get_post_meta($prospect_post_id, 'sd_full_name', true);
+        $tenant_id = (string) get_post_meta($tenant_post_id, 'sd_tenant_id', true);
+        $slug = (string) get_post_meta($tenant_post_id, 'sd_slug', true);
+
+        if ($email === '' || $tenant_id === '') {
+            error_log('SD Front Office: runtime provisioning skipped (missing email or tenant_id)');
+            return;
+        }
+
+        $endpoint = 'https://app.solodrive.pro/wp-json/sd/v1/provision-operator';
+
+        $payload = [
+            'tenant_id' => $tenant_id,
+            'tenant_slug' => $slug,
+            'email' => $email,
+            'full_name' => $full_name,
+        ];
+
+        $response = wp_remote_post($endpoint, [
+            'timeout' => 15,
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+            'body' => wp_json_encode($payload),
+        ]);
+
+        if (is_wp_error($response)) {
+            error_log('SD Front Office: runtime provisioning failed: ' . $response->get_error_message());
+            return;
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+
+        if (!empty($body['ok']) && !empty($body['login_url'])) {
+            update_post_meta($prospect_post_id, 'sd_operations_entry_url', $body['login_url']);
+
+            error_log('SD Front Office: runtime operator access provisioned: ' . $body['login_url']);
+        } else {
+            error_log('SD Front Office: runtime provisioning response invalid');
+        }
     }
 
     public static function ensure_tenant_defaults(int $post_id, WP_Post $post, bool $update): void {
