@@ -865,8 +865,10 @@ final class SD_Front_Office_Scaffold {
 
             case self::STAGE_SUBSCRIPTION_PAID:
             case self::STAGE_TENANT_PROVISIONING:
-            case self::STAGE_TENANT_INACTIVE:
                 return self::render_provisioning_state($prospect_post_id);
+
+            case self::STAGE_TENANT_INACTIVE:
+                return self::render_ready_state($prospect_post_id);
 
             case 'CONNECT_PENDING':
                 return self::render_stripe_connect($prospect_post_id);
@@ -1324,6 +1326,11 @@ final class SD_Front_Office_Scaffold {
             error_log('SD Front Office: marked subscription paid for prospect_post_id=' . $prospect_post_id . ' subscription_id=' . $subscription_id . ' customer_id=' . $customer_id);
 
             self::maybe_provision_inactive_tenant($prospect_post_id);
+            $operations_entry_url = (string) get_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, true);
+            if ($operations_entry_url !== '') {
+                wp_redirect($operations_entry_url);
+                exit;
+            }
         } catch (Throwable $e) {
             error_log('SD Front Office: checkout success verify failed: ' . $e->getMessage());
         }
@@ -1463,7 +1470,7 @@ final class SD_Front_Office_Scaffold {
         $body = json_decode(wp_remote_retrieve_body($response), true);
 
         if (!empty($body['ok']) && !empty($body['login_url'])) {
-            update_post_meta($prospect_post_id, 'sd_operations_entry_url', $body['login_url']);
+            update_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, (string) $body['login_url']);
 
             error_log('SD Front Office: runtime operator access provisioned: ' . $body['login_url']);
         } else {
