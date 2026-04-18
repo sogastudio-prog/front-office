@@ -1422,8 +1422,40 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, self::META_STOREFRONT_URL, $storefront_url);
         update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_TENANT_INACTIVE);
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
-
+        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'TENANT_INACTIVE');            
         error_log('SD Front Office: provisioning completed. tenant_id=' . $tenant_id . ' tenant_post_id=' . $tenant_post_id . ' storefront_url=' . $storefront_url);
+    }
+
+    public static function ensure_tenant_defaults(int $post_id, WP_Post $post, bool $update): void {
+        if ($post->post_type !== self::TENANT_POST_TYPE) {
+            return;
+        }
+
+        if (wp_is_post_revision($post_id) || wp_is_post_autosave($post_id)) {
+            return;
+        }
+
+        $tenant_id = (string) get_post_meta($post_id, 'sd_tenant_id', true);
+        if ($tenant_id === '') {
+            update_post_meta($post_id, 'sd_tenant_id', 'tnt_' . wp_generate_uuid4());
+        }
+
+        $status = (string) get_post_meta($post_id, 'sd_status', true);
+        if ($status === '') {
+            update_post_meta($post_id, 'sd_status', 'inactive');
+        }
+
+        $created_at = (string) get_post_meta($post_id, 'sd_created_at_gmt', true);
+        if ($created_at === '') {
+            update_post_meta($post_id, 'sd_created_at_gmt', current_time('mysql', true));
+        }
+
+        $provisioning_status = (string) get_post_meta($post_id, 'sd_provisioning_status', true);
+        if ($provisioning_status === '') {
+            update_post_meta($post_id, 'sd_provisioning_status', 'inactive_ready');
+        }
+
+        update_post_meta($post_id, 'sd_updated_at_gmt', current_time('mysql', true));
     }
 
     private static function handle_account_updated($account) {
