@@ -71,7 +71,6 @@ final class SD_Front_Office_Scaffold {
     private const STAGE_SUBSCRIPTION_PAID       = 'SUBSCRIPTION_PAID';
     private const STAGE_TENANT_PROVISIONING     = 'TENANT_PROVISIONING';
     private const STAGE_TENANT_INACTIVE         = 'TENANT_INACTIVE';
-    private const 
 
     private const BILLING_CHECKOUT_PENDING      = 'CHECKOUT_PENDING';
     private const BILLING_SUBSCRIPTION_PAID     = 'SUBSCRIPTION_PAID';
