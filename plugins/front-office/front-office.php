@@ -1250,13 +1250,13 @@ final class SD_Front_Office_Scaffold {
 
             <?php if ($storefront_url !== '') : ?>
                 <div class="sd-front-actions">
-                    <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($storefront_url); ?>">
+                    <a class="sd-front-btn sd-front-btn--secondary" href="<?php echo esc_url($storefront_url); ?>">
                         Open your booking page
                     </a>
 
                     <?php if ($operations_entry_url !== '') : ?>
-                        <a class="sd-front-btn sd-front-btn--secondary" href="<?php echo esc_url($operations_entry_url); ?>">
-                            Log in to operations
+                        <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($operations_entry_url); ?>">
+                            Go to Operations
                         </a>
                     <?php endif; ?>
                 </div>
