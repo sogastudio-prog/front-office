@@ -68,10 +68,10 @@ final class SD_Front_Office_Scaffold {
     private const META_STRIPE_STATE             = 'sd_stripe_state';
     private const META_STRIPE_COMPLETED_GMT     = 'sd_stripe_completed_gmt';
     private const PROSPECT_PAGE_SLUG            = 'prospect';
-    private const ACTION_START_CHECKOUT         = 'sdfo_start_checkout';
     private const STAGE_SUBSCRIPTION_PAID       = 'SUBSCRIPTION_PAID';
     private const STAGE_TENANT_PROVISIONING     = 'TENANT_PROVISIONING';
     private const STAGE_TENANT_INACTIVE         = 'TENANT_INACTIVE';
+    private const 
 
     private const BILLING_CHECKOUT_PENDING      = 'CHECKOUT_PENDING';
     private const BILLING_SUBSCRIPTION_PAID     = 'SUBSCRIPTION_PAID';
@@ -105,8 +105,6 @@ final class SD_Front_Office_Scaffold {
         add_action('admin_post_' . self::ACTION_CREATE_ACCOUNT, [__CLASS__, 'handle_account_creation_submit']);
         add_action('admin_post_nopriv_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
         add_action('admin_post_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
-        add_action('admin_post_nopriv_' . self::ACTION_START_CHECKOUT, [__CLASS__, 'handle_start_checkout']);
-        add_action('admin_post_' . self::ACTION_START_CHECKOUT, [__CLASS__, 'handle_start_checkout']);
         add_action('admin_post_nopriv_' . self::ACTION_START_PAYOUTS, [__CLASS__, 'handle_start_payouts']);
         add_action('admin_post_' . self::ACTION_START_PAYOUTS, [__CLASS__, 'handle_start_payouts']);
         if (!is_admin()) {
@@ -843,6 +841,8 @@ final class SD_Front_Office_Scaffold {
         }
 
         $prospect_post_id = self::require_prospect_post_id_from_token_request();
+
+        self::maybe_handle_front_checkout_submit($prospect_post_id);
         self::maybe_finalize_checkout_success($prospect_post_id);
 
         $lifecycle = (string) get_post_meta($prospect_post_id, 'sd_lifecycle_stage', true);
@@ -1000,8 +1000,8 @@ final class SD_Front_Office_Scaffold {
                 </div>
             <?php endif; ?>
 
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="sd-front-form">
-                <input type="hidden" name="action" value="<?php echo esc_attr(self::ACTION_START_CHECKOUT); ?>">
+            <form method="post" action="<?php echo esc_url(self::get_prospect_url_for_post($prospect_post_id)); ?>" class="sd-front-form">
+                <input type="hidden" name="sd_front_action" value="start_checkout">
                 <input type="hidden" name="prospect_token" value="<?php echo esc_attr($token); ?>">
                 <?php wp_nonce_field('sdfo_start_checkout_' . $prospect_post_id, 'sdfo_checkout_nonce'); ?>
 
@@ -1028,18 +1028,26 @@ final class SD_Front_Office_Scaffold {
         return (string) ob_get_clean();
     }
 
-    public static function handle_start_checkout(): void {
-        $token = isset($_POST['prospect_token']) ? sanitize_text_field((string) $_POST['prospect_token']) : '';
-        $prospect_post_id = self::get_prospect_post_id_by_token($token);
+    private static function maybe_handle_front_checkout_submit(int $prospect_post_id): void {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return;
+        }
 
-        if ($prospect_post_id <= 0) {
-            wp_die('Invalid or expired link.');
+        $front_action = isset($_POST['sd_front_action']) ? sanitize_text_field((string) $_POST['sd_front_action']) : '';
+        if ($front_action !== 'start_checkout') {
+            return;
         }
 
         if (
             !isset($_POST['sdfo_checkout_nonce']) ||
             !wp_verify_nonce((string) $_POST['sdfo_checkout_nonce'], 'sdfo_start_checkout_' . $prospect_post_id)
         ) {
+            self::redirect_checkout_error($prospect_post_id, 'invalid_request');
+        }
+
+        $posted_token = isset($_POST['prospect_token']) ? sanitize_text_field((string) $_POST['prospect_token']) : '';
+        $actual_token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
+        if ($posted_token === '' || $actual_token === '' || !hash_equals($actual_token, $posted_token)) {
             self::redirect_checkout_error($prospect_post_id, 'invalid_request');
         }
 
@@ -1077,25 +1085,25 @@ final class SD_Front_Office_Scaffold {
             return ['ok' => false, 'error' => 'stripe_sdk_missing'];
         }
 
-        update_post_meta($prospect_post_id, 'sd_pricing_profile_source', (string) ($pricing['profile_source'] ?? 'default'));
-        update_post_meta($prospect_post_id, 'sd_pricing_profile_id', (string) ($pricing['profile_id'] ?? 'default_public'));
-        update_post_meta($prospect_post_id, 'sd_resolved_stripe_price_id', $price_id);
-        update_post_meta($prospect_post_id, 'sd_resolved_plan_label', (string) ($pricing['plan_label'] ?? ''));
-            
         $stripe_secret_key = self::get_stripe_secret_key();
         if ($stripe_secret_key === '') {
             return ['ok' => false, 'error' => 'stripe_secret_missing'];
         }
 
-        $price_id = $pricing = self::resolve_checkout_pricing_for_prospect($prospect_post_id);
+        $pricing = self::resolve_checkout_pricing_for_prospect($prospect_post_id);
         if (empty($pricing['ok'])) {
             return ['ok' => false, 'error' => (string) ($pricing['error'] ?? 'stripe_price_missing')];
         }
 
-        $price_id = (string) $pricing['stripe_price_id'];;
+        $price_id = (string) ($pricing['stripe_price_id'] ?? '');
         if ($price_id === '') {
             return ['ok' => false, 'error' => 'stripe_price_missing'];
         }
+
+        update_post_meta($prospect_post_id, 'sd_pricing_profile_source', (string) ($pricing['profile_source'] ?? 'default'));
+        update_post_meta($prospect_post_id, 'sd_pricing_profile_id', (string) ($pricing['profile_id'] ?? 'default_public'));
+        update_post_meta($prospect_post_id, 'sd_resolved_stripe_price_id', $price_id);
+        update_post_meta($prospect_post_id, 'sd_resolved_plan_label', (string) ($pricing['plan_label'] ?? ''));
 
         $email = (string) get_post_meta($prospect_post_id, 'sd_email_normalized', true);
         $prospect_token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
