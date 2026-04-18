@@ -1075,7 +1075,7 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_CHECKOUT_PENDING);
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
 
-        wp_safe_redirect((string) $session['url']);
+        wp_redirect((string) $session['url']);
         exit;
     }
 
