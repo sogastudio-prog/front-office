@@ -1431,7 +1431,29 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
         update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'TENANT_INACTIVE');            
         error_log('SD Front Office: provisioning completed. tenant_id=' . $tenant_id . ' tenant_post_id=' . $tenant_post_id . ' storefront_url=' . $storefront_url);
-        self::provision_runtime_operator_access($prospect_post_id, $tenant_post_id);
+        // At the end of maybe_provision_inactive_tenant(), replace the current
+        // provision_runtime_operator_access() call with:
+
+        $stripe_account_id     = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
+        $stripe_customer_id    = (string) get_post_meta($prospect_post_id, 'sd_stripe_customer_id', true);
+        $stripe_subscription_id = (string) get_post_meta($prospect_post_id, 'sd_stripe_subscription_id', true);
+
+        $provisioning_payload = [
+            'tenant_id'              => $tenant_id,
+            'tenant_slug'            => $reserved_slug,
+            'prospect_id'            => $prospect_id,
+            'prospect_post_id'       => $prospect_post_id,
+            'full_name'              => get_post_meta($prospect_post_id, 'sd_full_name', true),
+            'email'                  => get_post_meta($prospect_post_id, 'sd_email_normalized', true),
+            'phone'                  => get_post_meta($prospect_post_id, 'sd_phone_raw', true),
+            'stripe_account_id'      => $stripe_account_id,
+            'stripe_customer_id'     => $stripe_customer_id,
+            'stripe_subscription_id' => $stripe_subscription_id,
+            'billing_status'         => 'paid',
+            'activation_mode'        => 'inactive_until_provisioned',
+        ];
+
+        do_action('sd_control_plane_tenant_provisioning_requested', $tenant_post_id, $prospect_post_id, $provisioning_payload);
     }
 
     private static function provision_runtime_operator_access(int $prospect_post_id, int $tenant_post_id): void {
