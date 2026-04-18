@@ -1114,10 +1114,34 @@ final class SD_Front_Office_Scaffold {
         try {
             \Stripe\Stripe::setApiKey($stripe_secret_key);
 
-            $success_url = add_query_arg(
-                ['checkout' => 'success', 'session_id' => '{CHECKOUT_SESSION_ID}'],
-                self::get_prospect_url_for_post($prospect_post_id)
+            // After payment, Stripe sends the operator directly to SDPRO.
+            // We pass a signed provisioning token so SDPRO can identify and
+            // finalize the tenant without a WP session on the front-office.
+            //
+            // Token is HMAC-SHA256(prospect_post_id|prospect_token, shared secret).
+            // SDPRO verifies this before acting.
+            $provisioning_secret = defined('SD_CONTROL_PLANE_PROVISIONING_SECRET')
+                ? SD_CONTROL_PLANE_PROVISIONING_SECRET
+                : (string) get_option('sd_control_plane_provisioning_secret', '');
+
+            $onboarding_token = hash_hmac(
+                'sha256',
+                $prospect_post_id . '|' . $prospect_token,
+                $provisioning_secret
             );
+
+            $sdpro_base = defined('SD_RUNTIME_BASE_URL')
+                ? rtrim(SD_RUNTIME_BASE_URL, '/')
+                : rtrim((string) get_option('sd_runtime_base_url', 'https://app.solodrive.pro'), '/');
+
+            $success_url = $sdpro_base . '/operator/?'
+                . http_build_query([
+                    'sd_onboard'       => '1',
+                    'prospect_post_id' => $prospect_post_id,
+                    'prospect_token'   => $prospect_token,
+                    'session_id'       => '{CHECKOUT_SESSION_ID}',
+                    'sig'              => $onboarding_token,
+                ]);
 
             $cancel_url = add_query_arg(
                 ['checkout' => 'cancel'],
@@ -1269,6 +1293,12 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function maybe_finalize_checkout_success(int $prospect_post_id): void {
+        // NOTE: The primary billing-confirmation path is now the SDPRO onboarding
+        // entry handler (sd_onboard=1).  SDPRO verifies the Stripe session, marks
+        // billing paid on the front-office prospect via a back-channel REST call
+        // to POST /wp-json/sd/v1/control-plane/confirm-billing, then provisions
+        // the tenant.  This method remains as a fallback only — it fires if the
+        // operator somehow lands back on the prospect page with ?checkout=success.
         $checkout_flag = isset($_GET['checkout']) ? sanitize_text_field((string) $_GET['checkout']) : '';
         $session_id = isset($_GET['session_id']) ? sanitize_text_field((string) $_GET['session_id']) : '';
 
@@ -1945,6 +1975,159 @@ final class SD_Front_Office_Scaffold {
             'callback'            => [__CLASS__, 'handle_stripe_webhook'],
             'permission_callback' => '__return_true',
         ]);
+
+        // Called by SDPRO after it verifies the Stripe session on the operator's
+        // browser. Marks the prospect paid so the front-office record stays in sync
+        // with what happened on the SDPRO side.
+        register_rest_route('sd/v1', '/control-plane/confirm-billing', [
+            'methods'             => 'POST',
+            'callback'            => [__CLASS__, 'handle_confirm_billing'],
+            'permission_callback' => '__return_true',
+        ]);
+
+        // Called by SDPRO to fetch the prospect package needed to build the
+        // provisioning payload (tenant_id, slug, name, email, stripe ids, etc.)
+        register_rest_route('sd/v1', '/control-plane/get-prospect-package', [
+            'methods'             => 'POST',
+            'callback'            => [__CLASS__, 'handle_get_prospect_package'],
+            'permission_callback' => '__return_true',
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // REST: confirm-billing
+    //
+    // SDPRO calls this after verifying the Stripe Checkout session. We trust
+    // the call because it carries the same HMAC-SHA256 signature used throughout
+    // the control-plane bridge.
+    // -------------------------------------------------------------------------
+    public static function handle_confirm_billing(WP_REST_Request $request): WP_REST_Response {
+        if (!self::verify_provisioning_signature($request)) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'signature_invalid'], 401);
+        }
+
+        $params = $request->get_json_params();
+
+        $prospect_post_id       = absint($params['prospect_post_id']       ?? 0);
+        $prospect_token         = sanitize_text_field((string) ($params['prospect_token']         ?? ''));
+        $session_id             = sanitize_text_field((string) ($params['session_id']             ?? ''));
+        $stripe_customer_id     = sanitize_text_field((string) ($params['stripe_customer_id']     ?? ''));
+        $stripe_subscription_id = sanitize_text_field((string) ($params['stripe_subscription_id'] ?? ''));
+
+        if ($prospect_post_id <= 0) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'missing_prospect_post_id'], 400);
+        }
+
+        // Verify the prospect token matches.
+        $stored_token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
+        if ($stored_token === '' || !hash_equals($stored_token, $prospect_token)) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'token_mismatch'], 401);
+        }
+
+        // Idempotent — if already paid, just confirm.
+        $current = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
+        if ($current !== self::BILLING_SUBSCRIPTION_PAID) {
+            update_post_meta($prospect_post_id, 'sd_billing_status',          self::BILLING_SUBSCRIPTION_PAID);
+            update_post_meta($prospect_post_id, 'sd_lifecycle_stage',         self::STAGE_SUBSCRIPTION_PAID);
+            update_post_meta($prospect_post_id, 'sd_stripe_checkout_session_id', $session_id);
+            update_post_meta($prospect_post_id, 'sd_stripe_customer_id',      $stripe_customer_id);
+            update_post_meta($prospect_post_id, 'sd_stripe_subscription_id',  $stripe_subscription_id);
+            update_post_meta($prospect_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
+            update_post_meta($prospect_post_id, 'sd_updated_at_gmt',          current_time('mysql', true));
+
+            error_log('[SD Front Office] confirm-billing: marked paid for prospect_post_id=' . $prospect_post_id);
+        }
+
+        return new WP_REST_Response(['ok' => true, 'billing_status' => self::BILLING_SUBSCRIPTION_PAID], 200);
+    }
+
+    // -------------------------------------------------------------------------
+    // REST: get-prospect-package
+    //
+    // SDPRO calls this to retrieve the minimal data it needs to build and fire
+    // the provisioning payload. Token-verified — no WP session required.
+    // -------------------------------------------------------------------------
+    public static function handle_get_prospect_package(WP_REST_Request $request): WP_REST_Response {
+        if (!self::verify_provisioning_signature($request)) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'signature_invalid'], 401);
+        }
+
+        $params = $request->get_json_params();
+
+        $prospect_post_id = absint($params['prospect_post_id'] ?? 0);
+        $prospect_token   = sanitize_text_field((string) ($params['prospect_token'] ?? ''));
+
+        if ($prospect_post_id <= 0) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'missing_prospect_post_id'], 400);
+        }
+
+        $stored_token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
+        if ($stored_token === '' || !hash_equals($stored_token, $prospect_token)) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'token_mismatch'], 401);
+        }
+
+        // Gather what SDPRO needs to provision the tenant.
+        $tenant_post_id  = (int)    get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', true);
+        $tenant_id       = (string) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_id',      true);
+        $reserved_slug   = (string) get_post_meta($prospect_post_id, 'sd_reserved_slug',              true);
+        $prospect_id     = (string) get_post_meta($prospect_post_id, 'sd_prospect_id',                true);
+        $full_name       = (string) get_post_meta($prospect_post_id, 'sd_full_name',                  true);
+        $email           = (string) get_post_meta($prospect_post_id, 'sd_email_normalized',           true);
+        $phone           = (string) get_post_meta($prospect_post_id, 'sd_phone_raw',                  true);
+        $stripe_acct_id  = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID,    true);
+
+        // If tenant post was already created on the front-office side during
+        // maybe_provision_inactive_tenant(), pull tenant_id from there too.
+        if ($tenant_id === '' && $tenant_post_id > 0) {
+            $tenant_id = (string) get_post_meta($tenant_post_id, 'sd_tenant_id', true);
+        }
+
+        // Generate tenant_id if the front-office hasn't created the tenant post yet
+        // (edge case: direct SDPRO-side onboarding before front-office fires do_action).
+        if ($tenant_id === '') {
+            $tenant_id = 'tnt_' . wp_generate_uuid4();
+            // Persist so subsequent calls are consistent.
+            update_post_meta($prospect_post_id, 'sd_promoted_to_tenant_id', $tenant_id);
+        }
+
+        if ($reserved_slug === '') {
+            return new WP_REST_Response(['ok' => false, 'error' => 'slug_not_reserved'], 409);
+        }
+
+        return new WP_REST_Response([
+            'ok'               => true,
+            'tenant_id'        => $tenant_id,
+            'tenant_slug'      => $reserved_slug,
+            'prospect_id'      => $prospect_id,
+            'prospect_post_id' => $prospect_post_id,
+            'full_name'        => $full_name,
+            'email'            => $email,
+            'phone'            => $phone,
+            'stripe_account_id'=> $stripe_acct_id,
+        ], 200);
+    }
+
+    // -------------------------------------------------------------------------
+    // Shared HMAC signature verification for control-plane REST routes
+    // -------------------------------------------------------------------------
+    private static function verify_provisioning_signature(WP_REST_Request $request): bool {
+        $secret = defined('SD_CONTROL_PLANE_PROVISIONING_SECRET')
+            ? SD_CONTROL_PLANE_PROVISIONING_SECRET
+            : (string) get_option('sd_control_plane_provisioning_secret', '');
+
+        if ($secret === '') {
+            error_log('[SD Front Office] Provisioning secret not configured — rejecting request.');
+            return false;
+        }
+
+        $raw_body = $request->get_body();
+        $sig      = $request->get_header('X-SD-Signature');
+
+        if ($sig !== null && $sig !== '') {
+            return hash_equals(hash_hmac('sha256', $raw_body, $secret), strtolower($sig));
+        }
+
+        return false;
     }
 
     private static function redirect_account_error(int $prospect_post_id, string $code): void {
