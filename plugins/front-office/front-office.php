@@ -1270,21 +1270,27 @@ final class SD_Front_Office_Scaffold {
         $checkout_flag = isset($_GET['checkout']) ? sanitize_text_field((string) $_GET['checkout']) : '';
         $session_id = isset($_GET['session_id']) ? sanitize_text_field((string) $_GET['session_id']) : '';
 
+        error_log('SD Front Office: maybe_finalize_checkout_success entered for prospect_post_id=' . $prospect_post_id . ' checkout=' . $checkout_flag . ' session_id=' . $session_id);
+
         if ($checkout_flag !== 'success' || $session_id === '') {
+            error_log('SD Front Office: checkout success finalizer skipped due to missing success/session');
             return;
         }
 
         $existing_paid = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
         if ($existing_paid === self::BILLING_SUBSCRIPTION_PAID) {
+            error_log('SD Front Office: checkout success finalizer skipped, already marked paid for prospect_post_id=' . $prospect_post_id);
             return;
         }
 
         if (!class_exists('\\Stripe\\Stripe') || !class_exists('\\Stripe\\Checkout\\Session')) {
+            error_log('SD Front Office: checkout success finalizer skipped, Stripe SDK missing');
             return;
         }
 
         $stripe_secret_key = self::get_stripe_secret_key();
         if ($stripe_secret_key === '') {
+            error_log('SD Front Office: checkout success finalizer skipped, Stripe secret missing');
             return;
         }
 
@@ -1292,7 +1298,15 @@ final class SD_Front_Office_Scaffold {
             \Stripe\Stripe::setApiKey($stripe_secret_key);
 
             $session = \Stripe\Checkout\Session::retrieve($session_id, []);
-            if (!$session || (string) $session->payment_status !== 'paid') {
+            if (!$session) {
+                error_log('SD Front Office: checkout success finalizer failed, no session returned for session_id=' . $session_id);
+                return;
+            }
+
+            error_log('SD Front Office: checkout session retrieved. payment_status=' . (string) $session->payment_status . ' subscription=' . (string) ($session->subscription ?? '') . ' customer=' . (string) ($session->customer ?? ''));
+
+            if ((string) $session->payment_status !== 'paid') {
+                error_log('SD Front Office: checkout session not marked paid yet for session_id=' . $session_id);
                 return;
             }
 
@@ -1306,6 +1320,8 @@ final class SD_Front_Office_Scaffold {
             update_post_meta($prospect_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
             update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SUBSCRIPTION_PAID);
             update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+            error_log('SD Front Office: marked subscription paid for prospect_post_id=' . $prospect_post_id . ' subscription_id=' . $subscription_id . ' customer_id=' . $customer_id);
 
             self::maybe_provision_inactive_tenant($prospect_post_id);
         } catch (Throwable $e) {
@@ -1352,17 +1368,22 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function maybe_provision_inactive_tenant(int $prospect_post_id): void {
+        error_log('SD Front Office: maybe_provision_inactive_tenant entered for prospect_post_id=' . $prospect_post_id);
+
         $existing_tenant_post_id = (int) get_post_meta($prospect_post_id, 'sd_promoted_to_tenant_post_id', true);
         if ($existing_tenant_post_id > 0) {
+            error_log('SD Front Office: provisioning skipped, tenant already exists. tenant_post_id=' . $existing_tenant_post_id);
             return;
         }
 
         $billing_status = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
         $reserved_slug = (string) get_post_meta($prospect_post_id, 'sd_reserved_slug', true);
-        $full_name = (string) get_post_meta($prospect_post_id, 'sd_full_name', true);
         $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
 
+        error_log('SD Front Office: provisioning precheck billing_status=' . $billing_status . ' reserved_slug=' . $reserved_slug . ' prospect_id=' . $prospect_id);
+
         if ($billing_status !== self::BILLING_SUBSCRIPTION_PAID || $reserved_slug === '') {
+            error_log('SD Front Office: provisioning aborted due to unmet preconditions for prospect_post_id=' . $prospect_post_id);
             return;
         }
 
@@ -1375,9 +1396,11 @@ final class SD_Front_Office_Scaffold {
         ], true);
 
         if (is_wp_error($tenant_post_id) || !$tenant_post_id) {
-            error_log('SD Front Office: tenant provision failed for prospect_post_id=' . $prospect_post_id);
+            error_log('SD Front Office: tenant provision failed for prospect_post_id=' . $prospect_post_id . ' error=' . (is_wp_error($tenant_post_id) ? $tenant_post_id->get_error_message() : 'unknown'));
             return;
         }
+
+        error_log('SD Front Office: tenant post created. tenant_post_id=' . $tenant_post_id);
 
         $tenant_id = 'tnt_' . wp_generate_uuid4();
 
@@ -1399,6 +1422,8 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, self::META_STOREFRONT_URL, $storefront_url);
         update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_TENANT_INACTIVE);
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+        error_log('SD Front Office: provisioning completed. tenant_id=' . $tenant_id . ' tenant_post_id=' . $tenant_post_id . ' storefront_url=' . $storefront_url);
     }
 
     private static function handle_account_updated($account) {
