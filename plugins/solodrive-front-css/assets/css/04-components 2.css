@@ -1,0 +1,437 @@
+/* =====================================
+   SOLODRIVE COMPONENTS
+   Cards, buttons, notes, dividers
+   ===================================== */
+
+/* Card */
+.sd-card {
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-md);
+  box-shadow: var(--sd-shadow-md);
+  padding: 32px;
+}
+
+.sd-card--tight {
+  padding: 24px;
+}
+
+.sd-card--soft {
+  background: var(--sd-surface);
+  box-shadow: var(--sd-shadow-sm);
+}
+
+.sd-card > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Card intro / opener */
+.sd-card-intro {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--sd-text);
+  margin-bottom: 24px;
+}
+
+/* Divider */
+.sd-divider {
+  border: 0;
+  border-top: 1px solid var(--sd-border);
+  margin: 40px 0 24px;
+}
+
+/* Buttons */
+.sd-button,
+.sd-button .wp-element-button,
+.wp-block-button__link.sd-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: var(--sd-radius-sm);
+  background: var(--sd-accent);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: none;
+}
+
+.sd-button:hover,
+.sd-button:focus,
+.sd-button .wp-element-button:hover,
+.wp-block-button__link.sd-button:hover {
+  background: var(--sd-accent-hover);
+  color: #ffffff;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.sd-button:focus-visible,
+.sd-button .wp-element-button:focus-visible,
+.wp-block-button__link.sd-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--sd-focus);
+}
+
+/* Secondary button */
+.sd-button--secondary {
+  background: transparent;
+  color: var(--sd-text);
+  border: 1px solid var(--sd-border-strong);
+}
+
+.sd-button--secondary:hover,
+.sd-button--secondary:focus {
+  background: #ffffff;
+  color: var(--sd-text);
+  border-color: var(--sd-border-strong);
+}
+
+/* Full-width button */
+.sd-button--block {
+  display: flex;
+  width: 100%;
+}
+
+/* Notes / helper text / meta blocks */
+.sd-note {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--sd-text-muted);
+}
+
+.sd-note--strong {
+  color: var(--sd-text-soft);
+}
+
+/* Simple callout */
+.sd-callout {
+  padding: 16px 18px;
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm);
+  background: var(--sd-surface);
+  color: var(--sd-text-soft);
+}
+
+/* Simple path/choice tile */
+.sd-tile {
+  display: block;
+  padding: 16px 18px;
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm);
+  background: var(--sd-surface);
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.sd-tile:hover {
+  border-color: var(--sd-border-strong);
+  box-shadow: var(--sd-shadow-sm);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.sd-tile__title {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sd-text);
+  margin-bottom: 6px;
+}
+
+.sd-tile__meta {
+  display: block;
+  font-size: 14px;
+  color: var(--sd-text-muted);
+  line-height: 1.5;
+}
+
+/* =====================================
+   ADDENDUM — MISSING COMPONENT PRIMITIVES
+   ===================================== */
+
+/* Core card — this was effectively still living in legacy */
+.sd-card {
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-md);
+  box-shadow: var(--sd-shadow-md);
+  padding: 32px;
+}
+
+.sd-card--tight {
+  padding: 24px;
+}
+
+.sd-card > *:last-child {
+  margin-bottom: 0;
+}
+
+.sd-card-intro {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--sd-text);
+  margin-bottom: 24px;
+}
+
+/* Ordered step list */
+.sd-steps {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.sd-steps li {
+  margin-bottom: 10px;
+  color: var(--sd-text-soft);
+}
+
+/* Front-of-flow card surfaces for confirmation / account creation */
+.sd-front-container,
+.sd-auth-card,
+.sd-confirm-card {
+  max-width: 720px;
+  margin: 56px auto;
+  padding: 32px 24px;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--sd-border);
+  border-radius: 18px;
+  box-shadow: var(--sd-shadow-md);
+}
+
+.sd-front-hero {
+  margin-bottom: 24px;
+}
+
+.sd-front-headline,
+.sd-auth-card__title,
+.sd-confirm-card__title {
+  font-size: clamp(32px, 5vw, 44px);
+  line-height: 1.08;
+  margin: 0 0 14px;
+  letter-spacing: -0.02em;
+  color: var(--sd-text);
+}
+
+.sd-front-body,
+.sd-auth-card__intro,
+.sd-confirm-card__intro {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--sd-text-soft);
+  margin: 0 auto;
+  max-width: 42rem;
+}
+
+/* Progress pills */
+.sd-front-progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 30px 0 18px;
+  font-size: 14px;
+}
+
+.sd-step {
+  padding: 12px 10px;
+  border: 1px solid var(--sd-border);
+  border-radius: 999px;
+  color: var(--sd-text-muted);
+  background: #ffffff;
+}
+
+.sd-step.is-active {
+  border-color: var(--sd-accent);
+  color: var(--sd-accent);
+  font-weight: 600;
+}
+
+.sd-step.is-complete {
+  border-color: #2ecc71;
+  color: #1f7a43;
+  background: #f3fcf6;
+  font-weight: 600;
+}
+
+.sd-front-processing {
+  margin: 18px 0 8px;
+  color: var(--sd-text-soft);
+}
+
+.sd-spinner {
+  margin: 0 auto 10px;
+  width: 24px;
+  height: 24px;
+  border: 3px solid #ddd;
+  border-top-color: var(--sd-accent);
+  border-radius: 50%;
+  animation: sd-spin 0.9s linear infinite;
+}
+
+@keyframes sd-spin {
+  to { transform: rotate(360deg); }
+}
+
+.sd-front-actions {
+  margin-top: 20px;
+}
+
+.sd-front-btn {
+  display: inline-block;
+  min-height: 48px;
+  padding: 12px 20px;
+  margin: 5px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.sd-front-btn--primary {
+  background: var(--sd-accent);
+  color: #fff;
+  border: 1px solid var(--sd-accent);
+}
+
+.sd-front-btn--primary:hover,
+.sd-front-btn--primary:focus {
+  background: var(--sd-accent-hover);
+  border-color: var(--sd-accent-hover);
+  color: #fff;
+  text-decoration: none;
+}
+
+.sd-front-btn--secondary {
+  background: #fff;
+  color: var(--sd-text);
+  border: 1px solid var(--sd-border);
+}
+
+.sd-front-btn--secondary:hover,
+.sd-front-btn--secondary:focus {
+  border-color: var(--sd-text);
+  color: var(--sd-text);
+  text-decoration: none;
+}
+
+.sd-front-footer {
+  margin-top: 26px;
+  color: var(--sd-text-muted);
+}
+/* =====================================
+   PATCH — SD CARD SHOULD LOOK LIKE A CARD
+   ===================================== */
+
+.sd-card,
+.wp-block-group.sd-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  padding: 32px;
+  overflow: hidden;
+}
+
+/* Gutenberg constrained groups can make cards feel flat */
+.wp-block-group.sd-card.is-layout-constrained {
+  max-width: 100%;
+}
+
+/* Kill inherited block spacing weirdness inside cards */
+.sd-card > * {
+  max-width: none;
+}
+
+.sd-card > *:first-child {
+  margin-top: 0;
+}
+
+.sd-card > *:last-child {
+  margin-bottom: 0;
+}
+
+.sd-card .wp-block-contact-form-7-contact-form-selector,
+.sd-card .wpcf7,
+.sd-card form {
+  max-width: none;
+}
+
+/* Stronger intro treatment */
+.sd-card-intro {
+  margin: 0 0 24px;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--sd-text);
+}
+
+/* Slight separation between intro and form */
+.sd-card-intro + .wp-block-contact-form-7-contact-form-selector,
+.sd-card-intro + .wpcf7 {
+  margin-top: 4px;
+}
+
+/* =====================================
+   EXIT SIGN CARD (Hero Visual)
+   ===================================== */
+
+.sd-exit-sign {
+  background: var(--sd-exit-green);
+  color: #fff;
+  border-radius: 14px;
+  padding: 24px 28px;
+  max-width: 320px;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.08),
+    inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.sd-exit-sign__label {
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+
+.sd-exit-sign__main {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.sd-exit-sign__arrow {
+  margin-top: 12px;
+  font-size: 20px;
+  opacity: 0.9;
+}
+
+/* Placement */
+
+.sd-hero {
+  position: relative;
+}
+
+.sd-hero__visual {
+  position: absolute;
+  right: 0;
+  top: 40px;
+}
+
+@media (max-width: 1024px) {
+  .sd-hero__visual {
+    position: static;
+    margin-top: 24px;
+  }
+
+  .sd-exit-sign {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

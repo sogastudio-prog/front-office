@@ -1,0 +1,140 @@
+/* =====================================
+   SOLODRIVE BASE
+   ===================================== */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--sd-bg);
+  color: var(--sd-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+}
+
+/* Prevent Astra drift */
+body {
+  line-height: 1.5;
+}
+
+/* Links */
+a {
+  color: var(--sd-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Headings */
+h1, h2, h3, h4 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--sd-text);
+}
+
+/* Typography scale */
+h1 {
+  font-size: 48px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--sd-space-2);
+}
+
+h2 {
+  font-size: 20px;
+  margin-top: var(--sd-space-4);
+  margin-bottom: var(--sd-space-2);
+}
+
+p {
+  font-size: 16px;
+  color: var(--sd-text-soft);
+  margin: 0 0 var(--sd-space-2);
+}
+
+/* Lists */
+ul, ol {
+  margin: 0 0 var(--sd-space-2);
+  padding-left: 20px;
+}
+
+li {
+  margin-bottom: 6px;
+}
+
+/* Inputs baseline reset */
+input, button {
+  font-family: inherit;
+}
+
+/* Remove WP weird spacing */
+.wp-block-group {
+  margin: 0;
+}
+
+/* =====================================
+   ADDENDUM — BASE SAFETY / ASTRA RESET
+   ===================================== */
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+.wp-site-blocks {
+  overflow-x: clip;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Keep old hidden helper harmless if it still exists in markup */
+.sd-hp {
+  display: none !important;
+}
+
+/* Astra/Gutenberg default constrained spacing is too aggressive */
+.entry-content > .wp-block-group,
+.entry-content > .wp-block-columns,
+.entry-content > .wp-block-cover {
+  padding-top: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+  padding-left: 0;
+}
+
+/* Keep article shells from fighting the SoloDrive shell */
+.entry-content,
+.ast-container {
+  max-width: none;
+}
+
+blockquote {
+  border-left: 2px solid var(--sd-border);
+  padding-left: 16px;
+  margin: 32px 0;
+  font-style: italic;
+  color: var(--sd-text);
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--sd-border);
+  margin: 48px 0;
+}

@@ -1,0 +1,245 @@
+/* =====================================
+   SOLODRIVE SHELL
+   Public page structure, width, spacing
+   ===================================== */
+
+/* Main public page wrapper */
+.sd-page,
+.sd-front-flow,
+.sd-home-page,
+.sd-convert-page,
+.sd-pricing-page,
+.sd-request-page,
+.sd-legal-page,
+.sd-privacy-page,
+.sd-about-page {
+  background: var(--sd-bg);
+}
+
+/* Core shell */
+.sd-shell,
+.sd-front-shell {
+  width: min(100% - 48px, 960px);
+  margin: 0 auto;
+}
+
+/* Narrow reading shell for authority/article pages */
+.sd-shell--narrow {
+  width: min(100% - 48px, 760px);
+  margin: 0 auto;
+}
+
+/* Standard section rhythm */
+.sd-section {
+  padding-top: var(--sd-space-5);
+  padding-bottom: var(--sd-space-5);
+}
+
+/* Hero rhythm */
+.sd-section--hero {
+  padding-top: 72px;
+  padding-bottom: 40px;
+}
+
+/* Tight section */
+.sd-section--tight {
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+/* Large section */
+.sd-section--lg {
+  padding-top: 88px;
+  padding-bottom: 88px;
+}
+
+/* Vertical stacking helpers */
+.sd-stack > * + * {
+  margin-top: var(--sd-space-2);
+}
+
+.sd-stack-lg > * + * {
+  margin-top: var(--sd-space-3);
+}
+
+.sd-stack-xl > * + * {
+  margin-top: var(--sd-space-4);
+}
+
+/* Eyebrow / section intro label */
+.sd-eyebrow {
+  display: inline-block;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--sd-text-muted);
+  margin-bottom: var(--sd-space-3);
+}
+
+/* Intro / lead text */
+.sd-lead {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--sd-text-soft);
+  max-width: 680px;
+}
+
+/* Article/content rhythm */
+.sd-content > * + * {
+  margin-top: var(--sd-space-2);
+}
+
+.sd-content h2 {
+  margin-top: 40px;
+}
+
+.sd-content h3 {
+  font-size: 18px;
+  line-height: 1.3;
+  margin-top: 28px;
+  margin-bottom: 12px;
+}
+
+.sd-content p,
+.sd-content ul,
+.sd-content ol {
+  max-width: 720px;
+}
+
+/* Grid utility for simple two-column blocks */
+.sd-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* Useful for homepage path/choice links */
+.sd-grid-2 > * {
+  min-width: 0;
+}
+
+/* Remove Astra-ish extra space around entry wrappers if present */
+.site-content .content-area,
+.site-content .site-main,
+.entry-content {
+  margin: 0;
+}
+
+/* Gutenberg groups inside shell */
+.sd-shell .wp-block-group,
+.sd-shell--narrow .wp-block-group {
+  margin: 0;
+}
+
+/* Top spacing for pages with logo/header already visible */
+.sd-page main,
+.sd-front-flow main {
+  display: block;
+}
+
+/* Utility spacing */
+.sd-mt-0 { margin-top: 0 !important; }
+.sd-mt-1 { margin-top: var(--sd-space-1) !important; }
+.sd-mt-2 { margin-top: var(--sd-space-2) !important; }
+.sd-mt-3 { margin-top: var(--sd-space-3) !important; }
+.sd-mt-4 { margin-top: var(--sd-space-4) !important; }
+
+.sd-mb-0 { margin-bottom: 0 !important; }
+.sd-mb-1 { margin-bottom: var(--sd-space-1) !important; }
+.sd-mb-2 { margin-bottom: var(--sd-space-2) !important; }
+.sd-mb-3 { margin-bottom: var(--sd-space-3) !important; }
+.sd-mb-4 { margin-bottom: var(--sd-space-4) !important; }
+
+/* =====================================
+   ADDENDUM — HEADER / LOGO / PUBLIC CHROME
+   ===================================== */
+
+#masthead,
+.ast-primary-header-bar {
+  background: #ffffff !important;
+  border-bottom: 1px solid var(--sd-border) !important;
+  box-shadow: none !important;
+}
+
+.ast-primary-header-bar {
+  min-height: 56px !important;
+}
+
+.ast-primary-header-bar .ast-builder-grid-row-container,
+.ast-primary-header-bar .ast-builder-grid-row {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  align-items: center !important;
+}
+
+.ast-primary-header-bar .ast-container {
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+/* Hide Astra clutter on public pre-login surfaces */
+.ast-builder-menu,
+.ast-header-social-wrap,
+.ast-header-search {
+  display: none !important;
+}
+
+/* Logo */
+.sd-logo {
+  display: inline-flex;
+  align-items: baseline;
+  text-decoration: none !important;
+  color: var(--sd-text) !important;
+  letter-spacing: 0.01em;
+  line-height: 1 !important;
+}
+
+.sd-logo-main {
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: 0.01em;
+}
+
+.sd-logo-dot {
+  font-weight: 600;
+  font-size: 20px;
+  opacity: 0.4 !important;
+  margin: 0 -1px !important;
+}
+
+.sd-logo-tld {
+  font-weight: 500 !important;
+  font-size: 0.85em !important;
+  opacity: 0.52 !important;
+  letter-spacing: 0.03em !important;
+}
+
+/* Operators button in header */
+.ast-header-button-1 .ast-custom-button,
+.ast-header-button-1 .ast-custom-button:visited {
+  background: transparent !important;
+  color: var(--sd-text) !important;
+  border: 1px solid rgba(17, 17, 17, 0.18) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+}
+
+.ast-header-button-1 .ast-custom-button:hover,
+.ast-header-button-1 .ast-custom-button:focus {
+  background: rgba(17, 17, 17, 0.04) !important;
+  filter: none !important;
+  transform: none !important;
+  color: var(--sd-text) !important;
+}
+
+/* Eyebrow alias so old markup doesn't break */
+.sd-eyebrow,
+.eyebrow {
+  display: inline-block;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--sd-text-muted);
+  margin-bottom: var(--sd-space-3);
+}

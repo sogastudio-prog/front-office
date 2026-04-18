@@ -43,7 +43,6 @@ final class SD_Front_Office_Scaffold {
     private const PAGE_SLUG_CONFIRM             = 'confirm';
     private const PAGE_SLUG_CONNECT_PAYOUTS     = 'connect-payouts';
     private const PAGE_SLUG_SUCCESS             = 'success';
-    private const ACTION_CREATE_ACCOUNT         = 'sdfo_create_account';
 
     private const STAGE_INTAKE_CAPTURED         = 'INTAKE_CAPTURED';
     private const STAGE_ACCOUNT_PENDING         = 'ACCOUNT_PENDING';
@@ -100,8 +99,6 @@ final class SD_Front_Office_Scaffold {
         add_action('wpcf7_before_send_mail', [__CLASS__, 'handle_cf7_submission']);
         add_action('save_post_sd_prospect', [__CLASS__, 'ensure_prospect_defaults'], 10, 3);
         add_action('save_post_sd_provision_package', [__CLASS__, 'ensure_provision_package_defaults'], 10, 3);
-        add_action('admin_post_nopriv_' . self::ACTION_CREATE_ACCOUNT, [__CLASS__, 'handle_account_creation_submit']);
-        add_action('admin_post_' . self::ACTION_CREATE_ACCOUNT, [__CLASS__, 'handle_account_creation_submit']);
         add_action('admin_post_nopriv_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
         add_action('admin_post_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
         add_action('admin_post_nopriv_' . self::ACTION_START_PAYOUTS, [__CLASS__, 'handle_start_payouts']);
@@ -384,7 +381,7 @@ final class SD_Front_Office_Scaffold {
 
         update_post_meta($prospect_post_id, 'sd_prospect_id', 'prs_' . wp_generate_uuid4());
         update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_INTAKE_CAPTURED);
-        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_ACCOUNT_PENDING);
+        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_SLUG_PENDING);
         update_post_meta($prospect_post_id, 'sd_source', 'cf7_request_access');
         update_post_meta($prospect_post_id, 'sd_created_at_gmt', current_time('mysql', true));
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
@@ -427,10 +424,11 @@ final class SD_Front_Office_Scaffold {
         if ($current_stage === '') {
             update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_INTAKE_CAPTURED);
         }
-        $owner_user_id = (int) get_post_meta($prospect_post_id, 'sd_owner_user_id', true);
-        if ($owner_user_id <= 0) {
-            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_INTAKE_CAPTURED);
-            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_ACCOUNT_PENDING);
+        $reserved_slug = (string) get_post_meta($prospect_post_id, 'sd_reserved_slug', true);
+
+        if ($reserved_slug === '') {
+            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_PENDING);
+            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_SLUG_PENDING);
         }
         $existing_count = (int) get_post_meta($prospect_post_id, 'sd_submission_count', true);
         update_post_meta($prospect_post_id, 'sd_submission_count', max(1, $existing_count + 1));
@@ -850,8 +848,6 @@ final class SD_Front_Office_Scaffold {
         switch ($lifecycle) {
             case self::STAGE_INTAKE_CAPTURED:
             case self::STAGE_ACCOUNT_PENDING:
-                return self::render_account_creation($prospect_post_id);
-
             case self::STAGE_ACCOUNT_CREATED:
             case self::STAGE_SLUG_PENDING:
                 return self::render_slug_reservation($prospect_post_id);
@@ -874,7 +870,7 @@ final class SD_Front_Office_Scaffold {
                 return self::render_ready_state($prospect_post_id);
 
             default:
-                return '<div class="sd-front-container"><h1>Unknown state</h1></div>';
+                return self::render_slug_reservation($prospect_post_id);
         }
     }
 
@@ -1208,9 +1204,9 @@ final class SD_Front_Office_Scaffold {
         </div>
         <?php
         return (string) ob_get_clean();
-        }
+    }
 
-        public static function handle_slug_reservation_submit(): void {
+    public static function handle_slug_reservation_submit(): void {
         $token = isset($_POST['prospect_token']) ? sanitize_text_field((string) $_POST['prospect_token']) : '';
         $prospect_post_id = self::get_prospect_post_id_by_token($token);
 
@@ -1225,12 +1221,8 @@ final class SD_Front_Office_Scaffold {
             self::redirect_slug_error($prospect_post_id, 'invalid_request');
         }
 
-        $owner_user_id = (int) get_post_meta($prospect_post_id, 'sd_owner_user_id', true);
-        if ($owner_user_id <= 0) {
-            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_ACCOUNT_PENDING);
-            wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
-            exit;
-        }
+        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_PENDING);
+        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_SLUG_PENDING);
 
         $candidate = isset($_POST['requested_slug']) ? (string) $_POST['requested_slug'] : '';
         $normalized = self::normalize_slug_candidate($candidate);
