@@ -1019,20 +1019,15 @@ final class SD_Front_Office_Scaffold {
             self::redirect_checkout_error($prospect_post_id, 'invalid_request');
         }
 
-        $owner_user_id = (int) get_post_meta($prospect_post_id, 'sd_owner_user_id', true);
         $reserved_slug = (string) get_post_meta($prospect_post_id, 'sd_reserved_slug', true);
-
-        if ($owner_user_id <= 0) {
-            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_ACCOUNT_PENDING);
-            wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
-            exit;
-        }
 
         if ($reserved_slug === '') {
             update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_PENDING);
             wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
             exit;
         }
+
+        self::maybe_stage_provision_package($prospect_post_id);
 
         $session = self::create_stripe_checkout_session($prospect_post_id);
         if (empty($session['ok'])) {
