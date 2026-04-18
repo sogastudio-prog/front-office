@@ -693,9 +693,9 @@ final class SD_Front_Office_Scaffold {
         if ($charges_enabled) {
             update_post_meta($prospect_post_id, self::META_STRIPE_COMPLETED_GMT, current_time('mysql', true));
         }
-        if ($charges_enabled) {
-            self::maybe_promote_prospect_to_runtime_tenant($prospect_post_id);
-        }
+        // if ($charges_enabled) {
+        //     self::maybe_promote_prospect_to_runtime_tenant($prospect_post_id);
+        // }
     }
 
     private static function maybe_promote_prospect_to_runtime_tenant(int $prospect_post_id): void {
@@ -1377,8 +1377,7 @@ final class SD_Front_Office_Scaffold {
 
         error_log('SD Front Office: provisioning precheck billing_status=' . $billing_status . ' reserved_slug=' . $reserved_slug . ' prospect_id=' . $prospect_id);
 
-        if ($billing_status !== self::BILLING_SUBSCRIPTION_PAID || $reserved_slug === '') {
-            error_log('SD Front Office: provisioning aborted due to unmet preconditions for prospect_post_id=' . $prospect_post_id);
+        if ($reserved_slug === '') {
             return;
         }
 
@@ -1404,8 +1403,8 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($provision_package_post_id, 'sd_package_status', 'staged');
         update_post_meta($provision_package_post_id, 'sd_origin_prospect_id', $prospect_id);
         update_post_meta($provision_package_post_id, 'sd_origin_prospect_post_id', $prospect_post_id);
-        update_post_meta($provision_package_post_id, 'sd_billing_status', self::BILLING_SUBSCRIPTION_PAID);
-        update_post_meta($provision_package_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
+        update_post_meta($provision_package_post_id, 'sd_billing_status', self::BILLING_CHECKOUT_PENDING);
+        update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'awaiting_payment');
         update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'staged_for_provisioning');
         update_post_meta($provision_package_post_id, 'sd_created_at_gmt', current_time('mysql', true));
         update_post_meta($provision_package_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
@@ -1458,7 +1457,6 @@ final class SD_Front_Office_Scaffold {
 
         error_log('SD Front Office: firing sd_control_plane_provision_package_requested for tenant_id=' . $tenant_id);
 
-        do_action('sd_control_plane_provision_package_requested', $provision_package_post_id, $prospect_post_id, $provisioning_payload);
     }
 
     private static function deprecated_provision_runtime_operator_access(int $prospect_post_id, int $provision_package_post_id): void {
@@ -1992,6 +1990,16 @@ final class SD_Front_Office_Scaffold {
             update_post_meta($prospect_post_id, 'sd_stripe_subscription_id',  $stripe_subscription_id);
             update_post_meta($prospect_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
             update_post_meta($prospect_post_id, 'sd_updated_at_gmt',          current_time('mysql', true));
+
+            self::maybe_stage_provision_package($prospect_post_id);
+
+            // NEW:
+            $provision_package_post_id = (int) get_post_meta($prospect_post_id, 'sd_provision_package_post_id', true);
+
+            if ($provision_package_post_id > 0) {
+                $payload = self::build_provisioning_payload(...); // reuse existing logic
+                do_action('sd_control_plane_provision_package_requested', $provision_package_post_id, $prospect_post_id, $payload);
+            }
 
             error_log('[SD Front Office] confirm-billing: marked paid for prospect_post_id=' . $prospect_post_id);
         }
