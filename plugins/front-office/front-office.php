@@ -883,32 +883,6 @@ final class SD_Front_Office_Scaffold {
         $error_code = isset($_GET['slug_err']) ? sanitize_text_field((string) $_GET['slug_err']) : '';
         $message = self::map_slug_error_message($error_code);
 
-        if ($reserved_slug !== '') {
-            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_RESERVED);
-
-            ob_start();
-            ?>
-            <div class="sd-front-container">
-                <div class="sd-front-hero">
-                    <h1 class="sd-front-headline">Your storefront name is reserved</h1>
-                    <p class="sd-front-body">
-                        Your future storefront will live at:
-                    </p>
-                    <p class="sd-front-body">
-                        <strong><?php echo esc_html('app.solodrive.pro/t/' . $reserved_slug); ?></strong>
-                    </p>
-                </div>
-
-                <div class="sd-front-actions">
-                    <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url(self::get_prospect_url_for_post($prospect_post_id)); ?>">
-                        Continue to checkout
-                    </a>
-                </div>
-            </div>
-            <?php
-            return (string) ob_get_clean();
-        }
-
         $value = $requested_slug !== '' ? $requested_slug : '';
 
         ob_start();
@@ -1243,6 +1217,7 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_reserved_slug', $normalized);
         update_post_meta($prospect_post_id, 'sd_slug_status', 'reserved');
         update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_RESERVED);
+        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_SLUG_RESERVED);
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
 
         wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
@@ -1291,12 +1266,11 @@ final class SD_Front_Office_Scaffold {
         $checkout_flag = isset($_GET['checkout']) ? sanitize_text_field((string) $_GET['checkout']) : '';
         $session_id = isset($_GET['session_id']) ? sanitize_text_field((string) $_GET['session_id']) : '';
 
-        error_log('SD Front Office: maybe_finalize_checkout_success entered for prospect_post_id=' . $prospect_post_id . ' checkout=' . $checkout_flag . ' session_id=' . $session_id);
-
         if ($checkout_flag !== 'success' || $session_id === '') {
-            error_log('SD Front Office: checkout success finalizer skipped due to missing success/session');
             return;
         }
+
+        error_log('SD Front Office: maybe_finalize_checkout_success entered for prospect_post_id=' . $prospect_post_id . ' checkout=' . $checkout_flag . ' session_id=' . $session_id);
 
         $existing_paid = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
         if ($existing_paid === self::BILLING_SUBSCRIPTION_PAID) {
