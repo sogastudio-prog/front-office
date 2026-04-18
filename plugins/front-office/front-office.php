@@ -1431,27 +1431,44 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
         update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'TENANT_INACTIVE');            
         error_log('SD Front Office: provisioning completed. tenant_id=' . $tenant_id . ' tenant_post_id=' . $tenant_post_id . ' storefront_url=' . $storefront_url);
-        // At the end of maybe_provision_inactive_tenant(), replace the current
-        // provision_runtime_operator_access() call with:
 
-        $stripe_account_id     = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
-        $stripe_customer_id    = (string) get_post_meta($prospect_post_id, 'sd_stripe_customer_id', true);
+        // --- Build and fire the cross-system provisioning payload ---
+        //
+        // The action hook registered at the bottom of this file will pick this
+        // up, sign it with X-SD-Signature (HMAC-SHA256), and POST it to SDPRO
+        // at POST /wp-json/sd/v1/control-plane/provision.
+        //
+        // provision_runtime_operator_access() is intentionally NOT called here
+        // any more. The SDPRO listener (handle_provision_request) creates the WP
+        // user and generates the login URL as part of the same atomic operation,
+        // and it returns sd_owner role assignment plus the login URL in its
+        // response.  The action hook callback below reads that response and writes
+        // sd_operations_entry_url back onto the tenant post, so the admin UI still
+        // gets the link.
+
+        $stripe_account_id      = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
+        $stripe_customer_id     = (string) get_post_meta($prospect_post_id, 'sd_stripe_customer_id', true);
         $stripe_subscription_id = (string) get_post_meta($prospect_post_id, 'sd_stripe_subscription_id', true);
+        $full_name              = (string) get_post_meta($prospect_post_id, 'sd_full_name', true);
+        $email                  = (string) get_post_meta($prospect_post_id, 'sd_email_normalized', true);
+        $phone                  = (string) get_post_meta($prospect_post_id, 'sd_phone_raw', true);
 
         $provisioning_payload = [
             'tenant_id'              => $tenant_id,
             'tenant_slug'            => $reserved_slug,
             'prospect_id'            => $prospect_id,
             'prospect_post_id'       => $prospect_post_id,
-            'full_name'              => get_post_meta($prospect_post_id, 'sd_full_name', true),
-            'email'                  => get_post_meta($prospect_post_id, 'sd_email_normalized', true),
-            'phone'                  => get_post_meta($prospect_post_id, 'sd_phone_raw', true),
+            'full_name'              => $full_name,
+            'email'                  => $email,
+            'phone'                  => $phone,
             'stripe_account_id'      => $stripe_account_id,
             'stripe_customer_id'     => $stripe_customer_id,
             'stripe_subscription_id' => $stripe_subscription_id,
             'billing_status'         => 'paid',
             'activation_mode'        => 'inactive_until_provisioned',
         ];
+
+        error_log('SD Front Office: firing sd_control_plane_tenant_provisioning_requested for tenant_id=' . $tenant_id);
 
         do_action('sd_control_plane_tenant_provisioning_requested', $tenant_post_id, $prospect_post_id, $provisioning_payload);
     }
@@ -2474,7 +2491,25 @@ add_action('sd_control_plane_tenant_provisioning_requested', function ($tenant_p
         update_post_meta($tenant_post_id, 'sd_activation_ready', 1);
         update_post_meta($tenant_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
 
-        error_log('[SD Front Office] Provisioning request succeeded for tenant_post_id=' . $tenant_post_id);
+        // Write the runtime post ID back so control-plane can cross-reference.
+        if (!empty($json['runtime_tenant_post_id'])) {
+            update_post_meta($tenant_post_id, 'sd_runtime_tenant_post_id', (int) $json['runtime_tenant_post_id']);
+        }
+
+        // Store the owner login URL so the admin UI "Open App" link works
+        // without a separate provision-operator call.
+        if (!empty($json['login_url'])) {
+            update_post_meta($tenant_post_id, 'sd_operations_entry_url', (string) $json['login_url']);
+
+            // Mirror onto the prospect so the staged success screen can use it.
+            if ($prospect_post_id > 0) {
+                update_post_meta($prospect_post_id, 'sd_operations_entry_url', (string) $json['login_url']);
+            }
+        }
+
+        error_log('[SD Front Office] Provisioning succeeded. tenant_post_id=' . $tenant_post_id
+            . ' runtime_tenant_post_id=' . ($json['runtime_tenant_post_id'] ?? 'n/a')
+            . ' owner_user_id=' . ($json['owner_user_id'] ?? 'n/a'));
         return;
     }
 
