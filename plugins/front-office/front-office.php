@@ -1096,14 +1096,13 @@ final class SD_Front_Office_Scaffold {
                 ? rtrim(SD_RUNTIME_BASE_URL, '/')
                 : rtrim((string) get_option('sd_runtime_base_url', 'https://app.solodrive.pro'), '/');
 
-            $success_url = $sdpro_base . '/operator/?'
-                . http_build_query([
-                    'sd_onboard'       => '1',
-                    'prospect_post_id' => $prospect_post_id,
-                    'prospect_token'   => $prospect_token,
-                    'session_id'       => '{CHECKOUT_SESSION_ID}',
-                    'sig'              => $onboarding_token,
-                ]);
+            $success_url =
+                $sdpro_base
+                . '/operator/?sd_onboard=1'
+                . '&prospect_post_id=' . rawurlencode((string) $prospect_post_id)
+                . '&prospect_token='   . rawurlencode($prospect_token)
+                . '&session_id={CHECKOUT_SESSION_ID}'
+                . '&sig='              . rawurlencode($onboarding_token);
 
             $cancel_url = add_query_arg(
                 ['checkout' => 'cancel'],
@@ -1381,7 +1380,7 @@ final class SD_Front_Office_Scaffold {
             return;
         }
 
-        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_TENANT_PROVISIONING);
+        // update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_TENANT_PROVISIONING);
 
         $provision_package_post_id = wp_insert_post([
             'post_type'   => self::PROVISION_PACKAGE_POST_TYPE,
@@ -1997,7 +1996,7 @@ final class SD_Front_Office_Scaffold {
             $provision_package_post_id = (int) get_post_meta($prospect_post_id, 'sd_provision_package_post_id', true);
 
             if ($provision_package_post_id > 0) {
-                $payload = self::build_provisioning_payload(...); // reuse existing logic
+            //    $payload = self::build_provisioning_payload(...); // reuse existing logic
                 do_action('sd_control_plane_provision_package_requested', $provision_package_post_id, $prospect_post_id, $payload);
             }
 
