@@ -640,7 +640,9 @@ final class SD_Front_Office_Scaffold {
 
         $prospect_post_id = !empty($posts) ? (int) $posts[0] : 0;
         if ($prospect_post_id <= 0) {
-            error_log('SD Front Office: no prospect found for Stripe account ' . $acct_id);
+            // Stripe Connect accounts are now created in SDPRO after runtime provisioning.
+            // Front-office no longer owns this account lifecycle, so account.updated events
+            // without a matching prospect are expected and should be ignored quietly.
             return;
         }
 
@@ -1308,6 +1310,7 @@ final class SD_Front_Office_Scaffold {
             update_post_meta($prospect_post_id, 'sd_billing_status', self::BILLING_SUBSCRIPTION_PAID);
             update_post_meta($prospect_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
             update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SUBSCRIPTION_PAID);
+            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_SUBSCRIPTION_PAID);
             update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
 
             error_log('SD Front Office: marked subscription paid for prospect_post_id=' . $prospect_post_id . ' subscription_id=' . $subscription_id . ' customer_id=' . $customer_id);
@@ -1404,7 +1407,6 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($provision_package_post_id, 'sd_origin_prospect_post_id', $prospect_post_id);
         update_post_meta($provision_package_post_id, 'sd_billing_status', self::BILLING_CHECKOUT_PENDING);
         update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'awaiting_payment');
-        update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'staged_for_provisioning');
         update_post_meta($provision_package_post_id, 'sd_created_at_gmt', current_time('mysql', true));
         update_post_meta($provision_package_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
 
@@ -1413,48 +1415,9 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_provision_package_id', $tenant_id);
         update_post_meta($prospect_post_id, 'sd_provision_package_post_id', (int) $provision_package_post_id);
         update_post_meta($prospect_post_id, self::META_STOREFRONT_URL, $storefront_url);
-        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_PROVISION_PACKAGE_STAGED);
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
-        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'PROVISION_PACKAGE_STAGED');            
-        error_log('SD Front Office: provisioning completed. tenant_id=' . $tenant_id . ' provision_package_post_id=' . $provision_package_post_id . ' storefront_url=' . $storefront_url);
-
-        // --- Build and fire the cross-system provisioning payload ---
-        //
-        // The action hook registered at the bottom of this file will pick this
-        // up, sign it with X-SD-Signature (HMAC-SHA256), and POST it to SDPRO
-        // at POST /wp-json/sd/v1/control-plane/provision.
-        //
-        // deprecated_provision_runtime_operator_access() is intentionally NOT called here
-        // any more. The SDPRO listener (handle_provision_request) creates the WP
-        // user and generates the login URL as part of the same atomic operation,
-        // and it returns sd_owner role assignment plus the login URL in its
-        // response.  The action hook callback below reads that response and writes
-        // sd_operations_entry_url back onto the provision package post, so the admin UI still
-        // gets the link.
-
-        $stripe_account_id      = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
-        $stripe_customer_id     = (string) get_post_meta($prospect_post_id, 'sd_stripe_customer_id', true);
-        $stripe_subscription_id = (string) get_post_meta($prospect_post_id, 'sd_stripe_subscription_id', true);
-        $full_name              = (string) get_post_meta($prospect_post_id, 'sd_full_name', true);
-        $email                  = (string) get_post_meta($prospect_post_id, 'sd_email_normalized', true);
-        $phone                  = (string) get_post_meta($prospect_post_id, 'sd_phone_raw', true);
-
-        $provisioning_payload = [
-            'tenant_id'              => $tenant_id,
-            'tenant_slug'            => $reserved_slug,
-            'prospect_id'            => $prospect_id,
-            'prospect_post_id'       => $prospect_post_id,
-            'full_name'              => $full_name,
-            'email'                  => $email,
-            'phone'                  => $phone,
-            'stripe_account_id'      => $stripe_account_id,
-            'stripe_customer_id'     => $stripe_customer_id,
-            'stripe_subscription_id' => $stripe_subscription_id,
-            'billing_status'         => 'paid',
-            'activation_mode'        => 'package_staged_for_runtime_provisioning',
-        ];
-
-        error_log('SD Front Office: firing sd_control_plane_provision_package_requested for tenant_id=' . $tenant_id);
+        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_CHECKOUT_PENDING);
+        error_log('SD Front Office: provision package staged. tenant_id=' . $tenant_id . ' provision_package_post_id=' . $provision_package_post_id . ' storefront_url=' . $storefront_url);
 
     }
 
@@ -2570,104 +2533,13 @@ final class SD_Front_Office_Scaffold {
 
 SD_Front_Office_Scaffold::bootstrap();
 add_action('sd_control_plane_provision_package_requested', function ($provision_package_post_id, $prospect_post_id, $payload) {
-    if (empty($payload) || !is_array($payload)) {
-        error_log('[SD Front Office] Provisioning callback aborted: missing payload.');
-        return;
-    }
-
-    $endpoint = defined('SD_CONTROL_PLANE_PROVISIONING_ENDPOINT')
-        ? SD_CONTROL_PLANE_PROVISIONING_ENDPOINT
-        : get_option('sd_control_plane_provisioning_endpoint');
-
-    if (!$endpoint) {
-        error_log('[SD Front Office] Provisioning callback aborted: endpoint not configured.');
-        return;
-    }
-
-    $secret = defined('SD_CONTROL_PLANE_PROVISIONING_SECRET')
-        ? SD_CONTROL_PLANE_PROVISIONING_SECRET
-        : get_option('sd_control_plane_provisioning_secret');
-
-    if (!$secret) {
-        error_log('[SD Front Office] Provisioning callback aborted: secret not configured.');
-        return;
-    }
-
-    $request_id = 'sdprov_' . md5(implode('|', [
-        (string) ($payload['tenant_id'] ?? ''),
-        (string) ($payload['tenant_slug'] ?? ''),
-        (string) ($payload['stripe_account_id'] ?? ''),
-        (string) ($payload['stripe_subscription_id'] ?? ''),
-        (string) ($payload['billing_status'] ?? ''),
-    ]));
-
-    $body = wp_json_encode($payload);
-
-    if (!$body) {
-        error_log('[SD Front Office] Provisioning callback aborted: failed to JSON encode payload.');
-        return;
-    }
-
-    $signature = hash_hmac('sha256', $body, $secret);
-
-    update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'sending');
-    update_post_meta($provision_package_post_id, 'sd_last_provisioning_payload_json', $body);
-
-    $response = wp_remote_post($endpoint, [
-        'timeout' => 20,
-        'headers' => [
-            'Content-Type' => 'application/json',
-            'X-SD-Request-ID' => $request_id,
-            'X-SD-Signature' => $signature,
-        ],
-        'body' => $body,
-    ]);
-
-    if (is_wp_error($response)) {
-        update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'failed');
-        update_post_meta($provision_package_post_id, 'sd_health_status', 'attention');
-
-        error_log('[SD Front Office] Provisioning request failed: ' . $response->get_error_message());
-        return;
-    }
-
-    $code = (int) wp_remote_retrieve_response_code($response);
-    $raw_response = wp_remote_retrieve_body($response);
-    $json = json_decode($raw_response, true);
-
-    if ($code >= 200 && $code < 300 && is_array($json) && !empty($json['ok'])) {
-        update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'provisioned');
-        update_post_meta($provision_package_post_id, 'sd_storefront_status', 'ready');
-        update_post_meta($provision_package_post_id, 'sd_activation_ready', 1);
+    // Deprecated: SDPRO onboarding is now the canonical runtime provisioner.
+    // Front-office no longer dispatches runtime provisioning from this hook.
+    if ($provision_package_post_id > 0) {
+        update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'deprecated_front_dispatch_ignored');
         update_post_meta($provision_package_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
-
-        // Write the runtime post ID back so control-plane can cross-reference.
-        if (!empty($json['runtime_tenant_post_id'])) {
-            update_post_meta($provision_package_post_id, 'sd_runtime_tenant_post_id', (int) $json['runtime_tenant_post_id']);
-        }
-
-        // Store the owner login URL so the admin UI "Open App" link works
-        // without a separate provision-operator call.
-        if (!empty($json['login_url'])) {
-            update_post_meta($provision_package_post_id, 'sd_operations_entry_url', (string) $json['login_url']);
-
-            // Mirror onto the prospect so the staged success screen can use it.
-            if ($prospect_post_id > 0) {
-                update_post_meta($prospect_post_id, 'sd_operations_entry_url', (string) $json['login_url']);
-            }
-        }
-
-        error_log('[SD Front Office] Provisioning succeeded. provision_package_post_id=' . $provision_package_post_id
-            . ' runtime_tenant_post_id=' . ($json['runtime_tenant_post_id'] ?? 'n/a')
-            . ' owner_user_id=' . ($json['owner_user_id'] ?? 'n/a'));
-        return;
     }
-
-    update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'failed');
-    update_post_meta($provision_package_post_id, 'sd_health_status', 'attention');
-    update_post_meta($provision_package_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
-
-    error_log('[SD Front Office] Provisioning request returned HTTP ' . $code . ' body=' . $raw_response);
+    error_log('[SD Front Office] Ignored deprecated front provisioning dispatch. provision_package_post_id=' . (int) $provision_package_post_id);
 }, 10, 3);
 /**
  * Front-end helper for CF7 redirect.
