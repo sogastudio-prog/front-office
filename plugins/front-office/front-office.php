@@ -425,6 +425,8 @@ final class SD_Front_Office_Scaffold {
             update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_INTAKE_CAPTURED);
         }
         $reserved_slug = (string) get_post_meta($prospect_post_id, 'sd_reserved_slug', true);
+        $provision_package_post_id = (int) get_post_meta($prospect_post_id, 'sd_provision_package_post_id', true);
+        $provision_package_id = (string) get_post_meta($prospect_post_id, 'sd_provision_package_id', true);
 
         if ($reserved_slug === '') {
             update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_PENDING);
@@ -640,9 +642,7 @@ final class SD_Front_Office_Scaffold {
 
         $prospect_post_id = !empty($posts) ? (int) $posts[0] : 0;
         if ($prospect_post_id <= 0) {
-            // Stripe Connect accounts are now created in SDPRO after runtime provisioning.
-            // Front-office no longer owns this account lifecycle, so account.updated events
-            // without a matching prospect are expected and should be ignored quietly.
+            error_log('SD Front Office: no prospect found for Stripe account ' . $acct_id);
             return;
         }
 
@@ -695,6 +695,62 @@ final class SD_Front_Office_Scaffold {
         if ($charges_enabled) {
             update_post_meta($prospect_post_id, self::META_STRIPE_COMPLETED_GMT, current_time('mysql', true));
         }
+        if ($charges_enabled) {
+            self::maybe_promote_prospect_to_runtime_tenant($prospect_post_id);
+        }
+    }
+
+    private static function maybe_promote_prospect_to_runtime_tenant(int $prospect_post_id): void {
+        if ($prospect_post_id <= 0) {
+            return;
+        }
+
+        $existing_tenant_id = (string) get_post_meta($prospect_post_id, 'sd_provision_package_id', true);
+        $existing_provision_package_post_id = (int) get_post_meta($prospect_post_id, 'sd_provision_package_post_id', true);
+
+        if ($existing_tenant_id !== '' || $existing_provision_package_post_id > 0) {
+            return;
+        }
+
+        $stripe_account_id = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
+        if ($stripe_account_id === '') {
+            error_log('SD Front Office: promotion skipped, missing stripe account id for prospect_post_id=' . $prospect_post_id);
+            return;
+        }
+
+        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'ACTIVATION_PROCESSING');
+
+        $result = self::promote_prospect_to_runtime_tenant($prospect_post_id);
+
+        if (empty($result['ok'])) {
+            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'ACTIVATION_FAILED');
+            error_log('SD Front Office: promotion failed for prospect_post_id=' . $prospect_post_id . ' error=' . wp_json_encode($result));
+            return;
+        }
+
+        $tenant_id = (string) ($result['tenant_id'] ?? '');
+        $provision_package_post_id = (int) ($result['provision_package_post_id'] ?? 0);
+        $storefront_url = (string) ($result['storefront_url'] ?? '');
+        $operations_entry_url = (string) ($result['operations_entry_url'] ?? '');
+
+        if ($tenant_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_provision_package_id', $provision_package_id);
+        }
+
+        if ($provision_package_post_id > 0) {
+            update_post_meta($prospect_post_id, 'sd_provision_package_post_id', $provision_package_post_id);
+        }
+
+        if ($storefront_url !== '') {
+            update_post_meta($prospect_post_id, self::META_STOREFRONT_URL, $storefront_url);
+        }
+
+        if ($operations_entry_url !== '') {
+            update_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, $operations_entry_url);
+        }
+
+        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'TENANT_READY');
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
     }
 
     private static function render_account_creation(int $prospect_post_id): string {
@@ -828,6 +884,32 @@ final class SD_Front_Office_Scaffold {
 
         $error_code = isset($_GET['slug_err']) ? sanitize_text_field((string) $_GET['slug_err']) : '';
         $message = self::map_slug_error_message($error_code);
+
+        if ($reserved_slug !== '') {
+            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_RESERVED);
+
+            ob_start();
+            ?>
+            <div class="sd-front-container">
+                <div class="sd-front-hero">
+                    <h1 class="sd-front-headline">Your storefront name is reserved</h1>
+                    <p class="sd-front-body">
+                        Your future storefront will live at:
+                    </p>
+                    <p class="sd-front-body">
+                        <strong><?php echo esc_html('app.solodrive.pro/t/' . $reserved_slug); ?></strong>
+                    </p>
+                </div>
+
+                <div class="sd-front-actions">
+                    <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url(self::get_prospect_url_for_post($prospect_post_id)); ?>">
+                        Continue to checkout
+                    </a>
+                </div>
+            </div>
+            <?php
+            return (string) ob_get_clean();
+        }
 
         $value = $requested_slug !== '' ? $requested_slug : '';
 
@@ -965,15 +1047,20 @@ final class SD_Front_Office_Scaffold {
             self::redirect_checkout_error($prospect_post_id, 'invalid_request');
         }
 
+        $owner_user_id = (int) get_post_meta($prospect_post_id, 'sd_owner_user_id', true);
         $reserved_slug = (string) get_post_meta($prospect_post_id, 'sd_reserved_slug', true);
+
+        if ($owner_user_id <= 0) {
+            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_ACCOUNT_PENDING);
+            wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
+            exit;
+        }
 
         if ($reserved_slug === '') {
             update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_PENDING);
             wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
             exit;
         }
-
-        self::maybe_stage_provision_package($prospect_post_id);
 
         $session = self::create_stripe_checkout_session($prospect_post_id);
         if (empty($session['ok'])) {
@@ -1042,13 +1129,14 @@ final class SD_Front_Office_Scaffold {
                 ? rtrim(SD_RUNTIME_BASE_URL, '/')
                 : rtrim((string) get_option('sd_runtime_base_url', 'https://app.solodrive.pro'), '/');
 
-            $success_url =
-                $sdpro_base
-                . '/operator/?sd_onboard=1'
-                . '&prospect_post_id=' . rawurlencode((string) $prospect_post_id)
-                . '&prospect_token='   . rawurlencode($prospect_token)
-                . '&session_id={CHECKOUT_SESSION_ID}'
-                . '&sig='              . rawurlencode($onboarding_token);
+            $success_url = $sdpro_base . '/operator/?'
+                . http_build_query([
+                    'sd_onboard'       => '1',
+                    'prospect_post_id' => $prospect_post_id,
+                    'prospect_token'   => $prospect_token,
+                    'session_id'       => '{CHECKOUT_SESSION_ID}',
+                    'sig'              => $onboarding_token,
+                ]);
 
             $cancel_url = add_query_arg(
                 ['checkout' => 'cancel'],
@@ -1068,13 +1156,17 @@ final class SD_Front_Office_Scaffold {
                     'prospect_post_id' => (string) $prospect_post_id,
                     'prospect_id'      => $prospect_id,
                     'prospect_token'   => $prospect_token,
-                    'reserved_slug'    => $reserved_slug,
+                    'reserved_slug'            => $reserved_slug,
+                    'provision_package_post_id' => $provision_package_post_id > 0 ? (string) $provision_package_post_id : '',
+                    'provision_package_id'      => $provision_package_id,
                 ],
                 'subscription_data' => [
                     'metadata' => [
-                        'prospect_post_id' => (string) $prospect_post_id,
-                        'prospect_id'      => $prospect_id,
-                        'reserved_slug'    => $reserved_slug,
+                        'prospect_post_id'       => (string) $prospect_post_id,
+                        'prospect_id'            => $prospect_id,
+                        'reserved_slug'          => $reserved_slug,
+                        'provision_package_post_id' => $provision_package_post_id > 0 ? (string) $provision_package_post_id : '',
+                        'provision_package_id'      => $provision_package_id,
                     ],
                 ],
             ]);
@@ -1157,7 +1249,6 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_reserved_slug', $normalized);
         update_post_meta($prospect_post_id, 'sd_slug_status', 'reserved');
         update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_RESERVED);
-        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_SLUG_RESERVED);
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
 
         wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
@@ -1206,11 +1297,12 @@ final class SD_Front_Office_Scaffold {
         $checkout_flag = isset($_GET['checkout']) ? sanitize_text_field((string) $_GET['checkout']) : '';
         $session_id = isset($_GET['session_id']) ? sanitize_text_field((string) $_GET['session_id']) : '';
 
+        error_log('SD Front Office: maybe_finalize_checkout_success entered for prospect_post_id=' . $prospect_post_id . ' checkout=' . $checkout_flag . ' session_id=' . $session_id);
+
         if ($checkout_flag !== 'success' || $session_id === '') {
+            error_log('SD Front Office: checkout success finalizer skipped due to missing success/session');
             return;
         }
-
-        error_log('SD Front Office: maybe_finalize_checkout_success entered for prospect_post_id=' . $prospect_post_id . ' checkout=' . $checkout_flag . ' session_id=' . $session_id);
 
         $existing_paid = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
         if ($existing_paid === self::BILLING_SUBSCRIPTION_PAID) {
@@ -1254,12 +1346,10 @@ final class SD_Front_Office_Scaffold {
             update_post_meta($prospect_post_id, 'sd_billing_status', self::BILLING_SUBSCRIPTION_PAID);
             update_post_meta($prospect_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
             update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SUBSCRIPTION_PAID);
-            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_SUBSCRIPTION_PAID);
             update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
 
             error_log('SD Front Office: marked subscription paid for prospect_post_id=' . $prospect_post_id . ' subscription_id=' . $subscription_id . ' customer_id=' . $customer_id);
 
-            self::maybe_stage_provision_package($prospect_post_id);
             $operations_entry_url = (string) get_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, true);
             if ($operations_entry_url !== '') {
                 wp_redirect($operations_entry_url);
@@ -1268,6 +1358,44 @@ final class SD_Front_Office_Scaffold {
         } catch (Throwable $e) {
             error_log('SD Front Office: checkout success verify failed: ' . $e->getMessage());
         }
+    }
+
+    private static function promote_prospect_to_runtime_tenant(int $prospect_post_id): array {
+        $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
+        $prospect_token = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
+        $full_name = (string) get_post_meta($prospect_post_id, 'sd_full_name', true);
+        $email = (string) get_post_meta($prospect_post_id, 'sd_email_raw', true);
+        $phone = (string) get_post_meta($prospect_post_id, 'sd_phone_raw', true);
+        $business_name = (string) get_post_meta($prospect_post_id, self::META_BUSINESS_NAME, true);
+
+        $stripe_account_id = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
+        $stripe_state = (string) get_post_meta($prospect_post_id, self::META_STRIPE_STATE, true);
+        $billing_status = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
+        $stripe_customer_id = (string) get_post_meta($prospect_post_id, 'sd_stripe_customer_id', true);
+        $stripe_subscription_id = (string) get_post_meta($prospect_post_id, 'sd_stripe_subscription_id', true);
+
+        $payload = [
+            'prospect_id' => $prospect_id,
+            'prospect_post_id' => $prospect_post_id,
+            'prospect_token' => $prospect_token,
+            'full_name' => $full_name,
+            'email' => $email,
+            'phone' => $phone,
+            'business_display_name' => $business_name !== '' ? $business_name : $full_name,
+            'stripe_account_id' => $stripe_account_id,
+            'stripe_state' => $stripe_state,
+            'billing_status' => $billing_status,
+            'stripe_customer_id' => $stripe_customer_id,
+            'stripe_subscription_id' => $stripe_subscription_id,
+        ];
+
+        $response = self::post_control_plane_endpoint('promote-prospect', $payload);
+
+        if (!is_array($response)) {
+            return ['ok' => false, 'error' => 'invalid_response'];
+        }
+
+        return $response;
     }
 
     private static function maybe_stage_provision_package(int $prospect_post_id): void {
@@ -1285,11 +1413,12 @@ final class SD_Front_Office_Scaffold {
 
         error_log('SD Front Office: provisioning precheck billing_status=' . $billing_status . ' reserved_slug=' . $reserved_slug . ' prospect_id=' . $prospect_id);
 
-        if ($reserved_slug === '') {
+        if ($billing_status !== self::BILLING_SUBSCRIPTION_PAID || $reserved_slug === '') {
+            error_log('SD Front Office: provisioning aborted due to unmet preconditions for prospect_post_id=' . $prospect_post_id);
             return;
         }
 
-        // update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_TENANT_PROVISIONING);
+        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_TENANT_PROVISIONING);
 
         $provision_package_post_id = wp_insert_post([
             'post_type'   => self::PROVISION_PACKAGE_POST_TYPE,
@@ -1304,27 +1433,68 @@ final class SD_Front_Office_Scaffold {
 
         error_log('SD Front Office: provision package post created. provision_package_post_id=' . $provision_package_post_id);
 
-        $tenant_id = 'tnt_' . wp_generate_uuid4();
+        $provision_package_id = 'pkg_' . wp_generate_uuid4();
 
-        update_post_meta($provision_package_post_id, 'sd_provision_package_id', $tenant_id);
+        update_post_meta($provision_package_post_id, 'sd_provision_package_id', $provision_package_id);
         update_post_meta($provision_package_post_id, 'sd_reserved_slug', $reserved_slug);
         update_post_meta($provision_package_post_id, 'sd_package_status', 'staged');
         update_post_meta($provision_package_post_id, 'sd_origin_prospect_id', $prospect_id);
         update_post_meta($provision_package_post_id, 'sd_origin_prospect_post_id', $prospect_post_id);
-        update_post_meta($provision_package_post_id, 'sd_billing_status', self::BILLING_CHECKOUT_PENDING);
-        update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'awaiting_payment');
+        update_post_meta($provision_package_post_id, 'sd_billing_status', self::BILLING_SUBSCRIPTION_PAID);
+        update_post_meta($provision_package_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
+        update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'staged_for_provisioning');
         update_post_meta($provision_package_post_id, 'sd_created_at_gmt', current_time('mysql', true));
         update_post_meta($provision_package_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
 
         $storefront_url = 'https://app.solodrive.pro/t/' . rawurlencode($reserved_slug);
 
-        update_post_meta($prospect_post_id, 'sd_provision_package_id', $tenant_id);
+        update_post_meta($prospect_post_id, 'sd_provision_package_id', $provision_package_id);
         update_post_meta($prospect_post_id, 'sd_provision_package_post_id', (int) $provision_package_post_id);
         update_post_meta($prospect_post_id, self::META_STOREFRONT_URL, $storefront_url);
+        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_PROVISION_PACKAGE_STAGED);
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
-        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_CHECKOUT_PENDING);
-        error_log('SD Front Office: provision package staged. tenant_id=' . $tenant_id . ' provision_package_post_id=' . $provision_package_post_id . ' storefront_url=' . $storefront_url);
+        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, 'PROVISION_PACKAGE_STAGED');            
+        error_log('SD Front Office: provisioning completed. tenant_id=' . $tenant_id . ' provision_package_post_id=' . $provision_package_post_id . ' storefront_url=' . $storefront_url);
 
+        // --- Build and fire the cross-system provisioning payload ---
+        //
+        // The action hook registered at the bottom of this file will pick this
+        // up, sign it with X-SD-Signature (HMAC-SHA256), and POST it to SDPRO
+        // at POST /wp-json/sd/v1/control-plane/provision.
+        //
+        // deprecated_provision_runtime_operator_access() is intentionally NOT called here
+        // any more. The SDPRO listener (handle_provision_request) creates the WP
+        // user and generates the login URL as part of the same atomic operation,
+        // and it returns sd_owner role assignment plus the login URL in its
+        // response.  The action hook callback below reads that response and writes
+        // sd_operations_entry_url back onto the provision package post, so the admin UI still
+        // gets the link.
+
+        $stripe_account_id      = (string) get_post_meta($prospect_post_id, self::META_STRIPE_ACCOUNT_ID, true);
+        $stripe_customer_id     = (string) get_post_meta($prospect_post_id, 'sd_stripe_customer_id', true);
+        $stripe_subscription_id = (string) get_post_meta($prospect_post_id, 'sd_stripe_subscription_id', true);
+        $full_name              = (string) get_post_meta($prospect_post_id, 'sd_full_name', true);
+        $email                  = (string) get_post_meta($prospect_post_id, 'sd_email_normalized', true);
+        $phone                  = (string) get_post_meta($prospect_post_id, 'sd_phone_raw', true);
+
+        $provisioning_payload = [
+            'tenant_id'              => $tenant_id,
+            'tenant_slug'            => $reserved_slug,
+            'prospect_id'            => $prospect_id,
+            'prospect_post_id'       => $prospect_post_id,
+            'full_name'              => $full_name,
+            'email'                  => $email,
+            'phone'                  => $phone,
+            'stripe_account_id'      => $stripe_account_id,
+            'stripe_customer_id'     => $stripe_customer_id,
+            'stripe_subscription_id' => $stripe_subscription_id,
+            'billing_status'         => 'paid',
+            'activation_mode'        => 'package_staged_for_runtime_provisioning',
+        ];
+
+        error_log('SD Front Office: firing sd_control_plane_provision_package_requested for tenant_id=' . $tenant_id);
+
+        do_action('sd_control_plane_provision_package_requested', $provision_package_post_id, $prospect_post_id, $provisioning_payload);
     }
 
     private static function deprecated_provision_runtime_operator_access(int $prospect_post_id, int $provision_package_post_id): void {
@@ -1382,7 +1552,7 @@ final class SD_Front_Office_Scaffold {
 
         $tenant_id = (string) get_post_meta($post_id, 'sd_provision_package_id', true);
         if ($tenant_id === '') {
-            update_post_meta($post_id, 'sd_provision_package_id', 'tnt_' . wp_generate_uuid4());
+            update_post_meta($post_id, 'sd_provision_package_id', 'pkg_' . wp_generate_uuid4());
         }
 
         $status = (string) get_post_meta($post_id, 'sd_package_status', true);
@@ -1859,16 +2029,6 @@ final class SD_Front_Office_Scaffold {
             update_post_meta($prospect_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
             update_post_meta($prospect_post_id, 'sd_updated_at_gmt',          current_time('mysql', true));
 
-            self::maybe_stage_provision_package($prospect_post_id);
-
-            // NEW:
-            $provision_package_post_id = (int) get_post_meta($prospect_post_id, 'sd_provision_package_post_id', true);
-
-            if ($provision_package_post_id > 0) {
-            //    $payload = self::build_provisioning_payload(...); // reuse existing logic
-                do_action('sd_control_plane_provision_package_requested', $provision_package_post_id, $prospect_post_id, $payload);
-            }
-
             error_log('[SD Front Office] confirm-billing: marked paid for prospect_post_id=' . $prospect_post_id);
         }
 
@@ -1919,9 +2079,9 @@ final class SD_Front_Office_Scaffold {
         // Generate tenant_id if the front-office hasn't created the provision package post yet
         // (edge case: direct SDPRO-side onboarding before front-office fires do_action).
         if ($tenant_id === '') {
-            $tenant_id = 'tnt_' . wp_generate_uuid4();
+            $provision_package_id = 'pkg_' . wp_generate_uuid4();
             // Persist so subsequent calls are consistent.
-            update_post_meta($prospect_post_id, 'sd_provision_package_id', $tenant_id);
+            update_post_meta($prospect_post_id, 'sd_provision_package_id', $provision_package_id);
         }
 
         if ($reserved_slug === '') {
@@ -1929,10 +2089,11 @@ final class SD_Front_Office_Scaffold {
         }
 
         return new WP_REST_Response([
-            'ok'               => true,
-            'provision_package_id' => $tenant_id,
-            'reserved_slug'        => $reserved_slug,
-            'tenant_id'             => $tenant_id,
+            'ok'                    => true,
+            'provision_package_post_id' => $provision_package_post_id,
+            'provision_package_id'  => $tenant_id,
+            'reserved_slug'         => $reserved_slug,
+            'tenant_id'             => '',
             'tenant_slug'           => $reserved_slug,
             'prospect_id'      => $prospect_id,
             'prospect_post_id' => $prospect_post_id,
@@ -2439,13 +2600,104 @@ final class SD_Front_Office_Scaffold {
 
 SD_Front_Office_Scaffold::bootstrap();
 add_action('sd_control_plane_provision_package_requested', function ($provision_package_post_id, $prospect_post_id, $payload) {
-    // Deprecated: SDPRO onboarding is now the canonical runtime provisioner.
-    // Front-office no longer dispatches runtime provisioning from this hook.
-    if ($provision_package_post_id > 0) {
-        update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'deprecated_front_dispatch_ignored');
-        update_post_meta($provision_package_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+    if (empty($payload) || !is_array($payload)) {
+        error_log('[SD Front Office] Provisioning callback aborted: missing payload.');
+        return;
     }
-    error_log('[SD Front Office] Ignored deprecated front provisioning dispatch. provision_package_post_id=' . (int) $provision_package_post_id);
+
+    $endpoint = defined('SD_CONTROL_PLANE_PROVISIONING_ENDPOINT')
+        ? SD_CONTROL_PLANE_PROVISIONING_ENDPOINT
+        : get_option('sd_control_plane_provisioning_endpoint');
+
+    if (!$endpoint) {
+        error_log('[SD Front Office] Provisioning callback aborted: endpoint not configured.');
+        return;
+    }
+
+    $secret = defined('SD_CONTROL_PLANE_PROVISIONING_SECRET')
+        ? SD_CONTROL_PLANE_PROVISIONING_SECRET
+        : get_option('sd_control_plane_provisioning_secret');
+
+    if (!$secret) {
+        error_log('[SD Front Office] Provisioning callback aborted: secret not configured.');
+        return;
+    }
+
+    $request_id = 'sdprov_' . md5(implode('|', [
+        (string) ($payload['tenant_id'] ?? ''),
+        (string) ($payload['tenant_slug'] ?? ''),
+        (string) ($payload['stripe_account_id'] ?? ''),
+        (string) ($payload['stripe_subscription_id'] ?? ''),
+        (string) ($payload['billing_status'] ?? ''),
+    ]));
+
+    $body = wp_json_encode($payload);
+
+    if (!$body) {
+        error_log('[SD Front Office] Provisioning callback aborted: failed to JSON encode payload.');
+        return;
+    }
+
+    $signature = hash_hmac('sha256', $body, $secret);
+
+    update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'sending');
+    update_post_meta($provision_package_post_id, 'sd_last_provisioning_payload_json', $body);
+
+    $response = wp_remote_post($endpoint, [
+        'timeout' => 20,
+        'headers' => [
+            'Content-Type' => 'application/json',
+            'X-SD-Request-ID' => $request_id,
+            'X-SD-Signature' => $signature,
+        ],
+        'body' => $body,
+    ]);
+
+    if (is_wp_error($response)) {
+        update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'failed');
+        update_post_meta($provision_package_post_id, 'sd_health_status', 'attention');
+
+        error_log('[SD Front Office] Provisioning request failed: ' . $response->get_error_message());
+        return;
+    }
+
+    $code = (int) wp_remote_retrieve_response_code($response);
+    $raw_response = wp_remote_retrieve_body($response);
+    $json = json_decode($raw_response, true);
+
+    if ($code >= 200 && $code < 300 && is_array($json) && !empty($json['ok'])) {
+        update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'provisioned');
+        update_post_meta($provision_package_post_id, 'sd_storefront_status', 'ready');
+        update_post_meta($provision_package_post_id, 'sd_activation_ready', 1);
+        update_post_meta($provision_package_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+        // Write the runtime post ID back so control-plane can cross-reference.
+        if (!empty($json['runtime_tenant_post_id'])) {
+            update_post_meta($provision_package_post_id, 'sd_runtime_tenant_post_id', (int) $json['runtime_tenant_post_id']);
+        }
+
+        // Store the owner login URL so the admin UI "Open App" link works
+        // without a separate provision-operator call.
+        if (!empty($json['login_url'])) {
+            update_post_meta($provision_package_post_id, 'sd_operations_entry_url', (string) $json['login_url']);
+
+            // Mirror onto the prospect so the staged success screen can use it.
+            if ($prospect_post_id > 0) {
+                update_post_meta($prospect_post_id, 'sd_operations_entry_url', (string) $json['login_url']);
+            }
+        }
+
+        error_log('[SD Front Office] Provisioning succeeded. provision_package_post_id=' . $provision_package_post_id
+            . ' runtime_tenant_post_id=' . ($json['runtime_tenant_post_id'] ?? 'n/a')
+            . ' owner_user_id=' . ($json['owner_user_id'] ?? 'n/a'));
+        return;
+    }
+
+    update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'failed');
+    update_post_meta($provision_package_post_id, 'sd_health_status', 'attention');
+    update_post_meta($provision_package_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+    error_log('[SD Front Office] Provisioning request returned HTTP ' . $code . ' body=' . $raw_response);
 }, 10, 3);
 /**
  * Front-end helper for CF7 redirect.
