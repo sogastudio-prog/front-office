@@ -99,10 +99,6 @@ final class SD_Front_Office_Scaffold {
         add_action('wpcf7_before_send_mail', [__CLASS__, 'handle_cf7_submission']);
         add_action('save_post_sd_prospect', [__CLASS__, 'ensure_prospect_defaults'], 10, 3);
         add_action('save_post_sd_provision_package', [__CLASS__, 'ensure_provision_package_defaults'], 10, 3);
-        add_action('admin_post_nopriv_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
-        add_action('admin_post_' . self::ACTION_START, [__CLASS__, 'handle_start_submit']);
-        add_action('admin_post_nopriv_' . self::ACTION_START_PAYOUTS, [__CLASS__, 'handle_start_payouts']);
-        add_action('admin_post_' . self::ACTION_START_PAYOUTS, [__CLASS__, 'handle_start_payouts']);
         if (!is_admin()) {
             add_filter('wpcf7_feedback_response', [__CLASS__, 'inject_cf7_redirect'], 10, 2);
         }
@@ -301,12 +297,6 @@ final class SD_Front_Office_Scaffold {
 
         if (!class_exists('WPCF7_Submission') || !method_exists('WPCF7_Submission', 'get_instance')) {
         error_log('SD Front Office: WPCF7_Submission class or get_instance missing');
-        return;
-        }
-
-        $submission = WPCF7_Submission::get_instance();
-        if (!$submission) {
-        error_log('SD Front Office: submission instance is null');
         return;
         }
 
@@ -1791,13 +1781,6 @@ final class SD_Front_Office_Scaffold {
             'storefront_url' => $storefront_url,
             'operations_entry_url' => $operations_entry_url,
         ];
-
-        return [
-            'prospect_id' => $prospect_id,
-            'activation_state' => $state,
-            'storefront_url' => $storefront_url,
-            'operations_entry_url' => $operations_entry_url,
-        ];
     }
 
     public static function register_rest_routes(): void {
@@ -2314,37 +2297,6 @@ final class SD_Front_Office_Scaffold {
             'submitted_at_gmt'  => current_time('mysql', true),
             'raw_payload_json'  => wp_json_encode($posted_data),
         ];
-    }
-
-    private static function post_control_plane_endpoint(string $path, array $payload): array {
-        $base = 'https://app.solodrive.pro/wp-json/sd/v1/control-plane/';
-        $url = $base . ltrim($path, '/');
-
-        $response = wp_remote_post($url, [
-            'timeout' => 20,
-            'headers' => [
-                'Content-Type' => 'application/json',
-                'Accept'       => 'application/json',
-            ],
-            'body' => wp_json_encode($payload),
-        ]);
-
-        if (is_wp_error($response)) {
-            error_log('SOLODRIVE.PRO control-plane POST failed: ' . $path . ' => ' . $response->get_error_message());
-            return ['ok' => false, 'error' => 'request_failed'];
-        }
-
-        $code = (int) wp_remote_retrieve_response_code($response);
-        $body = (string) wp_remote_retrieve_body($response);
-        $json = json_decode($body, true);
-
-        if (!is_array($json)) {
-            error_log('SOLODRIVE.PRO control-plane invalid JSON: ' . $path . ' => HTTP ' . $code . ' body=' . $body);
-            return ['ok' => false, 'error' => 'invalid_json', 'http_code' => $code];
-        }
-
-        $json['http_code'] = $code;
-        return $json;
     }
 
     private static function resolve_checkout_pricing_for_prospect(int $prospect_post_id): array {
