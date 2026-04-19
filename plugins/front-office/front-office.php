@@ -1033,6 +1033,14 @@ final class SD_Front_Office_Scaffold {
         return (string) ob_get_clean();
     }
 
+    private static function normalize_slug_candidate(string $value): string {
+        $value = strtolower(trim($value));
+        $value = preg_replace('/[^a-z0-9\-]+/', '-', $value);
+        $value = preg_replace('/\-+/', '-', (string) $value);
+        $value = trim((string) $value, '-');
+        return sanitize_title($value);
+    }
+
     public static function handle_slug_reservation_submit(): void {
         $token = isset($_POST['prospect_token']) ? sanitize_text_field((string) $_POST['prospect_token']) : '';
         $prospect_post_id = self::get_prospect_post_id_by_token($token);
