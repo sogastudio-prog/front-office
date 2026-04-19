@@ -686,84 +686,6 @@ final class SD_Front_Office_Scaffold {
         }
     }
 
-    private static function render_account_creation(int $prospect_post_id): string {
-        $token = self::ensure_prospect_token($prospect_post_id);
-        $full_name = (string) get_post_meta($prospect_post_id, 'sd_full_name', true);
-        $email = (string) get_post_meta($prospect_post_id, 'sd_email_raw', true);
-
-        $error_code = isset($_GET['acct_err'])
-            ? sanitize_text_field((string) $_GET['acct_err'])
-            : '';
-
-        $error_message = $error_code !== ''
-            ? self::map_account_error_message($error_code)
-            : '';
-
-        ob_start();
-        ?>
-        <div class="sd-front-container">
-            <div class="sd-front-hero">
-                <h1 class="sd-front-headline">Create your account</h1>
-                <p class="sd-front-body">
-                    You're one step away from setting up your SoloDrive storefront.
-                </p>
-            </div>
-
-            <?php if ($error_message !== '') : ?>
-                <div class="sd-front-error">
-                    <?php echo esc_html($error_message); ?>
-                </div>
-            <?php endif; ?>
-
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="sd-front-form">
-                <input type="hidden" name="action" value="<?php echo esc_attr(self::ACTION_CREATE_ACCOUNT); ?>">
-                <input type="hidden" name="prospect_token" value="<?php echo esc_attr($token); ?>">
-                <?php wp_nonce_field('sdfo_create_account_' . $prospect_post_id, 'sdfo_account_nonce'); ?>
-
-                <div class="sd-front-field">
-                    <label>Full Name</label>
-                    <input
-                        type="text"
-                        name="full_name"
-                        value="<?php echo esc_attr($full_name); ?>"
-                        autocomplete="name"
-                        required
-                    >
-                </div>
-
-                <div class="sd-front-field">
-                    <label>Email</label>
-                    <input
-                        type="email"
-                        name="email"
-                        value="<?php echo esc_attr($email); ?>"
-                        autocomplete="email"
-                        required
-                    >
-                </div>
-
-                <div class="sd-front-field">
-                    <label>Password</label>
-                    <input type="password" name="password" required>
-                </div>
-
-                <div class="sd-front-field">
-                    <label>Confirm Password</label>
-                    <input type="password" name="password_confirm" required>
-                </div>
-
-                <div class="sd-front-actions">
-                    <button type="submit" class="sd-front-btn sd-front-btn--primary">
-                        Create Account
-                    </button>
-                </div>
-            </form>
-        </div>
-        <?php
-
-        return (string) ob_get_clean();
-    }
-
     public static function shortcode_prospect_state(): string {
         if (self::is_editor_request()) {
             return '<div class="sd-front-placeholder">SOLODRIVE.PRO Prospect status block</div>';
@@ -1400,33 +1322,6 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($post_id, 'sd_updated_at_gmt', current_time('mysql', true));
     }
 
-    private static function handle_account_updated($account) {
-
-        $acct_id = $account->id;
-
-        $prospect_id = self::find_prospect_by_stripe_account_id($acct_id);
-
-        if ($prospect_id <= 0) {
-            error_log("Stripe webhook: no prospect for account {$acct_id}");
-            return;
-        }
-
-        update_post_meta($prospect_id, 'sd_stripe_charges_enabled', $account->charges_enabled ? '1' : '0');
-        update_post_meta($prospect_id, 'sd_stripe_payouts_enabled', $account->payouts_enabled ? '1' : '0');
-        update_post_meta($prospect_id, 'sd_stripe_details_submitted', $account->details_submitted ? '1' : '0');
-
-        update_post_meta($prospect_id, 'sd_stripe_requirements_currently_due_json', wp_json_encode($account->requirements->currently_due ?? []));
-        update_post_meta($prospect_id, 'sd_stripe_requirements_past_due_json', wp_json_encode($account->requirements->past_due ?? []));
-        update_post_meta($prospect_id, 'sd_stripe_disabled_reason', $account->requirements->disabled_reason ?? '');
-
-        update_post_meta($prospect_id, 'sd_stripe_status_snapshot_json', wp_json_encode($account));
-
-        // Promotion trigger (your locked rule)
-        if (!empty($account->charges_enabled)) {
-            update_post_meta($prospect_id, 'sd_stripe_onboarding_status', 'PAYMENTS_ENABLED');
-        }
-    }
-
     private static function is_request_access_form($contact_form, array $posted_data): bool {
         if (!is_object($contact_form) || !method_exists($contact_form, 'id')) {
             return false;
@@ -1445,37 +1340,6 @@ final class SD_Front_Office_Scaffold {
 
     public static function register_shortcodes(): void {
         add_shortcode('sdfo_prospect_state', [__CLASS__, 'shortcode_prospect_state']);
-    }
-
-    private static function render_account_creation_success(int $prospect_post_id): string {
-        $continue_url = self::get_prospect_url_for_post($prospect_post_id);
-
-        ob_start();
-        ?>
-        <div class="sd-front-container">
-            <div class="sd-front-hero">
-                <h1 class="sd-front-headline">Account created</h1>
-                <p class="sd-front-body">
-                    Your account is ready. Continue to choose your storefront slug.
-                </p>
-            </div>
-
-            <div class="sd-front-actions">
-                <a class="sd-front-btn sd-front-btn--primary" href="<?php echo esc_url($continue_url); ?>">
-                    Continue
-                </a>
-            </div>
-        </div>
-        <?php
-        return (string) ob_get_clean();
-        }
-
-        private static function normalize_slug_candidate(string $value): string {
-        $value = strtolower(trim($value));
-        $value = preg_replace('/[^a-z0-9\-]+/', '-', $value);
-        $value = preg_replace('/\-+/', '-', (string) $value);
-        $value = trim((string) $value, '-');
-        return sanitize_title($value);
     }
 
     private static function is_valid_slug_candidate(string $slug): bool {
@@ -1553,111 +1417,6 @@ final class SD_Front_Office_Scaffold {
             'slug_taken'      => 'That storefront name is already taken.',
             default           => '',
         };
-    }
-
-    public static function handle_account_creation_submit(): void {
-        $token = isset($_POST['prospect_token']) ? sanitize_text_field((string) $_POST['prospect_token']) : '';
-        $prospect_post_id = self::get_prospect_post_id_by_token($token);
-
-        if ($prospect_post_id <= 0) {
-            wp_die('Invalid or expired link.');
-        }
-
-        if (
-            !isset($_POST['sdfo_account_nonce']) ||
-            !wp_verify_nonce((string) $_POST['sdfo_account_nonce'], 'sdfo_create_account_' . $prospect_post_id)
-        ) {
-            self::redirect_account_error($prospect_post_id, 'invalid_request');
-        }
-
-        $full_name = sanitize_text_field((string) ($_POST['full_name'] ?? ''));
-        $email = sanitize_email((string) ($_POST['email'] ?? ''));
-        $password = (string) ($_POST['password'] ?? '');
-        $password_confirm = (string) ($_POST['password_confirm'] ?? '');
-
-        if ($full_name === '' || $email === '') {
-            self::redirect_account_error($prospect_post_id, 'missing_fields');
-        }
-
-        if (!is_email($email)) {
-            self::redirect_account_error($prospect_post_id, 'invalid_email');
-        }
-
-        if (strlen($password) < 8) {
-            self::redirect_account_error($prospect_post_id, 'weak_password');
-        }
-
-        if (!hash_equals($password, $password_confirm)) {
-            self::redirect_account_error($prospect_post_id, 'password_mismatch');
-        }
-
-        $existing_owner_user_id = (int) get_post_meta($prospect_post_id, 'sd_owner_user_id', true);
-        if ($existing_owner_user_id > 0) {
-            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_PENDING);
-            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_ACCOUNT_CREATED);
-            wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
-            exit;
-        }
-
-        $user_result = self::resolve_or_create_frontend_owner_user($email, $password, $full_name);
-
-        if (empty($user_result['ok'])) {
-            self::redirect_account_error($prospect_post_id, (string) ($user_result['error'] ?? 'account_failed'));
-        }
-
-        $user_id = (int) $user_result['user_id'];
-
-        update_post_meta($prospect_post_id, 'sd_owner_user_id', $user_id);
-        update_post_meta($prospect_post_id, 'sd_full_name', $full_name);
-        update_post_meta($prospect_post_id, 'sd_email_raw', $email);
-        update_post_meta($prospect_post_id, 'sd_email_normalized', strtolower(trim($email)));
-        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SLUG_PENDING);
-        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_ACCOUNT_CREATED);
-        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
-
-
-        wp_safe_redirect(self::get_prospect_url_for_post($prospect_post_id));
-        exit;
-    }
-
-    private static function resolve_or_create_frontend_owner_user(string $email, string $password, string $full_name): array {
-        $email = sanitize_email($email);
-        $full_name = sanitize_text_field($full_name);
-
-        if ($email === '' || !is_email($email)) {
-            return ['ok' => false, 'error' => 'invalid_email'];
-        }
-
-        $existing_user = get_user_by('email', $email);
-        if ($existing_user instanceof WP_User) {
-            return ['ok' => false, 'error' => 'email_exists'];
-        }
-
-        $base_login = sanitize_user(current(explode('@', $email)), true);
-        if ($base_login === '') {
-            $base_login = 'sduser';
-        }
-
-        $login = $base_login;
-        $suffix = 1;
-        while (username_exists($login)) {
-            $suffix++;
-            $login = $base_login . $suffix;
-        }
-
-        $user_id = wp_create_user($login, $password, $email);
-        if (is_wp_error($user_id) || $user_id <= 0) {
-            return ['ok' => false, 'error' => 'create_failed'];
-        }
-
-        wp_update_user([
-            'ID'           => $user_id,
-            'display_name' => $full_name,
-            'first_name'   => self::extract_first_name($full_name),
-            'last_name'    => self::extract_last_name($full_name),
-        ]);
-
-        return ['ok' => true, 'user_id' => (int) $user_id];
     }
 
     private static function is_invite_ready_form($contact_form): bool {
@@ -1765,22 +1524,6 @@ final class SD_Front_Office_Scaffold {
 
     private static function get_prospect_url_by_token(string $token): string {
         return home_url('/' . self::PAGE_SLUG_PROSPECT . '/' . rawurlencode($token) . '/');
-    }
-
-    private static function get_activation_payload_for_success(int $prospect_post_id): array {
-        $prospect_id = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
-
-        $state = self::get_activation_state($prospect_post_id);
-        $storefront_url = (string) get_post_meta($prospect_post_id, self::META_STOREFRONT_URL, true);
-        $operations_entry_url = (string) get_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, true);
-
-        return [
-            'prospect_id' => $prospect_id,
-            'prospect_token' => (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true),
-            'activation_state' => $state,
-            'storefront_url' => $storefront_url,
-            'operations_entry_url' => $operations_entry_url,
-        ];
     }
 
     public static function register_rest_routes(): void {
@@ -2148,61 +1891,6 @@ final class SD_Front_Office_Scaffold {
         return 'started';
     }
 
-    private static function get_public_prospect_view_model(int $prospect_post_id): array {
-        $public_state = self::get_public_prospect_state($prospect_post_id);
-
-        return match ($public_state) {
-
-            // Stripe not started yet
-            'started' => [
-                'headline' => 'Connect your payments',
-                'body' => 'Your setup page is ready. The next step is connecting payments through Stripe.',
-                'button_label' => 'Start setup',
-            ],
-
-            // Account exists, onboarding not finished
-            'account_created', 'onboarding_started' => [
-                'headline' => 'Finish setting up payments',
-                'body' => 'Your account has been created. Complete Stripe onboarding to continue.',
-                'button_label' => 'Continue setup',
-            ],
-
-            // Stripe needs more info or is reviewing
-            'payments_not_enabled' => [
-                'headline' => 'Payments setup is still in progress',
-                'body' => 'Stripe is reviewing your account or waiting on required information.',
-                'button_label' => 'Resume setup',
-            ],
-
-            // Stripe complete → system now working
-            'payments_enabled' => [
-                'headline' => 'Payments are connected',
-                'body' => 'Your account is ready. We’re activating your booking system now.',
-                'button_label' => '',
-            ],
-
-            // Backend provisioning
-            'activation_processing' => [
-                'headline' => 'We’re activating your account',
-                'body' => 'Your booking system is being prepared. This usually takes a few seconds.',
-                'button_label' => '',
-            ],
-
-            // Done
-            'tenant_ready' => [
-                'headline' => 'Your lane is ready',
-                'body' => 'Your booking page and operations access are now available.',
-                'button_label' => '',
-            ],
-
-            // Fallback
-            default => [
-                'headline' => 'We received your request',
-                'body' => 'Your setup page is ready. The next step is connecting payments.',
-                'button_label' => 'Start setup',
-            ],
-        };
-    }
 
     private static function map_public_status_label(string $state): string {
         return match ($state) {
@@ -2373,20 +2061,6 @@ final class SD_Front_Office_Scaffold {
         };
     }
 
-
-    private static function build_runtime_prospect_contract(int $prospect_post_id): array {
-        return [
-            'prospect_id'            => (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true),
-            'public_key'             => (string) get_post_meta($prospect_post_id, self::META_PUBLIC_KEY, true),
-            'prospect_post_id'       => $prospect_post_id,
-            'full_name'              => (string) get_post_meta($prospect_post_id, 'sd_full_name', true),
-            'email'                  => (string) get_post_meta($prospect_post_id, 'sd_email_raw', true),
-            'phone'                  => (string) get_post_meta($prospect_post_id, 'sd_phone_raw', true),
-            'business_display_name'  => (string) get_post_meta($prospect_post_id, self::META_BUSINESS_NAME, true),
-            'service_area'           => (string) get_post_meta($prospect_post_id, self::META_SERVICE_AREA, true),
-            'prospect_token'         => (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true),
-        ];
-    }
  }
 
 SD_Front_Office_Scaffold::bootstrap();
