@@ -102,6 +102,12 @@ final class SD_Front_Office_Scaffold {
         if (!is_admin()) {
             add_filter('wpcf7_feedback_response', [__CLASS__, 'inject_cf7_redirect'], 10, 2);
         }
+
+        add_filter('the_generator', '__return_empty_string');
+        add_filter('login_headerurl', [__CLASS__, 'login_header_url']);
+        add_filter('login_headertext', [__CLASS__, 'login_header_text']);
+        add_filter('login_display_language_dropdown', '__return_false');
+        add_action('login_enqueue_scripts', [__CLASS__, 'brand_wp_login']);
     }
 
     public static function register_post_types(): void {
@@ -527,6 +533,12 @@ final class SD_Front_Office_Scaffold {
             case 'account.updated':
                 self::handle_stripe_account_updated($event->data->object ?? null, $event_id);
                 break;
+            case 'checkout.session.completed':
+                self::handle_stripe_checkout_session_completed($event->data->object ?? null, $event_id);
+                break;
+            case 'invoice.paid':
+                self::handle_stripe_invoice_paid($event->data->object ?? null, $event_id);
+                break;
             default:
                 break;
         }
@@ -606,6 +618,135 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, self::META_STRIPE_STATE, 'onboarding_started');
 
         return $link->url;
+    }
+
+
+    private static function handle_stripe_checkout_session_completed($session, string $event_id = ''): void {
+        if (!is_object($session)) {
+            return;
+        }
+
+        $payment_status = isset($session->payment_status) ? (string) $session->payment_status : '';
+        if ($payment_status !== 'paid') {
+            return;
+        }
+
+        $prospect_post_id = 0;
+        if (isset($session->metadata) && is_object($session->metadata) && isset($session->metadata->prospect_post_id)) {
+            $prospect_post_id = absint((string) $session->metadata->prospect_post_id);
+        }
+
+        $session_id = isset($session->id) ? (string) $session->id : '';
+        if ($prospect_post_id <= 0 && $session_id !== '') {
+            $prospect_post_id = self::find_prospect_by_meta('sd_stripe_checkout_session_id', $session_id);
+        }
+
+        if ($prospect_post_id <= 0) {
+            return;
+        }
+
+        self::mark_subscription_paid(
+            $prospect_post_id,
+            $session_id,
+            isset($session->customer) ? (string) $session->customer : '',
+            isset($session->subscription) ? (string) $session->subscription : '',
+            'checkout.session.completed'
+        );
+    }
+
+    private static function handle_stripe_invoice_paid($invoice, string $event_id = ''): void {
+        if (!is_object($invoice)) {
+            return;
+        }
+
+        $prospect_post_id = 0;
+        if (isset($invoice->metadata) && is_object($invoice->metadata) && isset($invoice->metadata->prospect_post_id)) {
+            $prospect_post_id = absint((string) $invoice->metadata->prospect_post_id);
+        }
+
+        $subscription_id = isset($invoice->subscription) ? (string) $invoice->subscription : '';
+        $customer_id = isset($invoice->customer) ? (string) $invoice->customer : '';
+
+        if ($prospect_post_id <= 0 && $subscription_id !== '') {
+            $prospect_post_id = self::find_prospect_by_meta('sd_stripe_subscription_id', $subscription_id);
+        }
+        if ($prospect_post_id <= 0 && $customer_id !== '') {
+            $prospect_post_id = self::find_prospect_by_meta('sd_stripe_customer_id', $customer_id);
+        }
+
+        if ($prospect_post_id <= 0) {
+            return;
+        }
+
+        self::mark_subscription_paid(
+            $prospect_post_id,
+            '',
+            $customer_id,
+            $subscription_id,
+            'invoice.paid'
+        );
+    }
+
+    private static function mark_subscription_paid(
+        int $prospect_post_id,
+        string $session_id = '',
+        string $customer_id = '',
+        string $subscription_id = '',
+        string $source = ''
+    ): void {
+        if ($prospect_post_id <= 0 || get_post_type($prospect_post_id) !== self::PROSPECT_POST_TYPE) {
+            return;
+        }
+
+        update_post_meta($prospect_post_id, 'sd_billing_status', self::BILLING_SUBSCRIPTION_PAID);
+        update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SUBSCRIPTION_PAID);
+        update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_SUBSCRIPTION_PAID);
+        if ($session_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_stripe_checkout_session_id', $session_id);
+        }
+        if ($customer_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_stripe_customer_id', $customer_id);
+        }
+        if ($subscription_id !== '') {
+            update_post_meta($prospect_post_id, 'sd_stripe_subscription_id', $subscription_id);
+        }
+        update_post_meta($prospect_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
+        update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+
+        $provision_package_post_id = (int) get_post_meta($prospect_post_id, 'sd_provision_package_post_id', true);
+        if ($provision_package_post_id > 0) {
+            update_post_meta($provision_package_post_id, 'sd_billing_status', self::BILLING_SUBSCRIPTION_PAID);
+            update_post_meta($provision_package_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
+            update_post_meta($provision_package_post_id, 'sd_package_status', 'purchased');
+            update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'ready_for_runtime_provisioning');
+            update_post_meta($provision_package_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+        }
+
+        error_log('[SD Front Office] subscription paid via ' . ($source !== '' ? $source : 'direct') . ' for prospect_post_id=' . $prospect_post_id);
+    }
+
+    private static function find_prospect_by_meta(string $meta_key, string $meta_value): int {
+        $meta_key = trim($meta_key);
+        $meta_value = trim($meta_value);
+        if ($meta_key === '' || $meta_value === '') {
+            return 0;
+        }
+
+        $posts = get_posts([
+            'post_type' => self::PROSPECT_POST_TYPE,
+            'post_status' => 'publish',
+            'fields' => 'ids',
+            'numberposts' => 1,
+            'meta_query' => [[
+                'key' => $meta_key,
+                'value' => $meta_value,
+                'compare' => '=',
+            ]],
+            'no_found_rows' => true,
+            'suppress_filters' => false,
+        ]);
+
+        return !empty($posts) ? (int) $posts[0] : 0;
     }
 
     private static function handle_stripe_account_updated($account, string $event_id = ''): void {
@@ -1168,14 +1309,13 @@ final class SD_Front_Office_Scaffold {
             $subscription_id = isset($session->subscription) ? (string) $session->subscription : '';
             $customer_id = isset($session->customer) ? (string) $session->customer : '';
 
-            update_post_meta($prospect_post_id, 'sd_stripe_checkout_session_id', (string) $session_id);
-            update_post_meta($prospect_post_id, 'sd_stripe_customer_id', $customer_id);
-            update_post_meta($prospect_post_id, 'sd_stripe_subscription_id', $subscription_id);
-            update_post_meta($prospect_post_id, 'sd_billing_status', self::BILLING_SUBSCRIPTION_PAID);
-            update_post_meta($prospect_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
-            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SUBSCRIPTION_PAID);
-            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_SUBSCRIPTION_PAID);
-            update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
+            self::mark_subscription_paid(
+                $prospect_post_id,
+                (string) $session_id,
+                $customer_id,
+                $subscription_id,
+                'checkout-success-fallback'
+            );
 
             $operations_entry_url = (string) get_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, true);
             if ($operations_entry_url !== '') {
@@ -1590,25 +1730,13 @@ final class SD_Front_Office_Scaffold {
 
         $current = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
         if ($current !== self::BILLING_SUBSCRIPTION_PAID) {
-            update_post_meta($prospect_post_id, 'sd_billing_status', self::BILLING_SUBSCRIPTION_PAID);
-            update_post_meta($prospect_post_id, 'sd_lifecycle_stage', self::STAGE_SUBSCRIPTION_PAID);
-            update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_SUBSCRIPTION_PAID);
-            update_post_meta($prospect_post_id, 'sd_stripe_checkout_session_id', $session_id);
-            update_post_meta($prospect_post_id, 'sd_stripe_customer_id', $stripe_customer_id);
-            update_post_meta($prospect_post_id, 'sd_stripe_subscription_id', $stripe_subscription_id);
-            update_post_meta($prospect_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
-            update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
-
-            $provision_package_post_id = (int) get_post_meta($prospect_post_id, 'sd_provision_package_post_id', true);
-            if ($provision_package_post_id > 0) {
-                update_post_meta($provision_package_post_id, 'sd_billing_status', self::BILLING_SUBSCRIPTION_PAID);
-                update_post_meta($provision_package_post_id, 'sd_subscription_paid_at_gmt', current_time('mysql', true));
-                update_post_meta($provision_package_post_id, 'sd_package_status', 'purchased');
-                update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'ready_for_runtime_provisioning');
-                update_post_meta($provision_package_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
-            }
-
-            error_log('[SD Front Office] confirm-billing: marked paid for prospect_post_id=' . $prospect_post_id);
+            self::mark_subscription_paid(
+                $prospect_post_id,
+                $session_id,
+                $stripe_customer_id,
+                $stripe_subscription_id,
+                'confirm-billing'
+            );
         }
 
         return new WP_REST_Response(['ok' => true, 'billing_status' => self::BILLING_SUBSCRIPTION_PAID], 200);
@@ -2039,6 +2167,28 @@ final class SD_Front_Office_Scaffold {
         }
 
         return (string) get_option('sd_stripe_secret_key', '');
+    }
+
+
+    public static function login_header_url(): string {
+        return home_url('/');
+    }
+
+    public static function login_header_text(): string {
+        return 'SoloDrive';
+    }
+
+    public static function brand_wp_login(): void {
+        echo '<style>'
+            . 'body.login{background:#f6f7fb;color:#0f172a;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}'
+            . '#login{width:min(92vw,420px);padding-top:6vh;}'
+            . '#login h1 a{background:none!important;text-indent:0;width:auto;height:auto;display:flex;justify-content:center;align-items:center;color:#0f172a;font-size:28px;font-weight:800;text-decoration:none;}'
+            . '#login h1 a::after{content:"SoloDrive";}'
+            . '.login form{border:1px solid #e2e8f0;border-radius:18px;box-shadow:0 18px 40px rgba(15,23,42,.08);padding:28px 24px;background:#fff;}'
+            . '.login .button-primary{background:#111827;border-color:#111827;width:100%;min-height:42px;border-radius:999px;box-shadow:none;}'
+            . '.login #nav,.login #backtoblog{display:none;}'
+            . '.language-switcher,.privacy-policy-page-link{display:none!important;}'
+            . '</style>';
     }
 
     private static function get_stripe_webhook_secret(): string {

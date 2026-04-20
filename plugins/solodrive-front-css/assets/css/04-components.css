@@ -435,3 +435,86 @@
     margin-right: auto;
   }
 }
+
+/* =====================================
+   SOLODRIVE REBRAND — STOCK GUTENBERG BLOCKS
+   ===================================== */
+.entry-content .wp-block-group,
+.entry-content .wp-block-columns,
+.entry-content .wp-block-cover,
+.entry-content .wp-block-media-text,
+.entry-content .wp-block-post-content > .wp-block-group,
+.entry-content .wp-block-post-content > .wp-block-columns {
+  border: 1px solid var(--sd-border);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: var(--sd-shadow-sm);
+  padding: clamp(18px, 3vw, 28px);
+}
+
+.entry-content .wp-block-group + .wp-block-group,
+.entry-content .wp-block-columns + .wp-block-columns,
+.entry-content .wp-block-cover + .wp-block-group,
+.entry-content .wp-block-media-text + .wp-block-group {
+  margin-top: 24px;
+}
+
+.entry-content .wp-block-buttons .wp-block-button__link,
+.entry-content .wp-element-button,
+.entry-content .wp-block-file__button {
+  border-radius: 999px;
+  min-height: 44px;
+  padding: 12px 18px;
+  background: var(--sd-accent);
+  color: #ffffff;
+  border: 0;
+  box-shadow: none;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.entry-content .wp-block-buttons .wp-block-button__link:hover,
+.entry-content .wp-element-button:hover,
+.entry-content .wp-block-file__button:hover {
+  background: var(--sd-accent-hover);
+  color: #ffffff;
+}
+
+.entry-content .wp-block-quote,
+.entry-content .wp-block-pullquote {
+  margin: 24px 0;
+  padding: 20px 24px;
+  border: 1px solid var(--sd-border);
+  border-left: 4px solid var(--sd-accent);
+  border-radius: 18px;
+  background: #ffffff;
+  color: var(--sd-text-soft);
+}
+
+.entry-content .wp-block-pullquote {
+  text-align: left;
+}
+
+.entry-content .wp-block-table table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border: 1px solid var(--sd-border);
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.entry-content .wp-block-table th,
+.entry-content .wp-block-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--sd-border);
+  text-align: left;
+}
+
+.entry-content .wp-block-separator {
+  border: 0;
+  border-top: 1px solid var(--sd-border);
+  opacity: 1;
+  margin: 40px auto;
+  max-width: 160px;
+}
