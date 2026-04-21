@@ -17,15 +17,15 @@ final class SD_Front_Office_Admin {
         // Core list table enhancements
         add_filter("manage_{self::PROSPECT_POST_TYPE}_posts_columns", [__CLASS__, 'prospect_columns']);
         add_action("manage_{self::PROSPECT_POST_TYPE}_posts_custom_column", [__CLASS__, 'prospect_column_content'], 10, 2);
-        add_filter("manage_edit-{$self::PROSPECT_POST_TYPE}_sortable_columns", [__CLASS__, 'sortable_columns']);
+        add_filter("manage_edit-{self::PROSPECT_POST_TYPE}_sortable_columns", [__CLASS__, 'sortable_columns']);
 
         // Submenus
         add_action('admin_menu', [__CLASS__, 'register_submenus']);
 
         // Row + bulk actions
         add_filter('post_row_actions', [__CLASS__, 'row_actions'], 10, 2);
-        add_filter("bulk_actions-edit-{$self::PROSPECT_POST_TYPE}", [__CLASS__, 'bulk_actions']);
-        add_filter("handle_bulk_actions-edit-{$self::PROSPECT_POST_TYPE}", [__CLASS__, 'handle_bulk_actions'], 10, 3);
+        add_filter("bulk_actions-edit-{self::PROSPECT_POST_TYPE}", [__CLASS__, 'bulk_actions']);
+        add_filter("handle_bulk_actions-edit-{self::PROSPECT_POST_TYPE}", [__CLASS__, 'handle_bulk_actions'], 10, 3);
 
         // Filters & notices
         add_action('pre_get_posts', [__CLASS__, 'handle_filters']);
