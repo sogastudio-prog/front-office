@@ -1,84 +1,117 @@
 ---
 type: legal
-template: legal
+template: trust
 title: Legal Disclaimer
 slug: legal-disclaimer
 status: publish
 meta_title: Legal Disclaimer | SoloDrive
-meta_description: Review the SoloDrive legal disclaimer for information about independent driver responsibility and platform limitations.
-summary: The SoloDrive legal disclaimer explains important limits, independent driver responsibility, and platform positioning.
+meta_description: SoloDrive provides software infrastructure for independent drivers and does not operate as a transportation provider.
+summary: SoloDrive provides booking, trip, and payment workflow infrastructure. Independent operators remain responsible for their own service, business, insurance, licensing, and compliance obligations.
 schema_type: WebPage
 last_reviewed: 2026-04-28
 review_required: true
 ---
 
-<!-- wp:group {"className":"sd-legal-page","layout":{"type":"constrained"}} -->
-<div class="wp-block-group sd-legal-page"><!-- wp:html -->
-<div class="wp-block-group sd-legal-page">
+<section class="sd-section sd-hero sd-hero--trust">
+  <p class="sd-eyebrow">Legal Disclaimer</p>
 
-  <div class="wp-block-group sd-section sd-hero" aria-label="Legal disclaimer hero section">
-    <div class="wp-block-group__inner-container sd-container sd-container--narrow sd-sign-surface">
-      <span class="sd-sign-marker sd-sign-marker--merge sd-sign-marker--muted" aria-hidden="true"></span>
-      <p class="sd-eyebrow">Legal Disclaimer</p>
-      <h1>Clear boundaries, clearly stated.</h1>
-      <p class="sd-lead">SoloDrive provides software infrastructure. It does not provide transportation services and does not represent itself as the transportation provider.</p>
+  <h1>Clear boundaries, clearly stated.</h1>
+
+  <p class="sd-hero__lead">SoloDrive provides software infrastructure. It does not provide transportation services and does not represent itself as the transportation provider.</p>
+</section>
+
+<section class="sd-section sd-card">
+  <p>This page provides general information about the role of SoloDrive and the responsibilities of independent operators who use the platform.</p>
+
+  <p>It is not legal advice and should not be relied upon as a substitute for advice from qualified legal counsel in your jurisdiction.</p>
+</section>
+
+<section class="sd-section sd-card">
+  <p class="sd-eyebrow">Platform role</p>
+
+  <h2>SoloDrive operates as infrastructure, not as the driver or transportation company.</h2>
+
+  <div class="sd-grid sd-grid--2">
+    <div class="sd-panel">
+      <p class="sd-eyebrow">SoloDrive does</p>
+
+      <ul>
+        <li>Provide booking and trip-management software</li>
+        <li>Support storefront, request, quote, and trip surfaces</li>
+        <li>Facilitate software workflows related to transportation transactions</li>
+        <li>Support payment-related workflow infrastructure where enabled</li>
+      </ul>
+    </div>
+
+    <div class="sd-panel">
+      <p class="sd-eyebrow">SoloDrive does not</p>
+
+      <ul>
+        <li>Provide transportation services directly</li>
+        <li>Employ or supervise drivers as transportation staff</li>
+        <li>Represent itself as the passenger’s transportation provider</li>
+        <li>Assume responsibility for local operator compliance obligations</li>
+      </ul>
     </div>
   </div>
+</section>
 
-  <div class="wp-block-group sd-section sd-section--plain" aria-label="Legal summary">
-    <div class="wp-block-group__inner-container sd-container sd-container--narrow">
-      <div class="sd-copy-block">
-        <p>This page provides general information about the role of SoloDrive and the responsibilities of independent operators who use the platform.</p>
-        <p>It is not legal advice and should not be relied upon as a substitute for advice from qualified legal counsel in your jurisdiction.</p>
-      </div>
-    </div>
-  </div>
+<section class="sd-section sd-card">
+  <p class="sd-eyebrow">Operator responsibility</p>
 
-  <div class="wp-block-group sd-section" aria-label="Platform role">
-    <div class="wp-block-group__inner-container sd-container sd-sign-surface">
-      <span class="sd-sign-marker sd-sign-marker--exit sd-sign-marker--muted" aria-hidden="true"></span>
-      <div class="sd-section-heading">
-        <p class="sd-eyebrow">Platform role</p>
-        <h2>SoloDrive operates as infrastructure, not as the driver or transportation company.</h2>
-      </div>
-      <div class="wp-block-columns sd-compare-grid">
-        <div class="wp-block-column">
-          <div class="sd-compare-card">
-            <p class="sd-eyebrow">SoloDrive does</p>
-            <ul class="sd-clean-list">
-              <li>Provide booking and trip-management software</li>
-              <li>Support storefront, request, quote, and trip surfaces</li>
-              <li>Facilitate software workflows related to transportation transactions</li>
-            </ul>
-          </div>
-        </div>
-        <div class="wp-block-column">
-          <div class="sd-compare-card">
-            <p class="sd-eyebrow">SoloDrive does not</p>
-            <ul class="sd-clean-list">
-              <li>Provide transportation services directly</li>
-              <li>Employ or supervise drivers as transportation staff</li>
-              <li>Assume responsibility for local operator compliance obligations</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <h2>Each independent operator is responsible for their own business, service, and compliance posture.</h2>
 
-  <div class="wp-block-group sd-section" aria-label="Operator responsibility">
-    <div class="wp-block-group__inner-container sd-container sd-container--narrow sd-sign-surface">
-      <span class="sd-sign-marker sd-sign-marker--hov sd-sign-marker--muted" aria-hidden="true"></span>
-      <div class="sd-section-heading">
-        <p class="sd-eyebrow">Operator responsibility</p>
-        <h2>Each independent operator is responsible for their own business, service, and compliance posture.</h2>
-      </div>
-      <div class="sd-copy-block">
-        <p>That may include licensing, insurance, permits, tax obligations, safety procedures, disclosures, and any other local or industry-specific requirements that apply to their operations.</p>
-        <p>Use of the SoloDrive platform does not relieve operators of those responsibilities.</p>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- /wp:html --></div>
-<!-- /wp:group -->
+  <p>That may include licensing, insurance, permits, tax obligations, safety procedures, disclosures, and any other local or industry-specific requirements that apply to their operations.</p>
+
+  <p>Use of the SoloDrive platform does not relieve operators of those responsibilities.</p>
+</section>
+
+<section class="sd-section sd-card">
+  <p class="sd-eyebrow">Passenger relationship</p>
+
+  <h2>SoloDrive supports direct booking relationships between riders and independent operators.</h2>
+
+  <p>The platform provides tools that help an operator receive ride requests, coordinate trip details, manage trip surfaces, and support repeat direct booking.</p>
+
+  <p>The transportation relationship remains between the rider and the independent operator providing the service.</p>
+</section>
+
+<section class="sd-section sd-card">
+  <p class="sd-eyebrow">Payments and platform fees</p>
+
+  <h2>Payment flows may use third-party payment infrastructure.</h2>
+
+  <p>Where payment functionality is enabled, payments and related platform fees may be handled through third-party payment processors.</p>
+
+  <p>SoloDrive may collect software, application, or platform-related fees according to the applicable product configuration, plan, or transaction workflow.</p>
+</section>
+
+<section class="sd-section sd-card">
+  <p class="sd-eyebrow">No guarantee of business outcome</p>
+
+  <h2>SoloDrive provides tools. Operators remain responsible for how they use them.</h2>
+
+  <p>SoloDrive does not guarantee revenue, rider volume, legal eligibility, insurance coverage, customer retention, or business success.</p>
+
+  <p>Operators should evaluate their own market, requirements, and business practices before accepting direct bookings.</p>
+</section>
+
+<section class="sd-section sd-card">
+  <p class="sd-eyebrow">Use good judgment</p>
+
+  <h2>Know your local requirements before operating direct rides.</h2>
+
+  <p>Transportation rules can vary by location and service type. Operators should understand the rules that apply to them before using any software system to support transportation services.</p>
+
+  <p>If you are unsure what applies to your business, consult a qualified professional in your jurisdiction.</p>
+</section>
+
+<section class="sd-section sd-cta sd-cta--blue">
+  <h2>Infrastructure, not a transportation company.</h2>
+
+  <p>SoloDrive exists to give independent operators cleaner tools for direct booking, trip coordination, and repeat business.</p>
+
+  <p>
+    <a class="sd-button sd-button--light" href="/about/">Learn About SoloDrive</a>
+  </p>
+</section>
