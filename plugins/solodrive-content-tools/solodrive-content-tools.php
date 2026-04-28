@@ -22,3 +22,38 @@ require_once SDCT_PLUGIN_DIR . 'includes/class-sdct-cli.php';
 if (defined('WP_CLI') && WP_CLI) {
     WP_CLI::add_command('solodrive content', 'SDCT_CLI_Command');
 }
+
+/**
+ * Add frontend body classes for source-controlled managed pages.
+ *
+ * Doctrine:
+ * - WordPress post_title remains real for admin/search/routing.
+ * - Managed pages control visible titles inside source content.
+ * - Theme/Astra default page titles are hidden only for managed pages.
+ */
+add_filter('body_class', function ($classes) {
+    if (!is_page()) {
+        return $classes;
+    }
+
+    $post = get_post();
+
+    if (!$post) {
+        return $classes;
+    }
+
+    $content = (string) $post->post_content;
+
+    if (strpos($content, 'sd-managed-page') === false) {
+        return $classes;
+    }
+
+    $classes[] = 'sd-has-managed-page';
+    $classes[] = 'sd-hide-theme-title';
+
+    if (preg_match('/sd-managed-page--([a-z0-9-]+)/', $content, $match)) {
+        $classes[] = 'sd-managed-type-' . sanitize_html_class($match[1]);
+    }
+
+    return array_unique($classes);
+});
