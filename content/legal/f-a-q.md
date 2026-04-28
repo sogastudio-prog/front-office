@@ -1,100 +1,110 @@
 ---
 type: legal
-template: legal
+template: trust
 title: Frequently Asked Questions
 slug: f-a-q
 status: publish
 meta_title: Frequently Asked Questions | SoloDrive
-meta_description: Answers to common questions about SoloDrive, direct booking pages, independent drivers, and ride service infrastructure.
+meta_description: Answers to common questions about SoloDrive, direct booking pages, independent drivers, payments, riders, and platform responsibility.
 summary: Common questions and answers about SoloDrive and direct-booking ride service infrastructure for independent drivers.
 schema_type: FAQPage
 last_reviewed: 2026-04-28
 ---
 
-<!-- wp:group {"layout":{"type":"constrained"}} -->
-<div class="wp-block-group"><!-- wp:heading {"level":3} -->
-<h3 class="wp-block-heading">What is SOLODRIVE.PRO?</h3>
-<!-- /wp:heading -->
+<section class="sd-section sd-hero sd-hero--trust">
+  <p class="sd-eyebrow">Frequently Asked Questions</p>
 
-<!-- wp:paragraph -->
-<p>It is a booking and billing system for independent drivers who want to operate directly with repeat clients. We provide infrastructure — not rider dispatch.</p>
-<!-- /wp:paragraph -->
+  <h1>Questions drivers usually ask first.</h1>
 
-<!-- wp:heading {"level":3} -->
-<h3 class="wp-block-heading">Is this a rideshare marketplace?</h3>
-<!-- /wp:heading -->
+  <p class="sd-hero__lead">SoloDrive gives independent drivers infrastructure for direct booking, trip coordination, and repeat rider relationships.</p>
+</section>
 
-<!-- wp:paragraph -->
-<p>No. We do not match riders to drivers. You bring your own clients.</p>
-<!-- /wp:paragraph -->
+<section class="sd-section sd-card">
+  <h2>What is SOLODRIVE.PRO?</h2>
 
-<!-- wp:heading {"level":3} -->
-<h3 class="wp-block-heading">How do bookings work?</h3>
-<!-- /wp:heading -->
+  <p>SoloDrive is booking and ride-service infrastructure for independent drivers who want to operate directly with repeat clients.</p>
 
-<!-- wp:paragraph -->
-<p>Each driver receives a personal storefront link. Riders book through that link. Payment is processed securely. Trip records are stored automatically.</p>
-<!-- /wp:paragraph -->
+  <p>We provide software tools — not rider dispatch.</p>
+</section>
 
-<!-- wp:heading {"level":3} -->
-<h3 class="wp-block-heading">What do riders see?</h3>
-<!-- /wp:heading -->
+<section class="sd-section sd-card">
+  <h2>Is this a rideshare marketplace?</h2>
 
-<!-- wp:paragraph -->
-<p>A clean booking page with trip details, confirmation, and receipt. No pricing breakdown beyond the final total.</p>
-<!-- /wp:paragraph -->
+  <p>No. SoloDrive does not match random riders to random drivers.</p>
 
-<!-- wp:heading {"level":3} -->
-<h3 class="wp-block-heading">What does the fee cover?</h3>
-<!-- /wp:heading -->
+  <p>You bring your own riders, clients, and local relationships. SoloDrive gives you a cleaner way for those riders to come back directly.</p>
+</section>
 
-<!-- wp:paragraph -->
-<p>The fee covers storefront hosting, payment processing integration, Google Maps trip visibility, trip logging, receipts, GPS timestamps, and infrastructure support.</p>
-<!-- /wp:paragraph -->
+<section class="sd-section sd-card">
+  <h2>How do bookings work?</h2>
 
-<!-- wp:paragraph -->
-<p>We are not a transportation provider.</p>
-<!-- /wp:paragraph -->
+  <p>Each driver receives a direct booking path they can share with riders.</p>
 
-<!-- wp:heading {"level":3} -->
-<h3 class="wp-block-heading">Do I need an LLC or commercial insurance?</h3>
-<!-- /wp:heading -->
+  <p>Riders request rides through that path. Trip details, confirmation, coordination, and records are handled through the SoloDrive flow.</p>
+</section>
 
-<!-- wp:paragraph -->
-<p>Drivers are responsible for operating legally in their jurisdiction, including proper licensing and insurance.</p>
-<!-- /wp:paragraph -->
+<section class="sd-section sd-card">
+  <h2>What do riders see?</h2>
 
-<!-- wp:heading {"level":3} -->
-<h3 class="wp-block-heading">Can I use this while still driving for Uber or Lyft?</h3>
-<!-- /wp:heading -->
+  <p>Riders see a clean booking and trip experience with the information needed to request, confirm, and coordinate a ride.</p>
 
-<!-- wp:paragraph -->
-<p>Yes. Many drivers use SOLODRIVE.PRO to transition gradually toward private clients.</p>
-<!-- /wp:paragraph -->
+  <p>The goal is to make direct rides feel structured, professional, and easy to repeat.</p>
+</section>
 
-<!-- wp:heading {"level":3} -->
-<h3 class="wp-block-heading">What happens if a rider disputes a charge?</h3>
-<!-- /wp:heading -->
+<section class="sd-section sd-card">
+  <h2>What does the fee cover?</h2>
 
-<!-- wp:paragraph -->
-<p>Trip records, timestamps, and booking logs are stored to support documentation during disputes. Final decisions are handled by the payment processor.</p>
-<!-- /wp:paragraph -->
+  <p>The fee covers access to SoloDrive infrastructure such as storefront hosting, request flow, trip surfaces, payment-related workflow support where enabled, records, receipts, and platform support.</p>
 
-<!-- wp:heading {"level":3} -->
-<h3 class="wp-block-heading">Is this available everywhere?</h3>
-<!-- /wp:heading -->
+  <p>SoloDrive is not a transportation provider.</p>
+</section>
 
-<!-- wp:paragraph -->
-<p>Access is limited and reviewed manually. Availability may depend on region and use case.</p>
-<!-- /wp:paragraph -->
+<section class="sd-section sd-card">
+  <h2>Do I need an LLC or commercial insurance?</h2>
 
-<!-- wp:heading {"level":3} -->
-<h3 class="wp-block-heading">Can I cancel?</h3>
-<!-- /wp:heading -->
+  <p>Drivers are responsible for operating legally in their own jurisdiction, including any licensing, insurance, permits, tax obligations, or transportation requirements that apply to them.</p>
 
-<!-- wp:paragraph -->
-<p>Yes. You may discontinue use at any time. Details will be outlined in the Terms of Service.</p>
-<!-- /wp:paragraph --></div>
-<!-- /wp:group -->
+  <p>SoloDrive provides software infrastructure. It does not replace local compliance review.</p>
+</section>
 
-<!-- wp:block {"ref":563} /-->
+<section class="sd-section sd-card">
+  <h2>Can I use this while still driving for Uber or Lyft?</h2>
+
+  <p>Yes. Many drivers may use SoloDrive to transition gradually toward private clients and repeat direct bookings.</p>
+
+  <p>The idea is not to quit everything overnight. The idea is to stop letting every good rider relationship disappear.</p>
+</section>
+
+<section class="sd-section sd-card">
+  <h2>What happens if a rider disputes a charge?</h2>
+
+  <p>Trip records, timestamps, booking details, and workflow logs may support documentation during disputes.</p>
+
+  <p>Final decisions may be handled by the applicable payment processor or financial provider.</p>
+</section>
+
+<section class="sd-section sd-card">
+  <h2>Is this available everywhere?</h2>
+
+  <p>Availability may depend on region, use case, payment support, and operational readiness.</p>
+
+  <p>Drivers are responsible for understanding whether their intended service model is allowed in their location.</p>
+</section>
+
+<section class="sd-section sd-card">
+  <h2>Can I cancel?</h2>
+
+  <p>Details depend on the active plan, product configuration, or service terms in effect at the time.</p>
+
+  <p>The goal is to keep the system simple and transparent for drivers who are ready to build direct repeat business.</p>
+</section>
+
+<section class="sd-section sd-cta sd-cta--blue">
+  <h2>Ready to open your lane?</h2>
+
+  <p>Start with your own booking page and give riders a direct way to come back.</p>
+
+  <p>
+    <a class="sd-button sd-button--light" href="/start/">Get My Booking Page</a>
+  </p>
+</section>
