@@ -1,0 +1,59 @@
+hub: what-should-uber-drivers-do-next
+
+standard_cta:
+  heading: Next step
+  text: Request access and start setting up your own booking page.
+  link_text: Request access
+  link_url: /request-access/
+
+publish_status:
+  authority_cluster: draft_until_visual_review
+  conversion_pages: manual_until_migrated
+  legal_pages: review_required
+
+pages:
+  - slug: what-should-uber-drivers-do-next
+    type: authority
+    role: hub
+  - slug: own-your-riders
+    type: authority
+    role: core-thesis
+  - slug: apps-are-for-the-first-ride
+    type: authority
+    role: core-thesis
+  - slug: do-uber-drivers-own-their-customers
+    type: authority
+    role: diagnosis
+  - slug: why-uber-and-lyft-drivers-struggle-to-make-more-money
+    type: authority
+    role: pain
+  - slug: best-alternatives-to-uber-for-drivers
+    type: authority
+    role: search-entry
+  - slug: can-uber-drivers-start-their-own-business
+    type: authority
+    role: bridge
+  - slug: uber-vs-owning-your-own-business
+    type: authority
+    role: comparison
+  - slug: is-uber-worth-it-long-term
+    type: authority
+    role: urgency
+  - slug: is-it-legal-to-take-riders-off-uber
+    type: authority
+    role: objection
+  - slug: how-to-turn-uber-riders-into-repeat-customers
+    type: authority
+    role: execution
+  - slug: how-to-get-repeat-riders
+    type: authority
+    role: execution
+  - slug: how-do-private-ride-drivers-get-clients
+    type: authority
+    role: acquisition
+  - slug: how-to-start-a-transportation-business-in-a-small-town
+    type: authority
+    role: small-market
+  - slug: solodrive-pro-gig-driver-to-ride-service-owner
+    type: product
+    role: product-bridge

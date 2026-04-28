@@ -12,7 +12,8 @@ class SDCT_CLI_Command {
             return;
         }
         foreach ($pages as $page) {
-            WP_CLI::line($page['meta']['slug'] . ' | ' . $page['meta']['title'] . ' | ' . $page['meta']['status']);
+            $type = isset($page['meta']['type']) ? $page['meta']['type'] : 'authority';
+            WP_CLI::line($page['meta']['slug'] . ' | ' . $page['meta']['title'] . ' | ' . $page['meta']['status'] . ' | ' . $type);
         }
     }
 
@@ -154,7 +155,24 @@ class SDCT_CLI_Command {
     }
 
     private function update_meta($post_id, $meta) {
-        $map = array('meta_title', 'meta_description', 'summary', 'audience', 'primary_topic', 'cta', 'schema_type', 'last_reviewed');
+        $map = array(
+            'type',
+            'template',
+            'meta_title',
+            'meta_description',
+            'summary',
+            'audience',
+            'primary_topic',
+            'cta',
+            'primary_cta',
+            'secondary_cta',
+            'button_text',
+            'button_url',
+            'conversion_goal',
+            'schema_type',
+            'last_reviewed',
+            'review_required',
+        );
         foreach ($map as $key) {
             if (isset($meta[$key])) {
                 update_post_meta($post_id, '_sdct_' . $key, $meta[$key]);
