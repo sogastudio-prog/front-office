@@ -7,7 +7,9 @@ meta_description: SoloDrive helps rideshare drivers move from app-dependent gig 
 summary: SoloDrive helps drivers turn the passengers they already serve into direct-booking customers under their own name.
 audience: Uber and Lyft drivers
 primary_topic: SoloDrive product positioning for rideshare drivers
-cta: request-access
+type: product
+template: product
+primary_cta: request-access
 schema_type: Service
 last_reviewed: 2026-04-28
 ---
