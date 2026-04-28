@@ -1,0 +1,7 @@
+# Source-of-truth notes for internal linking.
+# The WP-CLI link audit currently scans markdown bodies for known page slugs.
+hubs:
+  - own-your-riders
+  - apps-are-for-the-first-ride
+conversion_pages:
+  - request-access

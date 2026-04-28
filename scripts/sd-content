@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+case "${1:-}" in
+  list)
+    wp solodrive content list --root="$ROOT"
+    ;;
+  validate)
+    wp solodrive content validate --root="$ROOT"
+    wp solodrive content links --root="$ROOT"
+    ;;
+  diff)
+    wp solodrive content diff --root="$ROOT" "${@:2}"
+    ;;
+  sync)
+    wp solodrive content sync --root="$ROOT" "${@:2}"
+    ;;
+  export)
+    wp solodrive content export --root="$ROOT" "${@:2}"
+    ;;
+  *)
+    echo "Usage: scripts/sd-content {list|validate|diff|sync|export} [wp-cli args...]"
+    exit 1
+    ;;
+esac
