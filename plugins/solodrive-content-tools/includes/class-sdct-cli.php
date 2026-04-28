@@ -150,7 +150,7 @@ class SDCT_CLI_Command {
             'post_title' => $meta['title'],
             'post_name' => $meta['slug'],
             'post_status' => $meta['status'],
-            'post_content' => SDCT_Markdown::to_blocks($page['body']),
+            'post_content' => self::render_content($page),
         );
     }
 
@@ -183,4 +183,21 @@ class SDCT_CLI_Command {
     private function root_arg($assoc_args) {
         return isset($assoc_args['root']) ? $assoc_args['root'] : null;
     }
+
+    private static function render_content($page) {
+        $body = isset($page['body']) ? $page['body'] : '';
+
+        /*
+         * Imported Gutenberg pages already contain WordPress block comments.
+         * Do not convert them as markdown or WordPress will display the block
+         * markup as literal text.
+         */
+        if (strpos($body, '<!-- wp:') !== false) {
+            return $body;
+        }
+
+        return SDCT_Markdown::to_blocks($body);
+    }
+
+
 }
