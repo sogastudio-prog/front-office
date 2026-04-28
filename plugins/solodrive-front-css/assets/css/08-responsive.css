@@ -1,48 +1,52 @@
-/* =====================================
-   ADDENDUM — RESPONSIVE POLISH
-   ===================================== */
+/*
+SoloDrive Front CSS — Responsive
+*/
+
+@media (max-width: 900px) {
+  .sd-grid--3,
+  .sd-grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 
 @media (max-width: 640px) {
-  .ast-primary-header-bar {
-    min-height: 52px !important;
+  .sd-page,
+  .sd-intake-page,
+  .sd-checkout-page,
+  .sd-prospect-flow,
+  body.page-id-488 .entry-content,
+  body.page-id-138 .entry-content,
+  body.page-id-472 .entry-content,
+  body.page-id-485 .entry-content {
+    padding: var(--sd-space-4) var(--sd-space-3) var(--sd-space-7);
   }
 
-  .ast-primary-header-bar .ast-container {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
+  .sd-grid--2,
+  .sd-grid--3,
+  .sd-grid--4 {
+    grid-template-columns: 1fr;
   }
 
-  .sd-logo-main {
-    font-size: 18px !important;
-    font-weight: 600 !important;
+  .sd-card,
+  .sd-panel,
+  .sd-intake-card,
+  .sd-checkout-card {
+    border-radius: var(--sd-radius-md);
+    padding: var(--sd-space-4);
   }
 
-  .ast-header-button-1 .ast-custom-button,
-  .ast-header-button-1 .ast-custom-button:visited {
-    padding: 8px 12px !important;
-    border-radius: 6px !important;
+  .entry-content h1 {
+    font-size: clamp(34px, 11vw, 46px);
   }
 
-  .sd-card {
-    padding: 22px 18px;
-    border-radius: 16px;
+  .entry-content h2 {
+    font-size: clamp(28px, 9vw, 38px);
   }
 
-  .sd-front-container,
-  .sd-auth-card,
-  .sd-confirm-card {
-    margin: 28px 16px;
-    padding: 24px 18px;
-    border-radius: 16px;
-  }
-
-  .sd-front-progress {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .sd-front-btn {
-    display: block;
+  .wp-block-button__link,
+  .sd-button,
+  button.sd-button,
+  a.sd-button {
     width: 100%;
-    margin: 8px 0 0;
   }
 }

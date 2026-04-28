@@ -1,0 +1,38 @@
+/*
+SoloDrive Front CSS — Page-Specific Managed Rules
+*/
+
+/* Legal / trust pages */
+body.page-id-488 .entry-content,
+body.page-id-138 .entry-content,
+body.page-id-472 .entry-content,
+body.page-id-485 .entry-content {
+  max-width: var(--sd-width-wide);
+  margin: 0 auto;
+  padding: var(--sd-space-6) var(--sd-space-4) var(--sd-space-8);
+}
+
+/* Keep legal pages readable */
+body.page-id-488 .entry-content > *,
+body.page-id-138 .entry-content > *,
+body.page-id-472 .entry-content > *,
+body.page-id-485 .entry-content > * {
+  max-width: var(--sd-width-content);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Hide imported internal footer blocks on legal/trust pages for now */
+body.page-id-138 .entry-content > .wp-block-group:last-child,
+body.page-id-472 .entry-content > .wp-block-group:last-child,
+body.page-id-485 .entry-content > .wp-block-group:last-child {
+  display: none;
+}
+
+/* Homepage and conversion pages */
+body.page-id-1146 .entry-content,
+body.page-id-136 .entry-content,
+body.page-id-413 .entry-content,
+body.page-id-880 .entry-content {
+  max-width: none;
+}
