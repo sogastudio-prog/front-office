@@ -59,7 +59,6 @@ class SDCT_Validator {
                     'last_reviewed',
                 ), $errors);
 
-                self::warn_without_h2($body, $warnings);
                 self::warn_long_meta_description($meta, $warnings);
                 break;
 
