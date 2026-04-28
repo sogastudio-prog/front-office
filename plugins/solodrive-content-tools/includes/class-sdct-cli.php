@@ -192,17 +192,30 @@ class SDCT_CLI_Command {
         $template = !empty($meta['template']) ? sanitize_html_class($meta['template']) : $type;
 
         /*
-         * Imported Gutenberg pages already contain WordPress block comments.
-         * Do not convert them as markdown or WordPress will display the block
-         * markup as literal text.
+         * Gutenberg pages already contain WordPress block comments.
+         * Clean managed pages may also contain intentional HTML sections/divs.
+         * Do not convert those as markdown or WordPress will display markup
+         * as literal text.
          */
-        if (strpos($body, '<!-- wp:') !== false) {
+        if (self::body_is_raw_markup($body)) {
             $content = $body;
         } else {
             $content = SDCT_Markdown::to_blocks($body);
         }
 
         return self::wrap_managed_content($content, $type, $template);
+    }
+
+    private static function body_is_raw_markup($body) {
+        if (strpos($body, '<!-- wp:') !== false) {
+            return true;
+        }
+
+        if (preg_match('/<\s*(section|div|article|header|footer|main|figure|img|a|p|h1|h2|h3|ol|ul|li)\b/i', $body)) {
+            return true;
+        }
+
+        return false;
     }
 
     private static function wrap_managed_content($content, $type, $template) {
