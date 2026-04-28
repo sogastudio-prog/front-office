@@ -103,3 +103,13 @@ body.sd-hide-theme-title .ast-single-post .entry-title,
 body.sd-hide-theme-title .page-title {
   display: none !important;
 }
+
+/* Hard stop: Astra page headers are not used on managed source-controlled pages */
+body.sd-hide-theme-title .entry-header,
+body.sd-hide-theme-title .ast-article-single > .entry-header,
+body.sd-hide-theme-title main .entry-header,
+body.sd-hide-theme-title header.entry-header,
+body.sd-hide-theme-title .entry-content > h1:first-child,
+body.sd-hide-theme-title .wp-block-post-title {
+  display: none !important;
+}
