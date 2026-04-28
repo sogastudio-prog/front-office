@@ -42,7 +42,7 @@ Section pattern:
       <p class="sd-lead">Your $20/month is not an extra fee. It keeps your lane live and covers your first $300 in monthly bookings before SoloDrive takes a 6.5% application service fee.</p>
       <div class="sd-actions">
         <div class="wp-block-button sd-button sd-button--primary"><a class="wp-block-button__link wp-element-button" href="/start/">Open your lane</a></div>
-        <div class="wp-block-button sd-button sd-button--secondary"><a class="wp-block-button__link wp-element-button" href="/convert-your-rides/">See how rides convert</a></div>
+        <div class="wp-block-button sd-button sd-button--secondary"><a class="wp-block-button__link wp-element-button" href="/start/">See how rides convert</a></div>
       </div>
     </div>
   </div>
@@ -223,7 +223,7 @@ Section pattern:
       <p>You do not need a giant customer list to justify SoloDrive. You just need a few riders who already trust you and a lane that stays open when they want to come back.</p>
       <div class="sd-actions sd-actions--center">
         <div class="wp-block-button sd-button sd-button--primary"><a class="wp-block-button__link wp-element-button" href="/start/">Request access</a></div>
-        <div class="wp-block-button sd-button sd-button--secondary"><a class="wp-block-button__link wp-element-button" href="/the-exit/">See the exit</a></div>
+        <div class="wp-block-button sd-button sd-button--secondary"><a class="wp-block-button__link wp-element-button" href="/">See the exit</a></div>
       </div>
     </div>
   </div>
