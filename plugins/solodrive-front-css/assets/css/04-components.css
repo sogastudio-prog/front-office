@@ -1,10 +1,16 @@
 /*
 SoloDrive Front CSS — Components
+Canonical primitives:
+- cards
+- panels
+- CTA buttons
+- grids
 */
 
 .sd-card,
 .sd-panel,
-.sd-page .wp-block-group.has-custom-css {
+.sd-managed-page .wp-block-group.has-background,
+.sd-managed-page .wp-block-group.has-custom-css {
   background: var(--sd-surface);
   border: 1px solid var(--sd-line);
   border-radius: var(--sd-radius-lg);
@@ -12,15 +18,29 @@ SoloDrive Front CSS — Components
 }
 
 .sd-card,
-.sd-panel {
+.sd-panel,
+.sd-managed-page .wp-block-group.has-background,
+.sd-managed-page .wp-block-group.has-custom-css {
   padding: clamp(24px, 4vw, 48px);
 }
 
-.sd-card--soft {
+/* Prevent nested boxes from becoming visually heavy */
+.sd-managed-page .wp-block-group .wp-block-group {
+  box-shadow: none;
+}
+
+.sd-managed-page .wp-block-group .wp-block-group.has-background {
+  border-color: var(--sd-line);
+}
+
+/* Accent cards */
+.sd-card--soft,
+.sd-panel--soft {
   background: var(--sd-surface-soft);
 }
 
-.sd-card--blue {
+.sd-card--blue,
+.sd-panel--blue {
   background: var(--sd-blue);
   color: #ffffff;
   border-color: transparent;
@@ -29,16 +49,15 @@ SoloDrive Front CSS — Components
 .sd-card--blue p,
 .sd-card--blue h1,
 .sd-card--blue h2,
-.sd-card--blue h3 {
+.sd-card--blue h3,
+.sd-panel--blue p,
+.sd-panel--blue h1,
+.sd-panel--blue h2,
+.sd-panel--blue h3 {
   color: #ffffff;
 }
 
-.sd-card .sd-card,
-.sd-page .wp-block-group.has-custom-css .wp-block-group.has-custom-css {
-  box-shadow: none;
-  border-color: var(--sd-line);
-}
-
+/* Text marker */
 .sd-eyebrow {
   color: var(--sd-faint);
   font-size: 12px;
@@ -47,6 +66,7 @@ SoloDrive Front CSS — Components
   text-transform: uppercase;
 }
 
+/* Buttons */
 .wp-block-button__link,
 .sd-button,
 button.sd-button,
@@ -54,8 +74,8 @@ a.sd-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  padding: 12px 20px;
+  min-height: 44px;
+  padding: 13px 22px;
   border-radius: var(--sd-radius-sm);
   background: var(--sd-blue);
   color: #ffffff;
@@ -74,6 +94,7 @@ a.sd-button:hover {
   color: #ffffff;
 }
 
+/* Grids */
 .sd-grid {
   display: grid;
   gap: var(--sd-space-4);
@@ -89,4 +110,15 @@ a.sd-button:hover {
 
 .sd-grid--4 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Managed page spacing */
+.sd-managed-page > * + * {
+  margin-top: var(--sd-space-5);
+}
+
+.sd-managed-page h1 + p,
+.sd-managed-page h2 + p,
+.sd-managed-page h3 + p {
+  margin-top: var(--sd-space-2);
 }

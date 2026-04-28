@@ -1,8 +1,16 @@
 /*
 SoloDrive Front CSS — Shell / Managed Page Normalization
+Doctrine:
+- Legacy pages conform to the new managed page system.
+- Page type wrappers are canonical.
 */
 
-/* Hide Astra default page titles on source-controlled managed pages */
+/* Hide Astra default page titles on managed/source-controlled pages */
+body:has(.sd-managed-page) .entry-title {
+  display: none;
+}
+
+/* Fallback for browsers/pages before wrapper sync */
 body.page-id-1146 .entry-title,
 body.page-id-136 .entry-title,
 body.page-id-413 .entry-title,
@@ -14,28 +22,39 @@ body.page-id-485 .entry-title {
   display: none;
 }
 
-body.page-id-1146 .site-content,
-body.page-id-136 .site-content,
-body.page-id-413 .site-content,
-body.page-id-880 .site-content,
-body.page-id-488 .site-content,
-body.page-id-138 .site-content,
-body.page-id-472 .site-content,
-body.page-id-485 .site-content {
+body:has(.sd-managed-page) .site-content {
   background: var(--sd-bg);
 }
 
-body.page-id-1146 .entry-content,
-body.page-id-136 .entry-content,
-body.page-id-413 .entry-content,
-body.page-id-880 .entry-content,
-body.page-id-488 .entry-content,
-body.page-id-138 .entry-content,
-body.page-id-472 .entry-content,
-body.page-id-485 .entry-content {
+body:has(.sd-managed-page) .entry-content {
   margin: 0;
 }
 
+/* Canonical managed page shell */
+.sd-managed-page {
+  width: min(100%, var(--sd-width-wide));
+  margin: 0 auto;
+  padding: var(--sd-space-6) var(--sd-space-4) var(--sd-space-8);
+  box-sizing: border-box;
+}
+
+/* Article / authority pages should read narrower */
+.sd-managed-page--authority {
+  max-width: var(--sd-width-content);
+}
+
+/* Conversion and product pages can breathe wider */
+.sd-managed-page--conversion,
+.sd-managed-page--product {
+  max-width: var(--sd-width-wide);
+}
+
+/* Legal pages should be readable, not full-bleed */
+.sd-managed-page--legal {
+  max-width: var(--sd-width-content);
+}
+
+/* Standard page primitives */
 .sd-page {
   max-width: var(--sd-width-wide);
   margin: 0 auto;
@@ -64,6 +83,7 @@ body.page-id-485 .entry-content {
 }
 
 .wp-block-group.sd-page,
-.wp-block-group.sd-section {
+.wp-block-group.sd-section,
+.wp-block-group.sd-managed-page {
   box-sizing: border-box;
 }

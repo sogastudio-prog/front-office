@@ -1,38 +1,55 @@
 /*
-SoloDrive Front CSS — Page-Specific Managed Rules
+SoloDrive Front CSS — Managed Page Type Rules
+Page-specific exceptions should be rare.
 */
 
-/* Legal / trust pages */
+/* Authority pages: article rhythm */
+.sd-managed-page--authority > p:first-of-type {
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--sd-muted);
+}
+
+.sd-managed-page--authority ul,
+.sd-managed-page--authority ol {
+  padding-left: 1.25rem;
+}
+
+/* Conversion pages: structured flow */
+.sd-managed-page--conversion {
+  display: block;
+}
+
+.sd-managed-page--conversion > .wp-block-group,
+.sd-managed-page--product > .wp-block-group {
+  margin-bottom: var(--sd-space-5);
+}
+
+/* Product pages: slightly stronger content cards */
+.sd-managed-page--product {
+  max-width: var(--sd-width-wide);
+}
+
+/* Legal pages: trust document rhythm */
+.sd-managed-page--legal {
+  font-size: 16px;
+}
+
+.sd-managed-page--legal > * + * {
+  margin-top: var(--sd-space-4);
+}
+
+.sd-managed-page--legal p,
+.sd-managed-page--legal li {
+  color: var(--sd-muted);
+}
+
+/* Temporary fallback: old legal pages before full wrapper resync */
 body.page-id-488 .entry-content,
 body.page-id-138 .entry-content,
 body.page-id-472 .entry-content,
 body.page-id-485 .entry-content {
-  max-width: var(--sd-width-wide);
+  max-width: var(--sd-width-content);
   margin: 0 auto;
   padding: var(--sd-space-6) var(--sd-space-4) var(--sd-space-8);
-}
-
-/* Keep legal pages readable */
-body.page-id-488 .entry-content > *,
-body.page-id-138 .entry-content > *,
-body.page-id-472 .entry-content > *,
-body.page-id-485 .entry-content > * {
-  max-width: var(--sd-width-content);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Hide imported internal footer blocks on legal/trust pages for now */
-body.page-id-138 .entry-content > .wp-block-group:last-child,
-body.page-id-472 .entry-content > .wp-block-group:last-child,
-body.page-id-485 .entry-content > .wp-block-group:last-child {
-  display: none;
-}
-
-/* Homepage and conversion pages */
-body.page-id-1146 .entry-content,
-body.page-id-136 .entry-content,
-body.page-id-413 .entry-content,
-body.page-id-880 .entry-content {
-  max-width: none;
 }
