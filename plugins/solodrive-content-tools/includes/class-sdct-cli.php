@@ -186,6 +186,10 @@ class SDCT_CLI_Command {
 
     private static function render_content($page) {
         $body = isset($page['body']) ? $page['body'] : '';
+        $meta = isset($page['meta']) ? $page['meta'] : array();
+
+        $type = !empty($meta['type']) ? sanitize_html_class($meta['type']) : 'authority';
+        $template = !empty($meta['template']) ? sanitize_html_class($meta['template']) : $type;
 
         /*
          * Imported Gutenberg pages already contain WordPress block comments.
@@ -193,10 +197,32 @@ class SDCT_CLI_Command {
          * markup as literal text.
          */
         if (strpos($body, '<!-- wp:') !== false) {
-            return $body;
+            $content = $body;
+        } else {
+            $content = SDCT_Markdown::to_blocks($body);
         }
 
-        return SDCT_Markdown::to_blocks($body);
+        return self::wrap_managed_content($content, $type, $template);
+    }
+
+    private static function wrap_managed_content($content, $type, $template) {
+        $classes = array(
+            'sd-managed-page',
+            'sd-managed-page--' . $type,
+            'sd-managed-template--' . $template,
+        );
+
+        $class_attr = esc_attr(implode(' ', array_filter($classes)));
+
+        /*
+         * Use a native Gutenberg group wrapper so the block editor continues
+         * to understand the page structure after sync.
+         */
+        return '<!-- wp:group {"className":"' . $class_attr . '","layout":{"type":"constrained"}} -->' . "\n"
+            . '<div class="wp-block-group ' . $class_attr . '">' . "\n"
+            . $content . "\n"
+            . '</div>' . "\n"
+            . '<!-- /wp:group -->';
     }
 
 
