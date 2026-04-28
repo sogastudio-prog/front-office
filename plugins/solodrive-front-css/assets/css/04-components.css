@@ -273,3 +273,40 @@ a.sd-button:hover {
     min-height: auto;
   }
 }
+
+/* =====================================
+   LOOP VISUAL RESPONSIVENESS
+   ===================================== */
+
+.sd-loop-visual {
+  overflow: hidden;
+}
+
+.sd-loop-image,
+.sd-managed-page img.sd-loop-image {
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: contain;
+}
+
+/* Let the loop card breathe wider than normal article cards */
+.sd-loop-card {
+  max-width: var(--sd-width-wide);
+}
+
+/* On small screens, use a horizontal scroll frame instead of crushing the diagram */
+@media (max-width: 640px) {
+  .sd-loop-visual {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .sd-loop-image,
+  .sd-managed-page img.sd-loop-image {
+    width: 680px !important;
+    max-width: none !important;
+  }
+}

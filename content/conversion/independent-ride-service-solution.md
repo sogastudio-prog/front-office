@@ -113,10 +113,12 @@ last_reviewed: 2026-04-28
   <p><a href="/how-do-private-ride-drivers-get-clients/">How Do Private Ride Drivers Get Clients?</a></p>
 </section>
 
-<section class="sd-section sd-card sd-center">
+<section class="sd-section sd-card sd-center sd-loop-card">
   <p class="sd-eyebrow">The loop</p>
 
-  <img src="https://solodrive.pro/wp-content/uploads/2026/04/solodrivepro-loop-wide-1.png" alt="Most rides disappear. Yours keep coming back." class="sd-loop-image" />
+  <div class="sd-loop-visual">
+    <img src="https://solodrive.pro/wp-content/uploads/2026/04/solodrivepro-loop-wide-1.png" alt="Most rides disappear. Yours keep coming back." class="sd-loop-image" />
+  </div>
 </section>
 
 <section class="sd-section sd-section--narrow">
