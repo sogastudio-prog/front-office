@@ -87,3 +87,11 @@ body:has(.sd-managed-page) .entry-content {
 .wp-block-group.sd-managed-page {
   box-sizing: border-box;
 }
+
+/* Managed legal/trust fallback title suppression */
+body.page-id-485 .entry-title,
+body.page-id-488 .entry-title,
+body.page-id-138 .entry-title,
+body.page-id-472 .entry-title {
+  display: none !important;
+}
