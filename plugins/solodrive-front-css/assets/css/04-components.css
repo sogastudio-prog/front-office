@@ -310,3 +310,29 @@ a.sd-button:hover {
     max-width: none !important;
   }
 }
+
+/* =====================================
+   TRUST / ABOUT COMPONENTS
+   ===================================== */
+
+.sd-hero--trust {
+  text-align: left;
+}
+
+.sd-comparison-grid {
+  margin-top: var(--sd-space-4);
+}
+
+.sd-managed-page--legal .sd-grid {
+  margin-top: var(--sd-space-4);
+}
+
+.sd-managed-page--legal .sd-panel ul {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .sd-hero--trust {
+    text-align: left;
+  }
+}
