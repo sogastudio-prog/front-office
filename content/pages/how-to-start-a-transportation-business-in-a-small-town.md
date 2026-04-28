@@ -202,4 +202,4 @@ Once the driver has a booking page, every good ride can become a future business
 
 Request access and start setting up your own booking page.
 
-[Request access](/request-access/)
+[Get your booking page](/start/)

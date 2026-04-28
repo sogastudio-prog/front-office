@@ -184,4 +184,4 @@ That is enough to begin turning one-time rides into direct clients.
 
 Request access and start setting up your own booking page.
 
-[Request access](/request-access/)
+[Get your booking page](/start/)

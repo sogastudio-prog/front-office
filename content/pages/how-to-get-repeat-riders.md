@@ -176,4 +176,4 @@ Then let the system do the work.
 
 Request access and start setting up your own booking page.
 
-[Request access](/request-access/)
+[Get your booking page](/start/)

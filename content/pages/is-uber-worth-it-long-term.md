@@ -161,4 +161,4 @@ That simple step turns rideshare from a closed loop into a customer acquisition 
 
 Request access and start setting up your own booking page.
 
-[Request access](/request-access/)
+[Get your booking page](/start/)

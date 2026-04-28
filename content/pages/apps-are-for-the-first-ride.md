@@ -33,4 +33,4 @@ SoloDrive gives drivers a booking page, intake flow, trip status surface, and pa
 
 Request access and start setting up your own booking page.
 
-[Request access](/request-access/)
+[Get your booking page](/start/)

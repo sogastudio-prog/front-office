@@ -1,70 +1,47 @@
 ---
 type: conversion
-template: conversion
+template: intake
 title: Start
 slug: start
 status: publish
 meta_title: Start | SoloDrive
 meta_description: Start setting up your SoloDrive direct-booking ride service page.
 summary: Start the SoloDrive setup path and begin creating your direct-booking ride service page.
-primary_cta: request-access
+primary_cta: start
 conversion_goal: begin_onboarding
 schema_type: Service
 last_reviewed: 2026-04-28
 ---
 
-<!-- wp:group {"className":"sd-page","style":{"spacing":{"padding":{"right":"24px","left":"24px"}}},"layout":{"type":"constrained"}} -->
-<div class="wp-block-group sd-page" style="padding-right:24px;padding-left:24px"><!-- wp:group {"metadata":{"name":"Hero"},"className":"sd-section sd-hero","layout":{"type":"constrained"}} -->
-<div class="wp-block-group sd-section sd-hero"><!-- wp:paragraph {"className":"sd-eyebrow"} -->
-<p class="sd-eyebrow">Start</p>
-<!-- /wp:paragraph -->
+<section class="sd-section sd-hero sd-hero--intake">
+  <p class="sd-eyebrow">Start</p>
 
-<!-- wp:heading {"level":1} -->
-<h1 class="wp-block-heading">This is your exit.</h1>
-<!-- /wp:heading -->
+  <h1>This is your exit.</h1>
 
-<!-- wp:paragraph {"className":"sd-lead"} -->
-<p class="sd-lead">You already have riders. This is how you start keeping them. <br>No contracts. No upfront complexity. No approval. Just get started.</p>
-<!-- /wp:paragraph --></div>
-<!-- /wp:group -->
+  <p class="sd-hero__lead">You already have riders. This is how you start keeping them.</p>
 
-<!-- wp:group {"className":"sd-section sd-section\u002d\u002dform","layout":{"type":"constrained"}} -->
-<div class="wp-block-group sd-section sd-section--form"><!-- wp:group {"className":"sd-card","layout":{"type":"constrained"}} -->
-<div class="wp-block-group sd-card"><!-- wp:paragraph {"className":"sd-card-intro"} -->
-<p class="sd-card-intro">Get your booking page.</p>
-<!-- /wp:paragraph -->
+  <p>No contracts. No upfront complexity. No approval theater. Just get started.</p>
+</section>
 
-<!-- wp:paragraph {"className":"sd-note"} -->
-<p class="sd-note">Takes less than 5 minutes.<br>You can start sharing your booking link today.</p>
-<!-- /wp:paragraph -->
+<section class="sd-section sd-card sd-form-card">
+  <h2>Get your booking page.</h2>
 
-<!-- wp:contact-form-7/contact-form-selector {"id":33,"hash":"f994d1f","title":"Request Access"} -->
-<div class="wp-block-contact-form-7-contact-form-selector">[contact-form-7 id="f994d1f" title="Request Access"]</div>
-<!-- /wp:contact-form-7/contact-form-selector --></div>
-<!-- /wp:group --></div>
-<!-- /wp:group -->
+  <p>Takes less than 5 minutes.</p>
 
-<!-- wp:group {"className":"sd-section sd-section\u002d\u002dcontent","layout":{"type":"constrained"}} -->
-<div class="wp-block-group sd-section sd-section--content"><!-- wp:heading {"className":"sd-mt-0"} -->
-<h2 class="wp-block-heading sd-mt-0">What happens next</h2>
-<!-- /wp:heading -->
+  <p>You can start sharing your booking link today.</p>
 
-<!-- wp:list {"ordered":true,"className":"sd-steps"} -->
-<ol class="wp-block-list sd-steps"><!-- wp:list-item -->
-<li>We create your account</li>
-<!-- /wp:list-item -->
+  <div class="sd-form-shell">
+[contact-form-7 id="f994d1f" title="Request Access"]
+  </div>
+</section>
 
-<!-- wp:list-item -->
-<li>We prepare your booking page</li>
-<!-- /wp:list-item -->
+<section class="sd-section sd-card">
+  <h2>What happens next</h2>
 
-<!-- wp:list-item -->
-<li>You complete your setup</li>
-<!-- /wp:list-item -->
-
-<!-- wp:list-item -->
-<li>You start sharing your link</li>
-<!-- /wp:list-item --></ol>
-<!-- /wp:list --></div>
-<!-- /wp:group --></div>
-<!-- /wp:group -->
+  <ol class="sd-step-list">
+    <li>We create your account</li>
+    <li>We prepare your booking page</li>
+    <li>You complete your setup</li>
+    <li>You start sharing your link</li>
+  </ol>
+</section>

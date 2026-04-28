@@ -153,4 +153,4 @@ The easier it is for the rider, the more likely they are to book again.
 
 Request access and start setting up your own booking page.
 
-[Request access](/request-access/)
+[Get your booking page](/start/)

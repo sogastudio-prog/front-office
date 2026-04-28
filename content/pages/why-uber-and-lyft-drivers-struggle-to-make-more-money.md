@@ -180,4 +180,4 @@ That is where the opportunity starts.
 
 Request access and start setting up your own booking page.
 
-[Request access](/request-access/)
+[Get your booking page](/start/)

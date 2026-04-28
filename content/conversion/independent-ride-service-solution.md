@@ -28,7 +28,7 @@ last_reviewed: 2026-04-28
   <p class="sd-hero__promise">Get your booking page live in under 5 minutes.</p>
 
   <p>
-    <a class="sd-button" href="/request-access/">Get My Booking Page</a>
+    <a class="sd-button" href="/start/">Get My Booking Page</a>
   </p>
 </section>
 
@@ -145,6 +145,6 @@ last_reviewed: 2026-04-28
   <p>You already have riders. This just gives them a way to come back.</p>
 
   <p>
-    <a class="sd-button sd-button--light" href="/request-access/">Get My Booking Page</a>
+    <a class="sd-button sd-button--light" href="/start/">Get My Booking Page</a>
   </p>
 </section>

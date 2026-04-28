@@ -41,4 +41,4 @@ Apps are for the first ride. Your business is built on the second.
 
 Request access and start setting up your own booking page.
 
-[Request access](/request-access/)
+[Get your booking page](/start/)
