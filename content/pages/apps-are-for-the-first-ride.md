@@ -22,9 +22,12 @@ A rider gets in your car, enjoys the ride, and asks whether you will be around l
 
 SoloDrive gives drivers a booking page, intake flow, trip status surface, and payment path so passengers can book directly next time.
 
-## Related idea
+## Related SoloDrive pages
 
-Read more about [owning your riders](/own-your-riders/).
+- [What Should Uber Drivers Do Next?](/what-should-uber-drivers-do-next/)
+- [Own Your Riders](/own-your-riders/)
+- [How to Turn Uber Riders Into Repeat Customers](/how-to-turn-uber-riders-into-repeat-customers/)
+- [How to Get Repeat Riders](/how-to-get-repeat-riders/)
 
 ## Next step
 
