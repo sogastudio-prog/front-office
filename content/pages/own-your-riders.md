@@ -12,8 +12,6 @@ schema_type: Article
 last_reviewed: 2026-04-27
 ---
 
-# Own Your Riders
-
 Drivers do not need more random rides. They need a way to turn the trust they already build in the car into repeat direct bookings.
 
 ## The problem
