@@ -1,7 +1,7 @@
 ---
 title: Uber vs Owning Your Own Business
 slug: uber-vs-owning-your-own-business
-status: draft
+status: publish
 meta_title: Uber vs Owning Your Own Business | SoloDrive
 meta_description: Driving for Uber creates app income. Owning your own transportation business means building direct rider relationships, repeat bookings, and customer control.
 summary: Uber can create income, but owning your own transportation business means building direct rider relationships and repeat bookings under your own name.

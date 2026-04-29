@@ -1,7 +1,7 @@
 ---
 title: Own Your Riders
 slug: own-your-riders
-status: draft
+status: publish
 meta_title: Own Your Riders | SoloDrive
 meta_description: SoloDrive helps rideshare drivers turn one-time passengers into repeat direct-booking customers.
 summary: Drivers do not need more random rides. They need a way to turn trust into repeat direct bookings.

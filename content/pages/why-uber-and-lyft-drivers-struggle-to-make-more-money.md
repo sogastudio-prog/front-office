@@ -1,7 +1,7 @@
 ---
 title: Why Uber and Lyft Drivers Struggle to Make More Money
 slug: why-uber-and-lyft-drivers-struggle-to-make-more-money
-status: draft
+status: publish
 meta_title: Why Uber and Lyft Drivers Struggle to Make More Money | SoloDrive
 meta_description: Uber and Lyft drivers struggle because apps control pricing, demand, and rider relationships. SoloDrive helps drivers build direct bookings.
 summary: Uber and Lyft drivers struggle to make more money because they do the service work while the apps control pricing, customer access, and repeat rider relationships.

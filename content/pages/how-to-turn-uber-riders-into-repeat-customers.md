@@ -1,7 +1,7 @@
 ---
 title: How to Turn Uber Riders Into Repeat Customers
 slug: how-to-turn-uber-riders-into-repeat-customers
-status: draft
+status: publish
 meta_title: How to Turn Uber Riders Into Repeat Customers | SoloDrive
 meta_description: Learn how rideshare drivers can turn good Uber and Lyft rides into repeat direct-booking customers with a simple booking link and follow-up system.
 summary: Uber and Lyft drivers can turn good rides into repeat customers by giving riders a clear way to book them directly next time.
