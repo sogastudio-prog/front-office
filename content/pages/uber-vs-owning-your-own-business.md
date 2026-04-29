@@ -197,3 +197,26 @@ That is why owning your own business starts with owning the repeat path.
 Request access and start setting up your own booking page.
 
 [Get your booking page](/start/)
+
+<section class="sd-section sd-card sd-related-pages">
+  <p class="sd-eyebrow">Related SoloDrive pages</p>
+
+  <h2>Keep going</h2>
+
+  <ul>
+    <li><a href="/own-your-riders/">Own Your Riders</a></li>
+    <li><a href="/apps-are-for-the-first-ride/">Apps Are for the First Ride</a></li>
+    <li><a href="/why-uber-and-lyft-drivers-struggle-to-make-more-money/">Why Uber and Lyft Drivers Struggle to Make More Money</a></li>
+    <li><a href="/how-to-turn-uber-riders-into-repeat-customers/">How to Turn Uber Riders Into Repeat Customers</a></li>
+  </ul>
+</section>
+
+<section class="sd-section sd-card sd-final-cta">
+  <p class="sd-eyebrow">Next step</p>
+
+  <h2>Build the direct path.</h2>
+
+  <p>Start your booking page and give your best riders a way to come back outside the app queue.</p>
+
+  <p><a class="sd-button" href="/start/">Start your booking page</a></p>
+</section>

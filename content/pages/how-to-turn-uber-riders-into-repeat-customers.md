@@ -154,3 +154,26 @@ The easier it is for the rider, the more likely they are to book again.
 Request access and start setting up your own booking page.
 
 [Get your booking page](/start/)
+
+<section class="sd-section sd-card sd-related-pages">
+  <p class="sd-eyebrow">Related SoloDrive pages</p>
+
+  <h2>Keep going</h2>
+
+  <ul>
+    <li><a href="/own-your-riders/">Own Your Riders</a></li>
+    <li><a href="/apps-are-for-the-first-ride/">Apps Are for the First Ride</a></li>
+    <li><a href="/why-uber-and-lyft-drivers-struggle-to-make-more-money/">Why Uber and Lyft Drivers Struggle to Make More Money</a></li>
+    <li><a href="/uber-vs-owning-your-own-business/">Uber vs Owning Your Own Business</a></li>
+  </ul>
+</section>
+
+<section class="sd-section sd-card sd-final-cta">
+  <p class="sd-eyebrow">Next step</p>
+
+  <h2>Turn one good ride into the next one.</h2>
+
+  <p>Start your booking page and give riders a clean link they can use to request you again.</p>
+
+  <p><a class="sd-button" href="/start/">Start your booking page</a></p>
+</section>

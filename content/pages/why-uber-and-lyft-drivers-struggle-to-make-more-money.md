@@ -181,3 +181,26 @@ That is where the opportunity starts.
 Request access and start setting up your own booking page.
 
 [Get your booking page](/start/)
+
+<section class="sd-section sd-card sd-related-pages">
+  <p class="sd-eyebrow">Related SoloDrive pages</p>
+
+  <h2>Keep going</h2>
+
+  <ul>
+    <li><a href="/own-your-riders/">Own Your Riders</a></li>
+    <li><a href="/apps-are-for-the-first-ride/">Apps Are for the First Ride</a></li>
+    <li><a href="/uber-vs-owning-your-own-business/">Uber vs Owning Your Own Business</a></li>
+    <li><a href="/how-to-turn-uber-riders-into-repeat-customers/">How to Turn Uber Riders Into Repeat Customers</a></li>
+  </ul>
+</section>
+
+<section class="sd-section sd-card sd-final-cta">
+  <p class="sd-eyebrow">Next step</p>
+
+  <h2>Stop letting every good rider disappear.</h2>
+
+  <p>Start your booking page and give riders a simple way to request you directly next time.</p>
+
+  <p><a class="sd-button" href="/start/">Start your booking page</a></p>
+</section>
