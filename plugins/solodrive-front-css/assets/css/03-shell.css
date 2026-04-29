@@ -113,3 +113,14 @@ body.sd-hide-theme-title .entry-content > h1:first-child,
 body.sd-hide-theme-title .wp-block-post-title {
   display: none !important;
 }
+
+/* Utility checkout pages own their visible heading inside the checkout card */
+body.sd-managed-type-utility .entry-header,
+body.sd-managed-type-utility header.entry-header,
+body.sd-managed-type-utility .entry-title,
+body.sd-managed-type-utility h1.entry-title,
+body.sd-managed-type-utility .page-title,
+body.sd-managed-type-utility .ast-single-post .entry-title,
+body.sd-managed-type-utility .entry-content > h1:first-child {
+  display: none !important;
+}

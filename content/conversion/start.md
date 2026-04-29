@@ -18,7 +18,7 @@ primary_cta_url: /start/
 
   <h1>Start your booking page.</h1>
 
-  <p class="sd-hero__lead">Tell us who you are. Then choose your storefront name and continue to checkout.</p>
+  <p class="sd-hero__lead">Tell us who you are. Then choose your booking link and continue to secure checkout.</p>
 
   <p>No payment on this step. We use this to create your setup link.</p>
 </section>
@@ -38,8 +38,8 @@ primary_cta_url: /start/
 
   <ol>
     <li>We create your setup record</li>
-    <li>You choose your storefront name</li>
+    <li>You choose your booking link</li>
     <li>You continue to secure checkout</li>
-    <li>We prepare your operator setup and booking page</li>
+    <li>We prepare your operator account and booking page</li>
   </ol>
 </section>

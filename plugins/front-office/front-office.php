@@ -924,9 +924,9 @@ final class SD_Front_Office_Scaffold {
         ?>
         <div class="sd-front-container">
             <div class="sd-front-hero">
-                <h1 class="sd-front-headline">Choose your storefront name</h1>
+                <h1 class="sd-front-headline">Choose your booking link</h1>
                 <p class="sd-front-body">
-                    Pick the name that will appear in your future storefront URL.
+                    This is the link riders will use to request you directly.
                 </p>
             </div>
 
@@ -942,7 +942,7 @@ final class SD_Front_Office_Scaffold {
                 <?php wp_nonce_field('sdfo_reserve_slug_' . $prospect_post_id, 'sdfo_slug_nonce'); ?>
 
                 <div class="sd-front-field">
-                    <label for="sd-storefront-slug">Storefront Name</label>
+                    <label for="sd-storefront-slug">Booking Link Name</label>
                     <input
                         type="text"
                         id="sd-storefront-slug"
@@ -959,7 +959,7 @@ final class SD_Front_Office_Scaffold {
 
                 <div class="sd-front-actions">
                     <button type="submit" class="sd-front-btn sd-front-btn--primary">
-                        Reserve Name
+                        Reserve my booking link
                     </button>
                 </div>
             </form>
@@ -988,12 +988,12 @@ final class SD_Front_Office_Scaffold {
         ?>
         <div class="sd-front-container">
             <div class="sd-front-hero">
-                <h1 class="sd-front-headline">Ready for checkout</h1>
+                <h1 class="sd-front-headline">Your booking link is reserved</h1>
                 <p class="sd-front-body">
-                    Your storefront name <strong><?php echo esc_html($reserved_slug); ?></strong> is reserved.
+                    Your booking link <strong><?php echo esc_html($reserved_slug); ?></strong> is reserved.
                 </p>
                 <p class="sd-front-body">
-                    Future storefront: <strong><?php echo esc_html('app.solodrive.pro/t/' . $reserved_slug); ?></strong>
+                    After checkout, we prepare your operator account and booking page.<br><br>Your future booking link: <strong><?php echo esc_html('app.solodrive.pro/t/' . $reserved_slug); ?></strong>
                 </p>
             </div>
 
@@ -1010,7 +1010,7 @@ final class SD_Front_Office_Scaffold {
 
                 <div class="sd-front-actions">
                     <button type="submit" class="sd-front-btn sd-front-btn--primary">
-                        Continue to checkout
+                        Continue to secure checkout
                     </button>
                 </div>
             </form>

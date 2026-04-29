@@ -52,7 +52,12 @@ add_filter('body_class', function ($classes) {
     $classes[] = 'sd-hide-theme-title';
 
     if (preg_match('/sd-managed-page--([a-z0-9-]+)/', $content, $match)) {
-        $classes[] = 'sd-managed-type-' . sanitize_html_class($match[1]);
+        $managed_type = sanitize_html_class($match[1]);
+        $classes[] = 'sd-managed-type-' . $managed_type;
+
+        if ($managed_type === 'utility') {
+            $classes[] = 'sd-hide-theme-title';
+        }
     }
 
     return array_unique($classes);
