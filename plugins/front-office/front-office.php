@@ -1,4 +1,8 @@
 <?php
+if (!defined('ABSPATH')) { exit; }
+
+require_once __DIR__ . '/includes/commercial-profile-sandbox.php';
+
 /**
  * Plugin Name: SoloDrive Front Office
  * Description: Front-office intake, lifecycle, and onboarding control plane.
@@ -2181,7 +2185,7 @@ final class SD_Front_Office_Scaffold {
         $authorization_code = (string) get_post_meta($prospect_post_id, 'sd_authorization_code', true);
 
         if ($package_key === '') {
-            $package_key = 'solo-standard';
+            $package_key = 'operator';
             update_post_meta($prospect_post_id, 'sd_package_key', $package_key);
         }
 
