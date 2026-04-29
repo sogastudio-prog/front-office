@@ -1,12 +1,12 @@
 ---
 type: utility
 template: checkout
-title: Prospect
+title: Booking Page Setup
 slug: prospect
 status: publish
-meta_title: Prospect Checkout | SoloDrive
-meta_description: Continue your SoloDrive setup and checkout flow.
-summary: Prospect checkout state page for SoloDrive onboarding.
+meta_title: Booking Page Setup | SoloDrive
+meta_description: Continue your SoloDrive booking page setup and checkout flow.
+summary: Utility checkout state page for SoloDrive onboarding.
 schema_type: WebPage
 last_reviewed: 2026-04-28
 ---

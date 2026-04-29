@@ -1,47 +1,43 @@
 ---
 type: conversion
-template: intake
+template: checkout
 title: Start
 slug: start
 status: publish
-meta_title: Start | SoloDrive
-meta_description: Start setting up your SoloDrive direct-booking ride service page.
-summary: Start the SoloDrive setup path and begin creating your direct-booking ride service page.
-primary_cta: start
-conversion_goal: begin_onboarding
-schema_type: Service
+meta_title: Start Your SoloDrive Booking Page
+meta_description: Start your SoloDrive booking page setup. No payment on this step.
+summary: Start page for drivers beginning their SoloDrive booking page setup.
+schema_type: WebPage
 last_reviewed: 2026-04-28
 ---
 
-<section class="sd-section sd-hero sd-hero--intake">
+<section class="sd-section sd-hero sd-hero--checkout">
   <p class="sd-eyebrow">Start</p>
 
-  <h1>This is your exit.</h1>
+  <h1>Start your booking page.</h1>
 
-  <p class="sd-hero__lead">You already have riders. This is how you start keeping them.</p>
+  <p class="sd-hero__lead">Tell us who you are. Then choose your storefront name and continue to checkout.</p>
 
-  <p>No contracts. No upfront complexity. No approval theater. Just get started.</p>
+  <p>No payment on this step. We use this to create your setup link.</p>
 </section>
 
-<section class="sd-section sd-card sd-form-card">
+<section class="sd-section sd-card sd-checkout-card">
   <h2>Get your booking page.</h2>
 
   <p>Takes less than 5 minutes.</p>
 
-  <p>You can start sharing your booking link today.</p>
+  <p>You can start sharing your booking link after setup is complete.</p>
 
-  <div class="sd-form-shell">
-[contact-form-7 id="f994d1f" title="Request Access"]
-  </div>
+  [contact-form-7 id="710" title="Start"]
 </section>
 
 <section class="sd-section sd-card">
   <h2>What happens next</h2>
 
-  <ol class="sd-step-list">
-    <li>We create your account</li>
-    <li>We prepare your booking page</li>
-    <li>You complete your setup</li>
-    <li>You start sharing your link</li>
+  <ol>
+    <li>We create your setup record</li>
+    <li>You choose your storefront name</li>
+    <li>You continue to secure checkout</li>
+    <li>We prepare your operator setup and booking page</li>
   </ol>
 </section>
