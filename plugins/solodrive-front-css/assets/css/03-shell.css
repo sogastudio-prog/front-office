@@ -124,3 +124,13 @@ body.sd-managed-type-utility .ast-single-post .entry-title,
 body.sd-managed-type-utility .entry-content > h1:first-child {
   display: none !important;
 }
+
+/* Astra title suppression for managed utility checkout pages */
+body.sd-managed-type-utility .ast-article-single > .entry-header,
+body.sd-managed-type-utility .site-main > article > .entry-header,
+body.sd-managed-type-utility article.page > header.entry-header,
+body.sd-managed-type-utility .entry-header .entry-title,
+body.sd-managed-type-utility .entry-header h1,
+body.sd-managed-type-utility .entry-content > h1:first-child {
+  display: none !important;
+}
