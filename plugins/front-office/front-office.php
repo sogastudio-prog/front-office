@@ -233,6 +233,12 @@ final class SD_Front_Office_Scaffold {
             'sd_requested_slug' => 'string',
             'sd_reserved_slug'  => 'string',
             'sd_slug_status'    => 'string',
+            'sd_package_key' => 'string',
+            'sd_commercial_profile_key' => 'string',
+            'sd_authorization_code' => 'string',
+            'sd_discount_policy_json' => 'string',
+            'sd_application_fee_policy_json' => 'string',
+            'sd_commercial_terms_snapshot_json' => 'string',
             'sd_pricing_profile_source' => 'string',
             'sd_pricing_profile_id' => 'string',
             'sd_resolved_stripe_price_id' => 'string',
@@ -258,6 +264,12 @@ final class SD_Front_Office_Scaffold {
             'sd_runtime_tenant_id' => 'string',
             'sd_runtime_tenant_post_id' => 'integer',
             'sd_provisioned_at_gmt' => 'string',
+            'sd_package_key' => 'string',
+            'sd_commercial_profile_key' => 'string',
+            'sd_authorization_code' => 'string',
+            'sd_discount_policy_json' => 'string',
+            'sd_application_fee_policy_json' => 'string',
+            'sd_commercial_terms_snapshot_json' => 'string',
             'sd_resolved_stripe_price_id' => 'string',
             'sd_resolved_plan_label' => 'string',
             'sd_health_status' => 'string',
@@ -387,6 +399,8 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_email_raw', (string) ($payload['email_raw'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_email_normalized', (string) ($payload['email_normalized'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_invitation_code', (string) ($payload['invitation_code'] ?? ''));
+        update_post_meta($prospect_post_id, 'sd_package_key', (string) ($payload['package_key'] ?? ''));
+        update_post_meta($prospect_post_id, 'sd_authorization_code', (string) ($payload['authorization_code'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_invitation_status', 'none');
         update_post_meta($prospect_post_id, 'sd_review_status', 'new');
         update_post_meta($prospect_post_id, 'sd_last_intake_channel', 'cf7');
@@ -412,6 +426,8 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, 'sd_email_raw', (string) ($payload['email_raw'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_email_normalized', (string) ($payload['email_normalized'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_invitation_code', (string) ($payload['invitation_code'] ?? ''));
+        update_post_meta($prospect_post_id, 'sd_package_key', (string) ($payload['package_key'] ?? ''));
+        update_post_meta($prospect_post_id, 'sd_authorization_code', (string) ($payload['authorization_code'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_last_intake_channel', 'cf7');
         update_post_meta($prospect_post_id, 'sd_last_submission_at_gmt', (string) ($payload['submitted_at_gmt'] ?? current_time('mysql', true)));
         update_post_meta($prospect_post_id, 'sd_last_submission_payload_json', (string) ($payload['raw_payload_json'] ?? '{}'));
@@ -1059,10 +1075,14 @@ final class SD_Front_Office_Scaffold {
             return ['ok' => false, 'error' => 'stripe_price_missing'];
         }
 
-        update_post_meta($prospect_post_id, 'sd_pricing_profile_source', (string) ($pricing['profile_source'] ?? 'default'));
-        update_post_meta($prospect_post_id, 'sd_pricing_profile_id', (string) ($pricing['profile_id'] ?? 'default_public'));
+        update_post_meta($prospect_post_id, 'sd_pricing_profile_source', (string) ($pricing['profile_source'] ?? 'commercial'));
+        update_post_meta($prospect_post_id, 'sd_pricing_profile_id', (string) ($pricing['profile_id'] ?? ''));
         update_post_meta($prospect_post_id, 'sd_resolved_stripe_price_id', $price_id);
         update_post_meta($prospect_post_id, 'sd_resolved_plan_label', (string) ($pricing['plan_label'] ?? ''));
+
+        $package_key               = (string) ($pricing['package_key'] ?? '');
+        $commercial_profile_key    = (string) ($pricing['profile_id'] ?? '');
+        $authorization_code        = (string) ($pricing['authorization_code'] ?? '');
 
         $email                     = (string) get_post_meta($prospect_post_id, 'sd_email_normalized', true);
         $prospect_token            = (string) get_post_meta($prospect_post_id, self::META_PROSPECT_TOKEN, true);
@@ -1121,6 +1141,9 @@ final class SD_Front_Office_Scaffold {
                     'reserved_slug'             => $reserved_slug,
                     'provision_package_post_id' => (string) $provision_package_post_id,
                     'provision_package_id'      => $provision_package_id,
+                    'sd_package_key'            => $package_key,
+                    'sd_commercial_profile_key' => $commercial_profile_key,
+                    'sd_authorization_code'     => $authorization_code,
                 ],
                 'subscription_data' => [
                     'metadata' => [
@@ -1129,6 +1152,9 @@ final class SD_Front_Office_Scaffold {
                         'reserved_slug'             => $reserved_slug,
                         'provision_package_post_id' => (string) $provision_package_post_id,
                         'provision_package_id'      => $provision_package_id,
+                        'sd_package_key'            => $package_key,
+                        'sd_commercial_profile_key' => $commercial_profile_key,
+                        'sd_authorization_code'     => $authorization_code,
                     ],
                 ],
             ]);
@@ -2117,6 +2143,8 @@ final class SD_Front_Office_Scaffold {
             'phone_raw'         => $phone_raw,
             'phone_normalized'  => self::normalize_phone($phone_raw),
             'invitation_code'   => $first($posted_data['invite_code'] ?? ''),
+            'package_key'       => sanitize_key((string) ($posted_data['sd_package_key'] ?? $posted_data['sd_package'] ?? '')),
+            'authorization_code'=> sanitize_text_field((string) ($posted_data['sd_authorization_code'] ?? $posted_data['authorization_code'] ?? $posted_data['invite_code'] ?? '')),
             'submission_count'  => 1,
             'submitted_at_gmt'  => current_time('mysql', true),
             'raw_payload_json'  => wp_json_encode($posted_data),
@@ -2124,35 +2152,77 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function resolve_checkout_pricing_for_prospect(int $prospect_post_id): array {
-        $invite_code = (string) get_post_meta($prospect_post_id, 'sd_invitation_code', true);
-
-        // Future hook: invite-profile resolution
-        if ($invite_code !== '') {
-            $invite_profile = self::resolve_invite_pricing_profile($invite_code, $prospect_post_id);
-            if (!empty($invite_profile['ok'])) {
-                return $invite_profile;
-            }
+        if (!function_exists('sd_resolve_commercial_profile')) {
+            return ['ok' => false, 'error' => 'commercial_resolver_missing'];
         }
 
-        $default_price_id = (string) get_option('sd_default_stripe_subscription_price_id', '');
-        $default_plan_label = (string) get_option('sd_default_subscription_plan_label', '');
-        $default_display_price = (string) get_option('sd_default_subscription_display_price', '');
+        $package_key = (string) get_post_meta($prospect_post_id, 'sd_package_key', true);
+        $authorization_code = (string) get_post_meta($prospect_post_id, 'sd_authorization_code', true);
 
-        if ($default_price_id === '') {
+        if ($package_key === '') {
+            $package_key = 'solo-standard';
+            update_post_meta($prospect_post_id, 'sd_package_key', $package_key);
+        }
+
+        $resolved = sd_resolve_commercial_profile($package_key, $authorization_code);
+
+        if (empty($resolved['ok'])) {
             return [
                 'ok' => false,
-                'error' => 'stripe_price_missing',
+                'error' => (string) ($resolved['error'] ?? 'commercial_profile_unresolved'),
             ];
         }
 
+        $stripe_price_id = (string) ($resolved['billing']['stripe_price_id'] ?? '');
+
+        if ($stripe_price_id === '') {
+            return ['ok' => false, 'error' => 'stripe_price_missing'];
+        }
+
+        self::store_commercial_snapshot($prospect_post_id, $resolved);
+
         return [
             'ok' => true,
-            'profile_source' => 'default',
-            'profile_id' => 'default_public',
-            'stripe_price_id' => $default_price_id,
-            'plan_label' => $default_plan_label,
-            'display_price' => $default_display_price,
+            'profile_source' => 'commercial',
+            'profile_id' => (string) ($resolved['profile_key'] ?? ''),
+            'package_key' => (string) ($resolved['package_key'] ?? $package_key),
+            'authorization_code' => (string) ($resolved['authorization_code'] ?? $authorization_code),
+            'stripe_price_id' => $stripe_price_id,
+            'plan_label' => (string) ($resolved['label'] ?? $resolved['package_label'] ?? 'SoloDrive Subscription'),
+            'discount_policy' => $resolved['discount_policy'] ?? [],
+            'application_fee_policy' => $resolved['application_fee_policy'] ?? [],
+            'terms_snapshot' => $resolved['terms_snapshot'] ?? [],
         ];
+    }
+
+    private static function store_commercial_snapshot(int $prospect_post_id, array $resolved): void {
+        $package_key = (string) ($resolved['package_key'] ?? '');
+        $profile_key = (string) ($resolved['profile_key'] ?? '');
+        $authorization_code = (string) ($resolved['authorization_code'] ?? '');
+        $stripe_price_id = (string) ($resolved['billing']['stripe_price_id'] ?? '');
+        $plan_label = (string) ($resolved['label'] ?? $resolved['package_label'] ?? '');
+
+        update_post_meta($prospect_post_id, 'sd_package_key', $package_key);
+        update_post_meta($prospect_post_id, 'sd_commercial_profile_key', $profile_key);
+        update_post_meta($prospect_post_id, 'sd_authorization_code', $authorization_code);
+        update_post_meta($prospect_post_id, 'sd_resolved_stripe_price_id', $stripe_price_id);
+        update_post_meta($prospect_post_id, 'sd_resolved_plan_label', $plan_label);
+        update_post_meta($prospect_post_id, 'sd_discount_policy_json', wp_json_encode($resolved['discount_policy'] ?? []));
+        update_post_meta($prospect_post_id, 'sd_application_fee_policy_json', wp_json_encode($resolved['application_fee_policy'] ?? []));
+        update_post_meta($prospect_post_id, 'sd_commercial_terms_snapshot_json', wp_json_encode($resolved['terms_snapshot'] ?? []));
+
+        $provision_package_post_id = (int) get_post_meta($prospect_post_id, 'sd_provision_package_post_id', true);
+
+        if ($provision_package_post_id > 0) {
+            update_post_meta($provision_package_post_id, 'sd_package_key', $package_key);
+            update_post_meta($provision_package_post_id, 'sd_commercial_profile_key', $profile_key);
+            update_post_meta($provision_package_post_id, 'sd_authorization_code', $authorization_code);
+            update_post_meta($provision_package_post_id, 'sd_resolved_stripe_price_id', $stripe_price_id);
+            update_post_meta($provision_package_post_id, 'sd_resolved_plan_label', $plan_label);
+            update_post_meta($provision_package_post_id, 'sd_discount_policy_json', wp_json_encode($resolved['discount_policy'] ?? []));
+            update_post_meta($provision_package_post_id, 'sd_application_fee_policy_json', wp_json_encode($resolved['application_fee_policy'] ?? []));
+            update_post_meta($provision_package_post_id, 'sd_commercial_terms_snapshot_json', wp_json_encode($resolved['terms_snapshot'] ?? []));
+        }
     }
 
     private static function resolve_invite_pricing_profile(string $invite_code, int $prospect_post_id): array {
@@ -2238,11 +2308,51 @@ add_action('sd_control_plane_provision_package_requested', function ($provision_
 add_action('wp_footer', function () {
     ?>
     <script>
-    document.addEventListener('wpcf7mailsent', function(event) {
-      if (event && event.detail && event.detail.apiResponse && event.detail.apiResponse.sd_redirect_url) {
-        window.location.href = event.detail.apiResponse.sd_redirect_url;
-      }
-    }, false);
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var packageKey = params.get('sd_package') || params.get('sd_package_key');
+      var authorizationCode = params.get('sd_authorization_code') || params.get('authorization_code');
+
+      try {
+        if (packageKey) {
+          sessionStorage.setItem('sd_package_key', packageKey);
+        }
+        if (authorizationCode) {
+          sessionStorage.setItem('sd_authorization_code', authorizationCode);
+        }
+      } catch (e) {}
+
+      try {
+        packageKey = packageKey || sessionStorage.getItem('sd_package_key');
+        authorizationCode = authorizationCode || sessionStorage.getItem('sd_authorization_code');
+      } catch (e) {}
+
+      document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('form.wpcf7-form').forEach(function(form) {
+          if (packageKey && !form.querySelector('input[name="sd_package_key"]')) {
+            var packageInput = document.createElement('input');
+            packageInput.type = 'hidden';
+            packageInput.name = 'sd_package_key';
+            packageInput.value = packageKey;
+            form.appendChild(packageInput);
+          }
+
+          if (authorizationCode && !form.querySelector('input[name="sd_authorization_code"]')) {
+            var authInput = document.createElement('input');
+            authInput.type = 'hidden';
+            authInput.name = 'sd_authorization_code';
+            authInput.value = authorizationCode;
+            form.appendChild(authInput);
+          }
+        });
+      });
+
+      document.addEventListener('wpcf7mailsent', function(event) {
+        if (event && event.detail && event.detail.apiResponse && event.detail.apiResponse.sd_redirect_url) {
+          window.location.href = event.detail.apiResponse.sd_redirect_url;
+        }
+      }, false);
+    })();
     </script>
     <?php
 });
