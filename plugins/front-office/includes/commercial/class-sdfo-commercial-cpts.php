@@ -719,6 +719,9 @@ final class SDFO_Commercial_CPTs {
             'stripe_sync_status'      => $m( 'sd_stripe_sync_status' ) ?: 'pending',
             'stripe_sync_at_gmt'      => $m( 'sd_stripe_sync_at_gmt' ),
             'default_profile_post_id' => $i( 'sd_default_profile_post_id' ),
+            // Kernel compatibility: sd_resolve_commercial_profile() reads
+            // default_profile_key to fall back when no auth code is provided.
+            'default_profile_key'     => self::resolve_profile_key_for_post( $i( 'sd_default_profile_post_id' ) ),
             'created_at_gmt'          => $m( 'sd_created_at_gmt' ),
             'updated_at_gmt'          => $m( 'sd_updated_at_gmt' ),
             // Compatibility shape for sd_commercial_build_terms_snapshot()
@@ -773,16 +776,25 @@ final class SDFO_Commercial_CPTs {
             $allowed = is_array( $decoded ) ? $decoded : [];
         }
 
+        $linked_profile_post_id = $i( 'sd_linked_profile_post_id' );
+
         return [
             'post_id'                => $post->ID,
             'code'                   => $m( 'sd_code' ),
             'label'                  => $post->post_title,
             'status'                 => $m( 'sd_status' ) ?: 'inactive',
-            'linked_profile_post_id' => $i( 'sd_linked_profile_post_id' ),
+            'linked_profile_post_id' => $linked_profile_post_id,
+            // assigned_profile_key: kernel compatibility field.
+            // sd_commercial_validate_authorization_code() calls sd_commercial_get_profile()
+            // using this key, so it must resolve to the linked profile's sd_profile_key.
+            'assigned_profile_key'   => self::resolve_profile_key_for_post( $linked_profile_post_id ),
             'allowed_package_keys'   => $allowed,
             'max_uses'               => $i( 'sd_max_uses' ),
             'current_uses'           => $i( 'sd_current_uses' ),
             'expires_at_gmt'         => $m( 'sd_expires_at_gmt' ),
+            // expires_at: alias for kernel compatibility.
+            // sd_commercial_validate_authorization_code() reads this key.
+            'expires_at'             => $m( 'sd_expires_at_gmt' ),
             'assigned_email'         => $m( 'sd_assigned_email' ),
             'assigned_domain'        => $m( 'sd_assigned_domain' ),
             'notes'                  => $m( 'sd_notes' ),
@@ -865,6 +877,21 @@ final class SDFO_Commercial_CPTs {
     // -------------------------------------------------------------------------
     // Utility
     // -------------------------------------------------------------------------
+
+    /**
+     * Look up the sd_profile_key for a given profile post ID.
+     *
+     * Used to populate assigned_profile_key and default_profile_key — the
+     * compatibility fields that sd_commercial_validate_authorization_code() and
+     * sd_resolve_commercial_profile() in the kernel expect on their data shapes.
+     */
+    private static function resolve_profile_key_for_post( int $post_id ): string {
+        if ( $post_id <= 0 ) { return ''; }
+        $key = (string) get_post_meta( $post_id, 'sd_profile_key', true );
+        if ( $key !== '' ) { return $key; }
+        $post = get_post( $post_id );
+        return $post ? sanitize_title( $post->post_title ) : '';
+    }
 
     public static function normalize_code( string $code ): string {
         return strtoupper( preg_replace( '/[^A-Z0-9_-]/i', '', trim( $code ) ) );
