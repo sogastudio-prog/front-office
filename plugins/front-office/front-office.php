@@ -993,7 +993,7 @@ final class SD_Front_Office_Scaffold {
                     Your booking link <strong><?php echo esc_html($reserved_slug); ?></strong> is reserved.
                 </p>
                 <p class="sd-front-body">
-                    After checkout, we prepare your operator account and booking page.<br><br>Your future booking link: <strong><?php echo esc_html('app.solodrive.pro/t/' . $reserved_slug); ?></strong>
+                    After checkout, we prepare your operator account and booking page.<br><br><strong>Subscription: $20/month.</strong><br>You will review and confirm payment securely with Stripe.<br><br>Your future booking link: <strong><?php echo esc_html('app.solodrive.pro/t/' . $reserved_slug); ?></strong>
                 </p>
             </div>
 
