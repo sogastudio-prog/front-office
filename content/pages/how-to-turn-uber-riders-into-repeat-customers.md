@@ -141,19 +141,6 @@ Then make sure the booking page does the work:
 
 The easier it is for the rider, the more likely they are to book again.
 
-## Related SoloDrive pages
-
-- [What Should Uber Drivers Do Next?](/what-should-uber-drivers-do-next/)
-- [Own Your Riders](/own-your-riders/)
-- [Apps Are for the First Ride](/apps-are-for-the-first-ride/)
-- [How to Get Repeat Riders](/how-to-get-repeat-riders/)
-- [Do Uber Drivers Own Their Customers?](/do-uber-drivers-own-their-customers/)
-
-## Next step
-
-Request access and start setting up your own booking page.
-
-[Get your booking page](/start/)
 
 <section class="sd-section sd-card sd-related-pages">
   <p class="sd-eyebrow">Related SoloDrive pages</p>

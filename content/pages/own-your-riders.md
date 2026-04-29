@@ -29,19 +29,6 @@ Apps are for the first ride. Your business is built on the second.
 - Your booking link becomes part of your business.
 - Every completed ride can become a future booking opportunity.
 
-## Related SoloDrive pages
-
-- [What Should Uber Drivers Do Next?](/what-should-uber-drivers-do-next/)
-- [Apps Are for the First Ride](/apps-are-for-the-first-ride/)
-- [Do Uber Drivers Own Their Customers?](/do-uber-drivers-own-their-customers/)
-- [How to Turn Uber Riders Into Repeat Customers](/how-to-turn-uber-riders-into-repeat-customers/)
-- [How to Get Repeat Riders](/how-to-get-repeat-riders/)
-
-## Next step
-
-Request access and start setting up your own booking page.
-
-[Get your booking page](/start/)
 
 <section class="sd-section sd-card sd-related-pages">
   <p class="sd-eyebrow">Related SoloDrive pages</p>

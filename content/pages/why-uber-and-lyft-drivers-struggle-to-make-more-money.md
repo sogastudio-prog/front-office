@@ -167,20 +167,6 @@ the driver has a real answer:
 
 That is where the opportunity starts.
 
-## Related SoloDrive pages
-
-- [What Should Uber Drivers Do Next?](/what-should-uber-drivers-do-next/)
-- [Do Uber Drivers Own Their Customers?](/do-uber-drivers-own-their-customers/)
-- [Own Your Riders](/own-your-riders/)
-- [Apps Are for the First Ride](/apps-are-for-the-first-ride/)
-- [How to Turn Uber Riders Into Repeat Customers](/how-to-turn-uber-riders-into-repeat-customers/)
-- [How to Get Repeat Riders](/how-to-get-repeat-riders/)
-
-## Next step
-
-Request access and start setting up your own booking page.
-
-[Get your booking page](/start/)
 
 <section class="sd-section sd-card sd-related-pages">
   <p class="sd-eyebrow">Related SoloDrive pages</p>

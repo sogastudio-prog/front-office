@@ -183,20 +183,6 @@ The real comparison is:
 
 That is why owning your own business starts with owning the repeat path.
 
-## Related SoloDrive pages
-
-- [Can Uber Drivers Start Their Own Business?](/can-uber-drivers-start-their-own-business/)
-- [What Should Uber Drivers Do Next?](/what-should-uber-drivers-do-next/)
-- [Do Uber Drivers Own Their Customers?](/do-uber-drivers-own-their-customers/)
-- [Own Your Riders](/own-your-riders/)
-- [Apps Are for the First Ride](/apps-are-for-the-first-ride/)
-- [How to Turn Uber Riders Into Repeat Customers](/how-to-turn-uber-riders-into-repeat-customers/)
-
-## Next step
-
-Request access and start setting up your own booking page.
-
-[Get your booking page](/start/)
 
 <section class="sd-section sd-card sd-related-pages">
   <p class="sd-eyebrow">Related SoloDrive pages</p>
