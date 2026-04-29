@@ -26,6 +26,27 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/*
+ * Commercial package resolution lives in the SoloDrive kernel.
+ * Public checkout uses the same source of truth instead of duplicating
+ * package/profile rules in the front-office plugin.
+ */
+$sdfo_kernel_commercial_candidates = [
+    WP_CONTENT_DIR . '/plugins/solodrive-kernel/includes/modules/commercial/020-commercial-profiles.php',
+    dirname(ABSPATH) . '/app/wp-content/plugins/solodrive-kernel/includes/modules/commercial/020-commercial-profiles.php',
+    ABSPATH . 'app/wp-content/plugins/solodrive-kernel/includes/modules/commercial/020-commercial-profiles.php',
+];
+
+foreach ($sdfo_kernel_commercial_candidates as $sdfo_kernel_commercial_path) {
+    if (
+        is_readable($sdfo_kernel_commercial_path)
+        && !function_exists('sd_resolve_commercial_profile')
+    ) {
+        require_once $sdfo_kernel_commercial_path;
+        break;
+    }
+}
+
 require_once plugin_dir_path(__FILE__) . 'includes/admin/admin-front-office.php';
 $front_office_autoload = plugin_dir_path(__FILE__) . 'vendor/autoload.php';
 if (file_exists($front_office_autoload)) {
