@@ -200,10 +200,48 @@ class SDCT_CLI_Command {
         if (self::body_is_raw_markup($body)) {
             $content = $body;
         } else {
-            $content = SDCT_Markdown::to_blocks($body);
+            $content = self::render_mixed_markdown_content($body);
         }
 
         return self::wrap_managed_content($content, $type, $template);
+    }
+
+    private static function render_mixed_markdown_content($body): string {
+        $body = trim((string) $body);
+
+        if ($body === '') {
+            return '';
+        }
+
+        /*
+         * Authority pages may be Markdown articles with managed raw HTML
+         * sections appended at the bottom. Convert the Markdown article body,
+         * but preserve the managed HTML sections as HTML.
+         */
+        $first_managed_section = strpos($body, '<section class="sd-section');
+
+        if ($first_managed_section === false) {
+            return SDCT_Markdown::to_blocks($body);
+        }
+
+        $markdown_part = trim(substr($body, 0, $first_managed_section));
+        $html_part = trim(substr($body, $first_managed_section));
+
+        $content = '';
+
+        if ($markdown_part !== '') {
+            $content .= SDCT_Markdown::to_blocks($markdown_part);
+        }
+
+        if ($html_part !== '') {
+            if ($content !== '') {
+                $content .= "\n\n";
+            }
+
+            $content .= $html_part;
+        }
+
+        return $content;
     }
 
     private static function body_is_raw_markup($body): bool {
