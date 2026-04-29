@@ -52,8 +52,10 @@ foreach ($sdfo_kernel_commercial_candidates as $sdfo_kernel_commercial_path) {
 require_once plugin_dir_path(__FILE__) . 'includes/admin/admin-front-office.php';
 require_once plugin_dir_path(__FILE__) . 'includes/commercial/class-sdfo-commercial-cpts.php';
 require_once plugin_dir_path(__FILE__) . 'includes/commercial/class-sdfo-commercial-stripe-sync.php';
+require_once plugin_dir_path(__FILE__) . 'includes/commercial/class-sdfo-commercial-admin.php';
 SDFO_Commercial_CPTs::register();
 SDFO_Commercial_Stripe_Sync::register();
+SDFO_Commercial_Admin::register();
 $front_office_autoload = plugin_dir_path(__FILE__) . 'vendor/autoload.php';
 if (file_exists($front_office_autoload)) {
     require_once $front_office_autoload;
