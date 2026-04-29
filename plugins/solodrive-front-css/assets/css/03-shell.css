@@ -134,3 +134,15 @@ body.sd-managed-type-utility .entry-header h1,
 body.sd-managed-type-utility .entry-content > h1:first-child {
   display: none !important;
 }
+
+/* Final Astra fallback: suppress visible theme title on managed utility checkout pages */
+body.sd-managed-type-utility.ast-single-post .entry-title,
+body.sd-managed-type-utility.ast-normal-title-enabled .entry-title,
+body.sd-managed-type-utility .ast-container > h1,
+body.sd-managed-type-utility .site-content h1.entry-title,
+body.sd-managed-type-utility main h1.entry-title,
+body.sd-managed-type-utility article > h1:first-child,
+body.sd-managed-type-utility .entry-content > h1:first-child,
+body.sd-managed-type-utility .wp-block-post-title {
+  display: none !important;
+}
