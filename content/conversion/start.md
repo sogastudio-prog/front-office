@@ -9,6 +9,8 @@ meta_description: Start your SoloDrive booking page setup. No payment on this st
 summary: Start page for drivers beginning their SoloDrive booking page setup.
 schema_type: WebPage
 last_reviewed: 2026-04-28
+primary_cta: Get My Booking Page
+primary_cta_url: /start/
 ---
 
 <section class="sd-section sd-hero sd-hero--checkout">
