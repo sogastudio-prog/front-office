@@ -206,17 +206,30 @@ class SDCT_CLI_Command {
         return self::wrap_managed_content($content, $type, $template);
     }
 
-    private static function body_is_raw_markup($body) {
+    private static function body_is_raw_markup($body): bool {
+        $body = trim((string) $body);
+
+        if ($body === '') {
+            return false;
+        }
+
+        /*
+         * Gutenberg block pages are already fully block-serialized.
+         * Keep them raw so WordPress does not display block comments as text.
+         */
         if (strpos($body, '<!-- wp:') !== false) {
             return true;
         }
 
-        if (preg_match('/<\s*(section|div|article|header|footer|main|figure|img|a|p|h1|h2|h3|ol|ul|li)\b/i', $body)) {
-            return true;
-        }
-
-        return false;
+        /*
+         * Treat a page as raw markup only when the body begins as HTML.
+         * Authority pages may be mostly Markdown with managed HTML sections
+         * appended at the bottom; those must still pass through Markdown
+         * conversion or headings like ## will render as literal text.
+         */
+        return (bool) preg_match('/^\\s*</', $body);
     }
+
 
     private static function wrap_managed_content($content, $type, $template) {
         $classes = array(
