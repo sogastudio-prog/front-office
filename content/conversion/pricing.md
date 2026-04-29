@@ -25,12 +25,14 @@ primary_cta_url: /start/?sd_package=operator
   <p><a class="sd-button" href="/start/?sd_package=operator">Start with this plan</a></p>
 </section>
 
-<section class="sd-section sd-card sd-plan-card">
+<section class="sd-section sd-card sd-plan-card sd-plan-card--featured">
   <p class="sd-eyebrow">Operator Subscription</p>
 
-  <h2>$20/month after checkout.</h2>
+  <h2>$20/month</h2>
 
-  <p>Includes the core SoloDrive setup path for drivers who want their own booking page and direct rider request flow.</p>
+  <p><strong>After secure checkout.</strong></p>
+
+  <p>Includes the core SoloDrive setup path for drivers who want their own booking page, direct rider request flow, and a cleaner way to turn repeat riders into direct business.</p>
 
   <ul>
     <li>Direct booking page setup path</li>
