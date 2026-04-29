@@ -1838,19 +1838,30 @@ final class SD_Front_Office_Scaffold {
             return new WP_REST_Response(['ok' => false, 'error' => 'slug_not_reserved'], 409);
         }
 
+        // Resolve commercial terms — read from prospect meta (written at checkout
+        // time by resolve_checkout_pricing_for_prospect / store_commercial_snapshot).
+        $package_key            = (string) get_post_meta($prospect_post_id, 'sd_package_key', true);
+        $commercial_profile_key = (string) get_post_meta($prospect_post_id, 'sd_commercial_profile_key', true);
+        $authorization_code     = (string) get_post_meta($prospect_post_id, 'sd_authorization_code', true);
+        $commercial_snapshot    = (string) get_post_meta($prospect_post_id, 'sd_commercial_terms_snapshot_json', true);
+
         return new WP_REST_Response([
-            'ok'                        => true,
-            'provision_package_post_id' => $provision_package_post_id,
-            'provision_package_id'      => $provision_package_id,
-            'reserved_slug'             => $reserved_slug,
-            'tenant_id'                 => '',
-            'tenant_slug'               => $reserved_slug,
-            'prospect_id'               => $prospect_id,
-            'prospect_post_id'          => $prospect_post_id,
-            'full_name'                 => $full_name,
-            'email'                     => $email,
-            'phone'                     => $phone,
-            'stripe_account_id'         => $stripe_acct_id,
+            'ok'                                => true,
+            'provision_package_post_id'         => $provision_package_post_id,
+            'provision_package_id'              => $provision_package_id,
+            'reserved_slug'                     => $reserved_slug,
+            'tenant_id'                         => '',
+            'tenant_slug'                       => $reserved_slug,
+            'prospect_id'                       => $prospect_id,
+            'prospect_post_id'                  => $prospect_post_id,
+            'full_name'                         => $full_name,
+            'email'                             => $email,
+            'phone'                             => $phone,
+            'stripe_account_id'                 => $stripe_acct_id,
+            'sd_package_key'                    => $package_key,
+            'sd_commercial_profile_key'         => $commercial_profile_key,
+            'sd_authorization_code'             => $authorization_code,
+            'sd_commercial_terms_snapshot_json' => $commercial_snapshot,
         ], 200);
     }
 
