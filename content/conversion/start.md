@@ -30,7 +30,7 @@ primary_cta_url: /start/
 
   <p>You can start sharing your booking link after setup is complete.</p>
 
-  [contact-form-7 id="710" title="Start"]
+  [contact-form-7 id="33" title="Start"]
 </section>
 
 <section class="sd-section sd-card">

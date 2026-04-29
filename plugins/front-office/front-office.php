@@ -2166,7 +2166,7 @@ final class SD_Front_Office_Scaffold {
             'phone_raw'         => $phone_raw,
             'phone_normalized'  => self::normalize_phone($phone_raw),
             'invitation_code'   => $first($posted_data['invite_code'] ?? ''),
-            'package_key'       => sanitize_key((string) ($posted_data['sd_package_key'] ?? $posted_data['sd_package'] ?? '')),
+            'package_key'       => sanitize_key((string) ($posted_data['sd_package_key'] ?? $posted_data['sd_package'] ?? 'operator')),
             'authorization_code'=> sanitize_text_field((string) ($posted_data['sd_authorization_code'] ?? $posted_data['authorization_code'] ?? $posted_data['invite_code'] ?? '')),
             'submission_count'  => 1,
             'submitted_at_gmt'  => current_time('mysql', true),
