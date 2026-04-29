@@ -1,8 +1,6 @@
 <?php
 if (!defined('ABSPATH')) { exit; }
 
-require_once __DIR__ . '/includes/commercial-profile-sandbox.php';
-
 /**
  * Plugin Name: SoloDrive Front Office
  * Description: Front-office intake, lifecycle, and onboarding control plane.
