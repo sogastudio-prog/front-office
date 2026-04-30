@@ -33,10 +33,10 @@ final class SDFO_Commercial_CPTs {
     // CPT slugs
     // -------------------------------------------------------------------------
 
-    const CPT_PACKAGE   = 'sd_commercial_package';
-    const CPT_PROFILE   = 'sd_commercial_profile';
-    const CPT_AUTH_CODE = 'sd_authorization_code';
-    const CPT_VENDOR    = 'sd_vendor';
+    const CPT_PACKAGE   = 'sd_comm_package';  // 15 chars — WP max is 20
+    const CPT_PROFILE   = 'sd_comm_profile';  // 15 chars
+    const CPT_AUTH_CODE = 'sd_auth_code';     // 12 chars
+    const CPT_VENDOR    = 'sd_vendor';        //  9 chars
 
     // -------------------------------------------------------------------------
     // Bootstrap
