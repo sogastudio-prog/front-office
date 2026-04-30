@@ -1681,12 +1681,12 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function map_slug_error_message(string $code): string {
-        return match ($code) {
+        $messages = [
             'invalid_request' => 'We could not verify your request. Please try again.',
             'invalid_slug'    => 'Use 3-40 lowercase letters, numbers, or single hyphens.',
             'slug_taken'      => 'That storefront name is already taken.',
-            default           => '',
-        };
+        ];
+        return isset($messages[$code]) ? $messages[$code] : '';
     }
 
     private static function is_invite_ready_form($contact_form): bool {
@@ -1971,7 +1971,7 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function map_account_error_message(string $code): string {
-        return match ($code) {
+        $messages = [
             'invalid_request'   => 'We could not verify your request. Please try again.',
             'missing_fields'    => 'Please complete all required fields.',
             'invalid_email'     => 'Please enter a valid email address.',
@@ -1979,8 +1979,8 @@ final class SD_Front_Office_Scaffold {
             'password_mismatch' => 'Your passwords do not match.',
             'email_exists'      => 'An account already exists for this email. Login/claim flow comes next.',
             'create_failed'     => 'We could not create your account right now.',
-            default             => '',
-        };
+        ];
+        return isset($messages[$code]) ? $messages[$code] : '';
     }
 
     private static function extract_first_name(string $full_name): string {
@@ -2162,13 +2162,13 @@ final class SD_Front_Office_Scaffold {
 
 
     private static function map_public_status_label(string $state): string {
-        return match ($state) {
-            'STARTED' => 'Request received',
+        $labels = [
+            'STARTED'               => 'Request received',
             'ACTIVATION_PROCESSING' => 'Activating your account',
-            'TENANT_READY' => 'Ready',
-            'ACTIVATION_FAILED' => 'Setup issue',
-            default => 'Request received',
-        };
+            'TENANT_READY'          => 'Ready',
+            'ACTIVATION_FAILED'     => 'Setup issue',
+        ];
+        return isset($labels[$state]) ? $labels[$state] : 'Request received';
     }
 
     public static function register_rewrite_rules(): void {
@@ -2532,14 +2532,14 @@ final class SD_Front_Office_Scaffold {
     }
 
     private static function map_checkout_error_message(string $code): string {
-        return match ($code) {
-            'invalid_request'      => 'We could not verify your request. Please try again.',
-            'stripe_sdk_missing'   => 'Stripe is not available right now.',
-            'stripe_secret_missing'=> 'Stripe secret key is missing.',
-            'stripe_price_missing' => 'Subscription price is not configured.',
-            'checkout_failed'      => 'We could not start checkout right now.',
-            default                => '',
-        };
+        $messages = [
+            'invalid_request'       => 'We could not verify your request. Please try again.',
+            'stripe_sdk_missing'    => 'Stripe is not available right now.',
+            'stripe_secret_missing' => 'Stripe secret key is missing.',
+            'stripe_price_missing'  => 'Subscription price is not configured.',
+            'checkout_failed'       => 'We could not start checkout right now.',
+        ];
+        return isset($messages[$code]) ? $messages[$code] : '';
     }
 
  }
