@@ -6,7 +6,10 @@ type: conversion
 template: product
 page_title: The Direct Booking System for Independent Ride Drivers
 meta_title: SoloDrive Solution | Direct Booking System for Independent Ride Drivers
-meta_description: SoloDrive gives independent ride drivers a booking page, ride request flow, operator dashboard, trip page, Stripe-powered payments, and business records for direct bookings.
+meta_description: SoloDrive gives independent ride drivers a booking page, ride request flow, dashboard, trip page, payments, and records for direct bookings.
+summary: SoloDrive is the direct booking system for independent ride drivers who want their own booking page, rider request flow, trip surfaces, payment path, and business records.
+schema_type: WebPage
+last_reviewed: 2026-04-29
 primary_cta: Get Your Booking Page
 ---
 
