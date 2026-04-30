@@ -1610,20 +1610,20 @@ final class SD_Front_Office_Scaffold {
             <?php foreach ($packages as $pkg) :
                 $price_cents = (int) ($pkg['display_price_cents'] ?? 0);
                 $price_str   = $price_cents > 0
-                    ? '
+                    ? '$' . number_format($price_cents / 100, 2) : 'Free';
 
-    private static function is_valid_slug_candidate(string $slug): bool {
-        if ($slug === '') {
-            return false;
-        }
+                private static function is_valid_slug_candidate(string $slug): bool {
+                    if ($slug === '') {
+                        return false;
+                    }
 
-        if (strlen($slug) < 3 || strlen($slug) > 40) {
-            return false;
-        }
+                    if (strlen($slug) < 3 || strlen($slug) > 40) {
+                        return false;
+                    }
 
-        if (!preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug)) {
-            return false;
-        }
+                    if (!preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug)) {
+                        return false;
+                    }
 
         $reserved = [
             'app', 'admin', 'api', 'www', 'solodrive', 'operator', 'operations',
@@ -1764,7 +1764,7 @@ final class SD_Front_Office_Scaffold {
         return sanitize_text_field((string) ($_GET['k'] ?? ''));
         }
 
-        private static function get_prospect_post_id_by_public_key(string $public_key): int {
+    private static function get_prospect_post_id_by_public_key(string $public_key): int {
             if ($public_key === '') {
                 return 0;
             }
