@@ -8,7 +8,7 @@ meta_title: Start Your SoloDrive Booking Page
 meta_description: Start your SoloDrive booking page setup. No payment on this step.
 summary: Start page for drivers beginning their SoloDrive booking page setup.
 schema_type: WebPage
-last_reviewed: 2026-04-28
+last_reviewed: 2026-04-30
 primary_cta: Get My Booking Page
 primary_cta_url: /start/
 ---
@@ -23,16 +23,8 @@ primary_cta_url: /start/
   <p>No payment on this step. We use this to create your setup link.</p>
 </section>
 
-<section class="sd-section sd-card sd-plan-summary">
-  <p class="sd-eyebrow">Selected setup</p>
-
-  <h2>SoloDrive Operator Subscription</h2>
-
-  <p><strong>$20/month after checkout.</strong></p>
-
-  <p>Includes your booking page setup path, direct rider request link, trip surfaces, and operator onboarding.</p>
-
-  <p>No payment on this step. You will review and confirm payment securely with Stripe.</p>
+<section class="sd-section sd-card">
+  [sdfo_package_select heading="Choose your plan"]
 </section>
 
 <section class="sd-section sd-card sd-checkout-card">
