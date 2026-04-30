@@ -179,7 +179,7 @@ final class SDFO_Commercial_Admin {
 
         $profiles = get_posts( [
             'post_type'      => self::PRF,
-            'post_status'    => 'publish',
+            'post_status'    => [ 'publish', 'draft' ],
             'posts_per_page' => -1,
             'orderby'        => 'title',
             'order'          => 'ASC',
@@ -223,9 +223,9 @@ final class SDFO_Commercial_Admin {
 
         // Linked package selector
         $current_pkg = (int) get_post_meta( $post->ID, 'sd_linked_package_post_id', true );
-        $packages    = get_posts( [
+        $packages = get_posts( [
             'post_type'      => self::PKG,
-            'post_status'    => 'publish',
+            'post_status'    => [ 'publish', 'draft' ],
             'posts_per_page' => -1,
             'orderby'        => 'title',
             'order'          => 'ASC',
@@ -409,7 +409,7 @@ final class SDFO_Commercial_Admin {
         $current_prf = (int) get_post_meta( $post->ID, 'sd_linked_profile_post_id', true );
         $profiles    = get_posts( [
             'post_type'      => self::PRF,
-            'post_status'    => 'publish',
+            'post_status'    => [ 'publish', 'draft' ],
             'posts_per_page' => -1,
             'orderby'        => 'title',
             'order'          => 'ASC',
@@ -436,7 +436,7 @@ final class SDFO_Commercial_Admin {
 
         $packages = get_posts( [
             'post_type'      => self::PKG,
-            'post_status'    => 'publish',
+            'post_status'    => [ 'publish', 'draft' ],
             'posts_per_page' => -1,
             'orderby'        => 'title',
             'order'          => 'ASC',
