@@ -1,0 +1,276 @@
+/*
+ * SoloDrive Front CSS — Authority Page Template
+ *
+ * Covers elements rendered by templates/sd-authority.php.
+ * Adds to existing 06-pages.css authority block.
+ *
+ * Depends on tokens from 01-tokens.css and components from 04-components.css.
+ */
+
+/* ============================================================
+   AUTHORITY HEADER
+   ============================================================ */
+
+.sd-authority__header {
+  margin-bottom: var(--sd-space-6);
+}
+
+.sd-authority__title {
+  font-size: clamp(36px, 5.5vw, 68px);
+  font-weight: 800;
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+  color: var(--sd-ink);
+  margin: 0 0 var(--sd-space-4);
+}
+
+.sd-authority__answer {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--sd-muted);
+  margin: 0;
+  max-width: 680px;
+}
+
+/* ============================================================
+   BODY SECTIONS
+   ============================================================ */
+
+.sd-authority__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sd-space-5);
+  margin-bottom: var(--sd-space-6);
+}
+
+.sd-authority__section {}
+
+.sd-authority__section-heading {
+  color: var(--sd-ink);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  margin: 0 0 var(--sd-space-3);
+}
+
+/* H2 sections */
+.sd-authority__section h2.sd-authority__section-heading {
+  font-size: clamp(26px, 3.8vw, 42px);
+  font-weight: 800;
+}
+
+/* H3 subsections */
+.sd-authority__section h3.sd-authority__section-heading {
+  font-size: clamp(18px, 2.4vw, 26px);
+  font-weight: 700;
+}
+
+/* Section body prose */
+.sd-authority__section-body p,
+.sd-authority__section-body li {
+  color: var(--sd-muted);
+  font-size: 16px;
+  line-height: 1.7;
+  margin: 0 0 var(--sd-space-3);
+}
+
+.sd-authority__section-body p:last-child {
+  margin-bottom: 0;
+}
+
+.sd-authority__section-body ul,
+.sd-authority__section-body ol {
+  padding-left: 1.25rem;
+  margin: 0 0 var(--sd-space-3);
+}
+
+.sd-authority__section-body li {
+  margin-bottom: var(--sd-space-2);
+}
+
+.sd-authority__section-body strong {
+  color: var(--sd-ink);
+  font-weight: 700;
+}
+
+.sd-authority__section-body a {
+  color: var(--sd-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sd-authority__section-body a:hover {
+  color: var(--sd-blue-dark);
+}
+
+/* ============================================================
+   FAQ
+   ============================================================ */
+
+.sd-authority__faq {
+  margin-bottom: var(--sd-space-5);
+}
+
+.sd-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: var(--sd-space-4);
+}
+
+.sd-faq-item {
+  border: 1px solid var(--sd-line);
+  border-radius: var(--sd-radius-sm);
+  background: var(--sd-surface);
+  overflow: hidden;
+}
+
+.sd-faq-item + .sd-faq-item {
+  border-top: none;
+  border-radius: 0;
+}
+
+.sd-faq-item:first-child {
+  border-radius: var(--sd-radius-sm) var(--sd-radius-sm) 0 0;
+}
+
+.sd-faq-item:last-child {
+  border-radius: 0 0 var(--sd-radius-sm) var(--sd-radius-sm);
+  border-top: none;
+}
+
+/* Single FAQ item has full radius */
+.sd-faq-list .sd-faq-item:only-child {
+  border-radius: var(--sd-radius-sm);
+  border-top: 1px solid var(--sd-line);
+}
+
+.sd-faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sd-space-4);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sd-ink);
+  cursor: pointer;
+  list-style: none;
+  gap: var(--sd-space-3);
+}
+
+/* Hide browser default marker */
+.sd-faq-question::-webkit-details-marker { display: none; }
+.sd-faq-question::marker { display: none; }
+
+/* Chevron indicator */
+.sd-faq-question::after {
+  content: "+";
+  flex-shrink: 0;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--sd-faint);
+  transition: transform 0.2s ease;
+}
+
+.sd-faq-item[open] > .sd-faq-question::after {
+  content: "−";
+}
+
+.sd-faq-answer {
+  padding: 0 var(--sd-space-4) var(--sd-space-4);
+  color: var(--sd-muted);
+  font-size: 15px;
+  line-height: 1.65;
+  margin: 0;
+  border-top: 1px solid var(--sd-line);
+  padding-top: var(--sd-space-3);
+}
+
+/* ============================================================
+   RELATED PAGES CARD
+   ============================================================ */
+
+.sd-related-pages {
+  margin-bottom: var(--sd-space-5);
+}
+
+.sd-related-pages__list {
+  list-style: none;
+  padding: 0;
+  margin: var(--sd-space-3) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sd-space-2);
+}
+
+.sd-related-pages__list li a {
+  color: var(--sd-blue);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sd-related-pages__list li a::before {
+  content: "→";
+  font-size: 13px;
+  color: var(--sd-faint);
+}
+
+.sd-related-pages__list li a:hover {
+  color: var(--sd-blue-dark);
+}
+
+/* ============================================================
+   CTA CARD
+   ============================================================ */
+
+.sd-final-cta {
+  margin-bottom: var(--sd-space-5);
+}
+
+.sd-final-cta__heading {
+  font-size: clamp(24px, 3.2vw, 36px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--sd-ink);
+  margin: var(--sd-space-3) 0 var(--sd-space-3);
+}
+
+.sd-final-cta__body {
+  color: var(--sd-muted);
+  font-size: 16px;
+  line-height: 1.65;
+  margin: 0 0 var(--sd-space-4);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 640px) {
+
+  .sd-authority__title {
+    font-size: clamp(30px, 8vw, 42px);
+  }
+
+  .sd-authority__answer {
+    font-size: 16px;
+  }
+
+  .sd-authority__section h2.sd-authority__section-heading {
+    font-size: clamp(22px, 6vw, 30px);
+  }
+
+  .sd-faq-question {
+    padding: var(--sd-space-3);
+    font-size: 15px;
+  }
+
+  .sd-faq-answer {
+    padding: var(--sd-space-2) var(--sd-space-3) var(--sd-space-3);
+  }
+
+}

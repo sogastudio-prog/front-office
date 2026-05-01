@@ -23,6 +23,7 @@ require_once SDCT_PLUGIN_DIR . 'includes/class-sdct-cli.php';
 // ---- Option B: Meta-first content architecture ----
 require_once SDCT_PLUGIN_DIR . 'includes/class-sdct-post-types.php';
 require_once SDCT_PLUGIN_DIR . 'includes/class-sdct-meta-authority.php';
+require_once SDCT_PLUGIN_DIR . 'includes/class-sdct-templates.php';
 
 // ---- WP-CLI command ----
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -34,6 +35,9 @@ SDCT_Post_Types::register_all();
 
 // ---- Register authority meta boxes ----
 SDCT_Meta_Authority::register();
+
+// ---- Register template routing + schema injection ----
+SDCT_Templates::register();
 
 /**
  * Add frontend body classes for source-controlled managed pages.
