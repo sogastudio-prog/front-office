@@ -3,22 +3,17 @@ SoloDrive Front CSS — Shell / Managed Page Normalization
 Doctrine:
 - Legacy pages conform to the new managed page system.
 - Page type wrappers are canonical.
+- Title suppression uses TWO paths:
+    1. body:has(.sd-managed-page) — covers post_type=page with content wrapper in DOM
+    2. body.sd-managed-type-* — covers CPTs where template owns rendering
+       and Astra's .entry-title may still render from theme structure
 */
 
-/* Hide Astra default page titles on managed/source-controlled pages */
-body:has(.sd-managed-page) .entry-title {
-  display: none;
-}
+/* ============================================================
+   PATH 1 — DOM presence selector (post_type=page legacy pages)
+   ============================================================ */
 
-/* Fallback for browsers/pages before wrapper sync */
-body.page-id-1146 .entry-title,
-body.page-id-136 .entry-title,
-body.page-id-413 .entry-title,
-body.page-id-880 .entry-title,
-body.page-id-488 .entry-title,
-body.page-id-138 .entry-title,
-body.page-id-472 .entry-title,
-body.page-id-485 .entry-title {
+body:has(.sd-managed-page) .entry-title {
   display: none;
 }
 
@@ -30,7 +25,165 @@ body:has(.sd-managed-page) .entry-content {
   margin: 0;
 }
 
-/* Canonical managed page shell */
+/* ============================================================
+   PATH 2 — Body class selector (CPTs + all managed types)
+   sd-hide-theme-title is added by SDCT_Templates::body_class()
+   for sd_authority, sd_conversion, sd_landing
+   ============================================================ */
+
+body.sd-hide-theme-title .entry-title,
+body.sd-hide-theme-title h1.entry-title,
+body.sd-hide-theme-title .ast-single-post .entry-title,
+body.sd-hide-theme-title .page-title {
+  display: none !important;
+}
+
+body.sd-hide-theme-title .entry-header,
+body.sd-hide-theme-title .ast-article-single > .entry-header,
+body.sd-hide-theme-title main .entry-header,
+body.sd-hide-theme-title header.entry-header,
+body.sd-hide-theme-title .entry-content > h1:first-child,
+body.sd-hide-theme-title .wp-block-post-title {
+  display: none !important;
+}
+
+/* ============================================================
+   CPT: sd_authority
+   ============================================================ */
+
+body.sd-managed-type-authority .entry-title,
+body.sd-managed-type-authority h1.entry-title,
+body.sd-managed-type-authority .ast-single-post .entry-title,
+body.sd-managed-type-authority .page-title,
+body.sd-managed-type-authority .entry-header,
+body.sd-managed-type-authority header.entry-header,
+body.sd-managed-type-authority .ast-article-single > .entry-header,
+body.sd-managed-type-authority .site-main > article > .entry-header,
+body.sd-managed-type-authority article > header.entry-header,
+body.sd-managed-type-authority .entry-header .entry-title,
+body.sd-managed-type-authority .entry-header h1,
+body.sd-managed-type-authority .entry-content > h1:first-child,
+body.sd-managed-type-authority .wp-block-post-title {
+  display: none !important;
+}
+
+body.sd-managed-type-authority.ast-single-post .entry-title,
+body.sd-managed-type-authority.ast-normal-title-enabled .entry-title,
+body.sd-managed-type-authority .ast-container > h1,
+body.sd-managed-type-authority .site-content h1.entry-title,
+body.sd-managed-type-authority main h1.entry-title,
+body.sd-managed-type-authority article > h1:first-child {
+  display: none !important;
+}
+
+/* ============================================================
+   CPT: sd_conversion
+   ============================================================ */
+
+body.sd-managed-type-conversion .entry-title,
+body.sd-managed-type-conversion h1.entry-title,
+body.sd-managed-type-conversion .ast-single-post .entry-title,
+body.sd-managed-type-conversion .page-title,
+body.sd-managed-type-conversion .entry-header,
+body.sd-managed-type-conversion header.entry-header,
+body.sd-managed-type-conversion .ast-article-single > .entry-header,
+body.sd-managed-type-conversion .site-main > article > .entry-header,
+body.sd-managed-type-conversion article > header.entry-header,
+body.sd-managed-type-conversion .entry-header .entry-title,
+body.sd-managed-type-conversion .entry-header h1,
+body.sd-managed-type-conversion .entry-content > h1:first-child,
+body.sd-managed-type-conversion .wp-block-post-title {
+  display: none !important;
+}
+
+body.sd-managed-type-conversion.ast-single-post .entry-title,
+body.sd-managed-type-conversion.ast-normal-title-enabled .entry-title,
+body.sd-managed-type-conversion .ast-container > h1,
+body.sd-managed-type-conversion .site-content h1.entry-title,
+body.sd-managed-type-conversion main h1.entry-title,
+body.sd-managed-type-conversion article > h1:first-child {
+  display: none !important;
+}
+
+/* ============================================================
+   CPT: sd_landing
+   ============================================================ */
+
+body.sd-managed-type-landing .entry-title,
+body.sd-managed-type-landing h1.entry-title,
+body.sd-managed-type-landing .ast-single-post .entry-title,
+body.sd-managed-type-landing .page-title,
+body.sd-managed-type-landing .entry-header,
+body.sd-managed-type-landing header.entry-header,
+body.sd-managed-type-landing .ast-article-single > .entry-header,
+body.sd-managed-type-landing .site-main > article > .entry-header,
+body.sd-managed-type-landing article > header.entry-header,
+body.sd-managed-type-landing .entry-header .entry-title,
+body.sd-managed-type-landing .entry-header h1,
+body.sd-managed-type-landing .entry-content > h1:first-child,
+body.sd-managed-type-landing .wp-block-post-title {
+  display: none !important;
+}
+
+body.sd-managed-type-landing.ast-single-post .entry-title,
+body.sd-managed-type-landing.ast-normal-title-enabled .entry-title,
+body.sd-managed-type-landing .ast-container > h1,
+body.sd-managed-type-landing .site-content h1.entry-title,
+body.sd-managed-type-landing main h1.entry-title,
+body.sd-managed-type-landing article > h1:first-child {
+  display: none !important;
+}
+
+/* ============================================================
+   CPT: sd_managed-type-utility (existing — preserved)
+   ============================================================ */
+
+body.sd-managed-type-utility .entry-header,
+body.sd-managed-type-utility header.entry-header,
+body.sd-managed-type-utility .entry-title,
+body.sd-managed-type-utility h1.entry-title,
+body.sd-managed-type-utility .page-title,
+body.sd-managed-type-utility .ast-single-post .entry-title,
+body.sd-managed-type-utility .entry-content > h1:first-child,
+body.sd-managed-type-utility .ast-article-single > .entry-header,
+body.sd-managed-type-utility .site-main > article > .entry-header,
+body.sd-managed-type-utility article.page > header.entry-header,
+body.sd-managed-type-utility .entry-header .entry-title,
+body.sd-managed-type-utility .entry-header h1,
+body.sd-managed-type-utility .wp-block-post-title {
+  display: none !important;
+}
+
+body.sd-managed-type-utility.ast-single-post .entry-title,
+body.sd-managed-type-utility.ast-normal-title-enabled .entry-title,
+body.sd-managed-type-utility .ast-container > h1,
+body.sd-managed-type-utility .site-content h1.entry-title,
+body.sd-managed-type-utility main h1.entry-title,
+body.sd-managed-type-utility article > h1:first-child,
+body.sd-managed-type-utility .entry-content > h1:first-child {
+  display: none !important;
+}
+
+/* ============================================================
+   LEGACY page-id fallbacks (migration period)
+   Remove entries as pages are migrated to CPTs
+   ============================================================ */
+
+body.page-id-1146 .entry-title,
+body.page-id-136 .entry-title,
+body.page-id-413 .entry-title,
+body.page-id-880 .entry-title,
+body.page-id-488 .entry-title,
+body.page-id-138 .entry-title,
+body.page-id-472 .entry-title,
+body.page-id-485 .entry-title {
+  display: none !important;
+}
+
+/* ============================================================
+   CANONICAL MANAGED PAGE SHELL
+   ============================================================ */
+
 .sd-managed-page {
   width: min(100%, var(--sd-width-wide));
   margin: 0 auto;
@@ -38,23 +191,23 @@ body:has(.sd-managed-page) .entry-content {
   box-sizing: border-box;
 }
 
-/* Article / authority pages should read narrower */
 .sd-managed-page--authority {
   max-width: var(--sd-width-content);
 }
 
-/* Conversion and product pages can breathe wider */
 .sd-managed-page--conversion,
 .sd-managed-page--product {
   max-width: var(--sd-width-wide);
 }
 
-/* Legal pages should be readable, not full-bleed */
 .sd-managed-page--legal {
   max-width: var(--sd-width-content);
 }
 
-/* Standard page primitives */
+/* ============================================================
+   STANDARD PAGE PRIMITIVES
+   ============================================================ */
+
 .sd-page {
   max-width: var(--sd-width-wide);
   margin: 0 auto;
@@ -86,63 +239,4 @@ body:has(.sd-managed-page) .entry-content {
 .wp-block-group.sd-section,
 .wp-block-group.sd-managed-page {
   box-sizing: border-box;
-}
-
-/* Managed legal/trust fallback title suppression */
-body.page-id-485 .entry-title,
-body.page-id-488 .entry-title,
-body.page-id-138 .entry-title,
-body.page-id-472 .entry-title {
-  display: none !important;
-}
-
-/* Managed pages control their own visible titles inside source content */
-body.sd-hide-theme-title .entry-title,
-body.sd-hide-theme-title h1.entry-title,
-body.sd-hide-theme-title .ast-single-post .entry-title,
-body.sd-hide-theme-title .page-title {
-  display: none !important;
-}
-
-/* Hard stop: Astra page headers are not used on managed source-controlled pages */
-body.sd-hide-theme-title .entry-header,
-body.sd-hide-theme-title .ast-article-single > .entry-header,
-body.sd-hide-theme-title main .entry-header,
-body.sd-hide-theme-title header.entry-header,
-body.sd-hide-theme-title .entry-content > h1:first-child,
-body.sd-hide-theme-title .wp-block-post-title {
-  display: none !important;
-}
-
-/* Utility checkout pages own their visible heading inside the checkout card */
-body.sd-managed-type-utility .entry-header,
-body.sd-managed-type-utility header.entry-header,
-body.sd-managed-type-utility .entry-title,
-body.sd-managed-type-utility h1.entry-title,
-body.sd-managed-type-utility .page-title,
-body.sd-managed-type-utility .ast-single-post .entry-title,
-body.sd-managed-type-utility .entry-content > h1:first-child {
-  display: none !important;
-}
-
-/* Astra title suppression for managed utility checkout pages */
-body.sd-managed-type-utility .ast-article-single > .entry-header,
-body.sd-managed-type-utility .site-main > article > .entry-header,
-body.sd-managed-type-utility article.page > header.entry-header,
-body.sd-managed-type-utility .entry-header .entry-title,
-body.sd-managed-type-utility .entry-header h1,
-body.sd-managed-type-utility .entry-content > h1:first-child {
-  display: none !important;
-}
-
-/* Final Astra fallback: suppress visible theme title on managed utility checkout pages */
-body.sd-managed-type-utility.ast-single-post .entry-title,
-body.sd-managed-type-utility.ast-normal-title-enabled .entry-title,
-body.sd-managed-type-utility .ast-container > h1,
-body.sd-managed-type-utility .site-content h1.entry-title,
-body.sd-managed-type-utility main h1.entry-title,
-body.sd-managed-type-utility article > h1:first-child,
-body.sd-managed-type-utility .entry-content > h1:first-child,
-body.sd-managed-type-utility .wp-block-post-title {
-  display: none !important;
 }
