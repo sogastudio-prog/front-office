@@ -55,6 +55,7 @@ final class SD_Front_Office_Admin {
 		add_filter( 'manage_edit-' . self::CPT_PROSPECT . '_sortable_columns',[ __CLASS__, 'sortable_columns' ] );
 		add_action( 'pre_get_posts', [ __CLASS__, 'handle_sort_and_filter' ] );
 		add_action( 'restrict_manage_posts', [ __CLASS__, 'list_stage_filter_dropdown' ] );
+		add_filter( 'post_row_actions', [ __CLASS__, 'prospect_row_actions' ], 10, 2 );
 	}
 
 	// -------------------------------------------------------------------------
@@ -82,6 +83,19 @@ final class SD_Front_Office_Admin {
 			self::PAGE_DETAIL,
 			[ __CLASS__, 'render_detail_page' ]
 		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Row actions
+	// -------------------------------------------------------------------------
+
+	public static function prospect_row_actions( array $actions, \WP_Post $post ) : array {
+		if ( $post->post_type !== self::CPT_PROSPECT ) { return $actions; }
+		$detail_url = add_query_arg( [
+			'page'        => self::PAGE_DETAIL,
+			'prospect_id' => $post->ID,
+		], admin_url( 'edit.php?post_type=' . self::CPT_PROSPECT ) );
+		return array_merge( [ 'sdf_detail' => '<a href="' . esc_url( $detail_url ) . '"><strong>View detail</strong></a>' ], $actions );
 	}
 
 	// -------------------------------------------------------------------------
@@ -736,8 +750,25 @@ final class SD_Front_Office_Admin {
 	public static function admin_notices() : void {
 		$screen = get_current_screen();
 		if ( ! $screen ) { return; }
-		if ( $screen->id !== 'edit-' . self::CPT_PROSPECT ) { return; }
 		if ( ! current_user_can( 'manage_options' ) ) { return; }
+
+		// On the standard WP edit page for a prospect, nudge to the detail view
+		if ( $screen->id === self::CPT_PROSPECT && ! empty( $_GET['post'] ) ) {
+			$post_id = absint( $_GET['post'] );
+			if ( get_post_type( $post_id ) === self::CPT_PROSPECT ) {
+				$detail_url = add_query_arg( [
+					'page'        => self::PAGE_DETAIL,
+					'prospect_id' => $post_id,
+				], admin_url( 'edit.php?post_type=' . self::CPT_PROSPECT ) );
+				echo '<div class="notice notice-info" style="display:flex;align-items:center;gap:14px;padding:10px 16px;">';
+				echo '<span>This prospect has a <strong>detail view</strong> with full pipeline, billing, and provisioning data.</span>';
+				echo '<a href="' . esc_url( $detail_url ) . '" class="button button-primary" style="flex-shrink:0;">View detail page →</a>';
+				echo '</div>';
+			}
+			return;
+		}
+
+		if ( $screen->id !== 'edit-' . self::CPT_PROSPECT ) { return; }
 
 		// Prospects paid but not provisioned
 		$stuck = get_posts( [
