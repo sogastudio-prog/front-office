@@ -468,19 +468,49 @@ final class SD_Front_Office_Admin {
 		$token        = $m( 'sd_prospect_token' );
 		$prospect_url = $token !== '' ? home_url( '/prospect/' . rawurlencode( $token ) . '/' ) : '';
 
+		$name    = $m( 'sd_full_name' );
+		$email   = $m( 'sd_email_normalized' ) ?: $m( 'sd_email_raw' );
+		$phone   = $m( 'sd_phone_normalized' ) ?: $m( 'sd_phone_raw' );
+		$stage   = $m( 'sd_lifecycle_stage' );
+		$billing = $m( 'sd_billing_status' );
+
+		$pm              = $pkg_post_id > 0 ? fn( $k ) => (string) get_post_meta( $pkg_post_id, $k, true ) : fn( $k ) => '';
+		$pkg_prov_status = $pm( 'sd_provisioning_status' );
+		$runtime_tid     = $m( 'sd_runtime_tenant_id' );
+		$has_tenant      = $tenant_post_id > 0 || $runtime_tid !== '';
+		$is_paid         = $billing === 'SUBSCRIPTION_PAID';
+
+		// Avatar initials
+		$initials = '';
+		if ( $name !== '' ) {
+			$parts    = preg_split( '/\s+/', trim( $name ) );
+			$initials = strtoupper( substr( $parts[0], 0, 1 ) . ( isset( $parts[1] ) ? substr( $parts[1], 0, 1 ) : '' ) );
+		}
+
 		echo '<div class="wrap sdf-wrap">';
 
 		// Breadcrumb
 		echo '<div class="sdf-breadcrumb">';
 		echo '<a href="' . esc_url( $pipeline_url ) . '">← Pipeline</a>';
 		echo ' <span class="sdf-breadcrumb-sep">·</span> ';
-		echo esc_html( $m( 'sd_full_name' ) ?: 'Prospect #' . $prospect_id );
+		echo esc_html( $name ?: 'Prospect #' . $prospect_id );
 		echo '</div>';
 
-		// Page title row
-		echo '<div class="sdf-detail-title-row">';
-		echo '<h1 class="sdf-page-title">' . esc_html( $m( 'sd_full_name' ) ?: '(unnamed)' ) . '</h1>';
-		echo '<div class="sdf-detail-actions">';
+		// ---- Hero card ----
+		echo '<div class="sdf-hero-card">';
+		echo '<div class="sdf-hero-left">';
+		echo '<div class="sdf-hero-avatar">' . esc_html( $initials ?: '#' ) . '</div>';
+		echo '<div class="sdf-hero-info">';
+		echo '<div class="sdf-hero-name">' . esc_html( $name ?: '(unnamed)' ) . '</div>';
+		if ( $email !== '' ) { echo '<div class="sdf-hero-contact">' . esc_html( $email ) . '</div>'; }
+		if ( $phone !== '' ) { echo '<div class="sdf-hero-contact">' . esc_html( $phone ) . '</div>'; }
+		echo '<div class="sdf-hero-badges">';
+		echo self::stage_badge( $stage );
+		echo self::billing_badge( $billing );
+		echo '</div>';
+		echo '</div>';
+		echo '</div>';
+		echo '<div class="sdf-hero-actions">';
 		if ( $edit_url ) {
 			echo '<a href="' . esc_url( $edit_url ) . '" class="button">Edit record</a>';
 		}
@@ -490,23 +520,42 @@ final class SD_Front_Office_Admin {
 		echo '</div>';
 		echo '</div>';
 
-		// ---- Stage pipeline strip ----
-		self::render_pipeline_strip( $m( 'sd_lifecycle_stage' ) );
+		// ---- Pipeline strip ----
+		self::render_pipeline_strip( $stage );
 
-		// ---- Three-panel layout ----
+		// ---- Vitals strip ----
+		$prov_done = $pkg_prov_status === 'provisioned';
+		$prov_cls  = $prov_done ? 'ok' : ( $pkg_prov_status !== '' ? 'warn' : 'neutral' );
+		$prov_val  = $prov_done ? 'Provisioned' : ( $pkg_prov_status !== '' ? ucwords( strtolower( str_replace( '_', ' ', $pkg_prov_status ) ) ) : 'Not started' );
+
+		echo '<div class="sdf-vitals-row">';
+		self::vital_chip(
+			'Billing',
+			$is_paid ? 'Paid' : ( $billing !== '' ? ucwords( strtolower( str_replace( '_', ' ', $billing ) ) ) : 'Unpaid' ),
+			$is_paid ? 'ok' : ( $billing === 'SUBSCRIPTION_FAILED' ? 'err' : 'neutral' )
+		);
+		self::vital_chip( 'Package', $pkg_post_id > 0 ? 'Linked' : 'None', $pkg_post_id > 0 ? 'ok' : 'neutral' );
+		self::vital_chip( 'Provisioning', $prov_val, $prov_cls );
+		self::vital_chip(
+			'Tenant',
+			$has_tenant ? 'Live' : ( $is_paid ? 'Pending' : 'Not provisioned' ),
+			$has_tenant ? 'ok' : ( $is_paid ? 'warn' : 'neutral' )
+		);
+		echo '</div>';
+
+		// ---- Two-panel grid ----
 		echo '<div class="sdf-detail-grid">';
 
-		// == Panel 1: Prospect identity ==
+		// Panel 1: Prospect identity
 		echo '<div class="sdf-detail-panel">';
 		echo '<div class="sdf-panel-head">Prospect</div>';
-
 		self::detail_row( 'Post ID', (string) $prospect_id );
 		self::detail_row( 'Prospect ID', $m( 'sd_prospect_id' ) );
-		self::detail_row( 'Stage', self::stage_badge( $m( 'sd_lifecycle_stage' ) ), false );
+		self::detail_row( 'Stage', self::stage_badge( $stage ), false );
 		self::detail_row( 'Activation state', $m( 'sd_activation_state' ) );
-		self::detail_row( 'Name', $m( 'sd_full_name' ) );
-		self::detail_row( 'Email', $m( 'sd_email_normalized' ) ?: $m( 'sd_email_raw' ) );
-		self::detail_row( 'Phone', $m( 'sd_phone_normalized' ) ?: $m( 'sd_phone_raw' ) );
+		self::detail_row( 'Name', $name );
+		self::detail_row( 'Email', $email );
+		self::detail_row( 'Phone', $phone );
 		self::detail_row( 'Source', $m( 'sd_source' ) );
 		self::detail_row( 'Review', $m( 'sd_review_status' ) );
 		self::detail_row( 'Invitation code', $m( 'sd_invitation_code' ) );
@@ -514,47 +563,38 @@ final class SD_Front_Office_Admin {
 		self::detail_row( 'Created', self::fmt_gmt( $m( 'sd_created_at_gmt' ) ) );
 		self::detail_row( 'Updated', self::fmt_gmt( $m( 'sd_updated_at_gmt' ) ) );
 		self::detail_row( 'Submissions', $m( 'sd_submission_count' ) );
-
 		if ( $prospect_url !== '' ) {
 			self::detail_row( 'Prospect URL', '<a href="' . esc_url( $prospect_url ) . '" target="_blank" rel="noopener">' . esc_html( $prospect_url ) . '</a>', false );
 		}
+		echo '</div>';
 
-		echo '</div>'; // Panel 1
-
-		// == Panel 2: Billing & Stripe ==
+		// Panel 2: Billing & Stripe
 		echo '<div class="sdf-detail-panel">';
 		echo '<div class="sdf-panel-head">Billing &amp; Stripe</div>';
-
-		self::detail_row( 'Billing status', self::billing_badge( $m( 'sd_billing_status' ) ), false );
+		self::detail_row( 'Billing status', self::billing_badge( $billing ), false );
 		self::detail_row( 'Paid at', self::fmt_gmt( $m( 'sd_subscription_paid_at_gmt' ) ) );
 		self::detail_row( 'Plan', $m( 'sd_resolved_plan_label' ) );
-		self::detail_row( 'Price ID', $m( 'sd_resolved_stripe_price_id' ) );
-		self::detail_row( 'Checkout session', self::mask_str( $m( 'sd_stripe_checkout_session_id' ) ) );
-		self::detail_row( 'Customer ID', $m( 'sd_stripe_customer_id' ) );
-		self::detail_row( 'Subscription ID', $m( 'sd_stripe_subscription_id' ) );
+		self::detail_row( 'Price ID', self::id_chip( $m( 'sd_resolved_stripe_price_id' ) ), false );
+		self::detail_row( 'Checkout session', self::id_chip( self::mask_str( $m( 'sd_stripe_checkout_session_id' ) ) ), false );
+		self::detail_row( 'Customer ID', self::id_chip( $m( 'sd_stripe_customer_id' ) ), false );
+		self::detail_row( 'Subscription ID', self::id_chip( $m( 'sd_stripe_subscription_id' ) ), false );
 
 		echo '<div class="sdf-panel-sub-head">Connect account</div>';
-		$acct_id = $m( 'sd_stripe_account_id' );
-		self::detail_row( 'Account ID', $acct_id );
+		self::detail_row( 'Account ID', self::id_chip( $m( 'sd_stripe_account_id' ) ), false );
 		self::detail_row( 'Onboarding status', $m( 'sd_stripe_onboarding_status' ) );
 		self::detail_row( 'Connect state', $m( 'sd_stripe_state' ) );
-		self::detail_row( 'Charges enabled', $m( 'sd_stripe_charges_enabled' ) === '1' ? '✓ Yes' : '✗ No' );
-		self::detail_row( 'Payouts enabled', $m( 'sd_stripe_payouts_enabled' ) === '1' ? '✓ Yes' : '✗ No' );
-		self::detail_row( 'Details submitted', $m( 'sd_stripe_details_submitted' ) === '1' ? '✓ Yes' : '✗ No' );
+		self::detail_row( 'Charges enabled',   self::bool_chip( $m( 'sd_stripe_charges_enabled' )   === '1' ), false );
+		self::detail_row( 'Payouts enabled',    self::bool_chip( $m( 'sd_stripe_payouts_enabled' )    === '1' ), false );
+		self::detail_row( 'Details submitted',  self::bool_chip( $m( 'sd_stripe_details_submitted' )  === '1' ), false );
 
 		$disabled_reason = $m( 'sd_stripe_disabled_reason' );
 		if ( $disabled_reason !== '' ) {
-			self::detail_row( 'Disabled reason', '<span style="color:#dc2626">' . esc_html( $disabled_reason ) . '</span>', false );
+			self::detail_row( 'Disabled reason', '<span class="sdf-alert-text">' . esc_html( $disabled_reason ) . '</span>', false );
 		}
 
-		// Requirements
 		$currently_due = json_decode( $m( 'sd_stripe_requirements_currently_due_json' ), true );
 		if ( is_array( $currently_due ) && ! empty( $currently_due ) ) {
-			self::detail_row(
-				'Currently due',
-				'<span style="color:#dc2626">' . esc_html( implode( ', ', $currently_due ) ) . '</span>',
-				false
-			);
+			self::detail_row( 'Currently due', '<span class="sdf-alert-text">' . esc_html( implode( ', ', $currently_due ) ) . '</span>', false );
 		}
 
 		echo '</div>'; // Panel 2
@@ -567,17 +607,19 @@ final class SD_Front_Office_Admin {
 
 		if ( $pkg_post_id > 0 ) {
 			$pkg_edit = get_edit_post_link( $pkg_post_id, '' );
-			$pm = fn( $k ) => (string) get_post_meta( $pkg_post_id, $k, true );
+			$slug     = $pm( 'sd_reserved_slug' );
 
 			echo '<div class="sdf-chain-body">';
 
 			echo '<div class="sdf-chain-section">';
+			if ( $slug !== '' ) {
+				echo '<div class="sdf-chain-slug">/' . esc_html( $slug ) . '</div>';
+			}
 			if ( $pkg_edit ) {
 				echo '<a href="' . esc_url( $pkg_edit ) . '" class="button button-small sdf-chain-edit-link">Edit package record</a>';
 			}
 			self::detail_row( 'Post ID', (string) $pkg_post_id );
 			self::detail_row( 'Package ID', $pm( 'sd_provision_package_id' ) );
-			self::detail_row( 'Slug', $pm( 'sd_reserved_slug' ) );
 			self::detail_row( 'Package status', $pm( 'sd_package_status' ) );
 			self::detail_row( 'Billing', self::billing_badge( $pm( 'sd_billing_status' ) ), false );
 			self::detail_row( 'Paid at', self::fmt_gmt( $pm( 'sd_subscription_paid_at_gmt' ) ) );
@@ -585,27 +627,27 @@ final class SD_Front_Office_Admin {
 
 			echo '<div class="sdf-chain-section">';
 			echo '<div class="sdf-panel-sub-head">Provisioning</div>';
-			self::detail_row( 'Status', self::prov_status_badge( $pm( 'sd_provisioning_status' ) ), false );
+			self::detail_row( 'Status', self::prov_status_badge( $pkg_prov_status ), false );
 			self::detail_row( 'Provisioned at', self::fmt_gmt( $pm( 'sd_provisioned_at_gmt' ) ) );
 			self::detail_row( 'Runtime tenant ID', $pm( 'sd_runtime_tenant_id' ) );
 			self::detail_row( 'Runtime tenant post', $pm( 'sd_runtime_tenant_post_id' ) );
 			self::detail_row( 'Health', $pm( 'sd_health_status' ) );
 			echo '</div>';
 
-			// Provisioning payloads
 			$prov_payload  = $pm( 'sd_last_provisioning_payload_json' );
 			$prov_response = $pm( 'sd_last_provisioning_response_json' );
 
 			if ( $prov_payload !== '' || $prov_response !== '' ) {
-				echo '<div class="sdf-chain-section">';
+				echo '<div class="sdf-chain-section sdf-chain-section-full">';
 				echo '<div class="sdf-panel-sub-head">Last provisioning exchange</div>';
 				if ( $prov_payload !== '' ) {
 					$decoded = json_decode( $prov_payload, true );
+					echo '<div class="sdf-json-label">Request</div>';
 					echo '<pre class="sdf-json">' . esc_html( is_array( $decoded ) ? json_encode( $decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) : $prov_payload ) . '</pre>';
 				}
 				if ( $prov_response !== '' ) {
 					$decoded = json_decode( $prov_response, true );
-					echo '<div class="sdf-panel-sub-head" style="margin-top:10px;">Response</div>';
+					echo '<div class="sdf-json-label" style="margin-top:10px;">Response</div>';
 					echo '<pre class="sdf-json">' . esc_html( is_array( $decoded ) ? json_encode( $decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) : $prov_response ) . '</pre>';
 				}
 				echo '</div>';
@@ -613,39 +655,43 @@ final class SD_Front_Office_Admin {
 
 			echo '</div>'; // .sdf-chain-body
 		} else {
-			echo '<div class="sdf-chain-empty">No provision package linked yet. This is created when the prospect reserves their slug.</div>';
+			echo '<div class="sdf-chain-empty">No provision package linked yet — created when the prospect reserves their slug.</div>';
 		}
 
 		echo '</div>'; // .sdf-chain-block
 
 		// ---- Runtime Tenant block ----
+		$ops_url        = $m( 'sd_operations_entry_url' );
+		$storefront_url = $m( 'sd_storefront_url' );
+		$runtime_tpost  = (int) $m( 'sd_runtime_tenant_post_id' );
+
 		echo '<div class="sdf-chain-block sdf-chain-block-tenant">';
 		echo '<div class="sdf-chain-head">Runtime Tenant (SDPRO)</div>';
 
-		$ops_url        = $m( 'sd_operations_entry_url' );
-		$storefront_url = $m( 'sd_storefront_url' );
-		$runtime_tid    = $m( 'sd_runtime_tenant_id' );
-		$runtime_tpost  = (int) $m( 'sd_runtime_tenant_post_id' );
-
-		if ( $runtime_tid !== '' || $runtime_tpost > 0 ) {
+		if ( $has_tenant ) {
 			echo '<div class="sdf-chain-body">';
 			echo '<div class="sdf-chain-section">';
-			echo '<span class="sdf-badge sdf-badge-ok" style="margin-bottom:12px;display:inline-block;">✓ Tenant provisioned</span>';
-			self::detail_row( 'Runtime tenant ID', $runtime_tid );
-			self::detail_row( 'Runtime tenant post', (string) $runtime_tpost );
-			if ( $storefront_url !== '' ) {
-				self::detail_row( 'Storefront URL', '<a href="' . esc_url( $storefront_url ) . '" target="_blank" rel="noopener">' . esc_html( $storefront_url ) . '</a>', false );
-			}
-			if ( $ops_url !== '' ) {
-				self::detail_row( 'Operator app', '<a href="' . esc_url( $ops_url ) . '" target="_blank" rel="noopener">' . esc_html( $ops_url ) . ' ↗</a>', false );
-			}
+			echo '<span class="sdf-badge sdf-badge-ok sdf-tenant-live-badge">&#10003; Tenant live</span>';
+			self::detail_row( 'Tenant ID', $runtime_tid );
+			self::detail_row( 'Tenant post', (string) $runtime_tpost );
 			echo '</div>';
-			echo '</div>';
+			if ( $storefront_url !== '' || $ops_url !== '' ) {
+				echo '<div class="sdf-chain-section">';
+				echo '<div class="sdf-panel-sub-head">URLs</div>';
+				if ( $storefront_url !== '' ) {
+					self::detail_row( 'Storefront', '<a href="' . esc_url( $storefront_url ) . '" target="_blank" rel="noopener">' . esc_html( $storefront_url ) . ' ↗</a>', false );
+				}
+				if ( $ops_url !== '' ) {
+					self::detail_row( 'Operator app', '<a href="' . esc_url( $ops_url ) . '" target="_blank" rel="noopener">' . esc_html( $ops_url ) . ' ↗</a>', false );
+				}
+				echo '</div>';
+			}
+			echo '</div>'; // .sdf-chain-body
 		} else {
 			echo '<div class="sdf-chain-empty">';
 			echo 'Tenant not yet provisioned on SDPRO.';
-			if ( $m( 'sd_billing_status' ) === 'SUBSCRIPTION_PAID' ) {
-				echo ' <strong>Payment is confirmed</strong> — provisioning should have been triggered. Check the provision package provisioning status above.';
+			if ( $is_paid ) {
+				echo ' <strong>Payment is confirmed</strong> — provisioning should have been triggered. Check the provision package status above.';
 			}
 			echo '</div>';
 		}
@@ -793,12 +839,8 @@ final class SD_Front_Office_Admin {
 		.sdf-breadcrumb a { color: #2563eb; }
 		.sdf-breadcrumb-sep { margin: 0 6px; }
 
-		/* ---- Detail title row ---- */
-		.sdf-detail-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-		.sdf-detail-title-row .sdf-page-title { margin-bottom: 0; }
-		.sdf-detail-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-		/* ---- Pipeline strip ---- */
+/* ---- Pipeline strip ---- */
 		.sdf-pipeline-strip { display: flex; align-items: flex-start; gap: 0; overflow-x: auto; padding: 14px 0 10px; margin-bottom: 24px; position: relative; }
 		.sdf-pipeline-strip::before { content: ''; position: absolute; top: 22px; left: 8px; right: 8px; height: 2px; background: #e2e8f0; z-index: 0; }
 		.sdf-pip { flex: 1 1 0; min-width: 64px; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 1; }
@@ -824,10 +866,42 @@ final class SD_Front_Office_Admin {
 		.sdf-chain-block { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 16px; }
 		.sdf-chain-block-tenant { border-color: #bae6fd; }
 		.sdf-chain-head { font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
-		.sdf-chain-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+		.sdf-chain-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; align-items: start; }
+		.sdf-chain-section-full { grid-column: 1 / -1; }
 		.sdf-chain-section { }
 		.sdf-chain-empty { font-size: 13px; color: #64748b; padding: 10px 0; }
 		.sdf-chain-edit-link { margin-bottom: 12px; display: inline-block; }
+		.sdf-chain-slug { font-family: ui-monospace, 'SF Mono', monospace; font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -.01em; margin-bottom: 10px; }
+		.sdf-tenant-live-badge { margin-bottom: 12px; display: inline-block; }
+		.sdf-json-label { font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; }
+
+		/* ---- Hero card ---- */
+		.sdf-hero-card { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px 24px; margin-bottom: 20px; flex-wrap: wrap; }
+		.sdf-hero-left { display: flex; align-items: flex-start; gap: 16px; }
+		.sdf-hero-avatar { width: 52px; height: 52px; border-radius: 50%; background: #1e293b; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0; letter-spacing: -.02em; }
+		.sdf-hero-name { font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2; margin-bottom: 3px; }
+		.sdf-hero-contact { font-size: 13px; color: #64748b; margin-bottom: 2px; }
+		.sdf-hero-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+		.sdf-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; align-self: center; }
+
+		/* ---- Vitals strip ---- */
+		.sdf-vitals-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+		.sdf-vital { display: flex; align-items: center; gap: 7px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px 13px; font-size: 12px; }
+		.sdf-vital-ok { border-color: #86efac; background: #f0fdf4; }
+		.sdf-vital-warn { border-color: #fcd34d; background: #fffbeb; }
+		.sdf-vital-err { border-color: #fca5a5; background: #fef2f2; }
+		.sdf-vital-label { color: #64748b; font-weight: 600; }
+		.sdf-vital-sep { color: #cbd5e1; }
+		.sdf-vital-value { color: #0f172a; font-weight: 700; }
+		.sdf-vital-ok .sdf-vital-value { color: #15803d; }
+		.sdf-vital-warn .sdf-vital-value { color: #b45309; }
+		.sdf-vital-err .sdf-vital-value { color: #b91c1c; }
+
+		/* ---- ID chips & booleans ---- */
+		.sdf-id-chip { font-family: ui-monospace, 'SF Mono', 'Cascadia Code', monospace; font-size: 11px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 6px; color: #334155; word-break: break-all; }
+		.sdf-check-yes { color: #16a34a; font-weight: 700; }
+		.sdf-check-no  { color: #94a3b8; font-weight: 600; }
+		.sdf-alert-text { color: #dc2626; font-weight: 600; }
 		</style>
 		<?php
 	}
@@ -835,6 +909,25 @@ final class SD_Front_Office_Admin {
 	// -------------------------------------------------------------------------
 	// Helper renderers
 	// -------------------------------------------------------------------------
+
+	private static function vital_chip( string $label, string $value, string $state ) : void {
+		echo '<div class="sdf-vital sdf-vital-' . esc_attr( $state ) . '">';
+		echo '<span class="sdf-vital-label">' . esc_html( $label ) . '</span>';
+		echo '<span class="sdf-vital-sep">·</span>';
+		echo '<span class="sdf-vital-value">' . esc_html( $value ) . '</span>';
+		echo '</div>';
+	}
+
+	private static function id_chip( string $id ) : string {
+		if ( $id === '' || $id === '—' ) { return '—'; }
+		return '<code class="sdf-id-chip">' . esc_html( $id ) . '</code>';
+	}
+
+	private static function bool_chip( bool $val ) : string {
+		return $val
+			? '<span class="sdf-check-yes">&#10003; Yes</span>'
+			: '<span class="sdf-check-no">&#10007; No</span>';
+	}
 
 	private static function detail_row( string $label, string $value, bool $escape = true ) : void {
 		$display = $escape ? esc_html( $value !== '' ? $value : '—' ) : ( $value !== '' ? $value : '—' );
