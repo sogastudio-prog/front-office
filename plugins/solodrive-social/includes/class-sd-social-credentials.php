@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) { exit; }
 
 /**
  * SD_Social_Credentials
- * Handles secure storage and retrieval of platform OAuth tokens (Internal use only)
+ * Secure storage for Google & Meta OAuth tokens (Internal)
  */
 final class SD_Social_Credentials {
 
@@ -11,17 +11,18 @@ final class SD_Social_Credentials {
     private const OPTION_META   = 'sd_social_meta_credentials';
 
     public static function init(): void {
-        add_action('admin_post_sd_social_connect_google', [__CLASS__, 'handle_google_connect']);
-        add_action('admin_post_sd_social_connect_meta', [__CLASS__, 'handle_meta_connect']);
+        add_action('admin_post_sd_social_connect_google', [__CLASS__, 'handle_google_connect']); // legacy if needed
+        add_action('admin_post_sd_social_disconnect', [__CLASS__, 'handle_disconnect']);
     }
 
     /**
-     * Store encrypted credentials
+     * Store credentials securely using site salt + openssl
      */
     public static function save(string $platform, array $data): bool {
-        $encrypted = wp_encrypt(json_encode($data));
-        $option_key = $platform === 'google' ? self::OPTION_GOOGLE : self::OPTION_META;
+        $json = wp_json_encode($data);
+        $encrypted = self::encrypt($json);
         
+        $option_key = $platform === 'google' ? self::OPTION_GOOGLE : self::OPTION_META;
         return update_option($option_key, $encrypted, false);
     }
 
@@ -36,26 +37,49 @@ final class SD_Social_Credentials {
             return null;
         }
 
-        $decrypted = wp_decrypt($encrypted);
+        $decrypted = self::decrypt($encrypted);
         $data = json_decode($decrypted, true);
 
         return is_array($data) ? $data : null;
     }
 
-    /**
-     * Check if platform is connected
-     */
+    private static function encrypt(string $data): string {
+        $key = defined('SD_SOCIAL_ENCRYPTION_KEY') ? SD_SOCIAL_ENCRYPTION_KEY : wp_salt('auth');
+        $iv = openssl_random_pseudo_bytes(16);
+        $encrypted = openssl_encrypt($data, 'aes-256-cbc', $key, 0, $iv);
+        return base64_encode($iv . $encrypted);
+    }
+
+    private static function decrypt(string $data): string {
+        $key = defined('SD_SOCIAL_ENCRYPTION_KEY') ? SD_SOCIAL_ENCRYPTION_KEY : wp_salt('auth');
+        $data = base64_decode($data);
+        $iv = substr($data, 0, 16);
+        $encrypted = substr($data, 16);
+        return openssl_decrypt($encrypted, 'aes-256-cbc', $key, 0, $iv);
+    }
+
     public static function is_connected(string $platform): bool {
         return !empty(self::get($platform));
     }
 
-    /**
-     * Delete credentials (disconnect)
-     */
     public static function disconnect(string $platform): bool {
         $option_key = $platform === 'google' ? self::OPTION_GOOGLE : self::OPTION_META;
         return delete_option($option_key);
     }
 
-    // TODO: Add token refresh logic (especially for Meta long-lived tokens)
+    public static function handle_disconnect(): void {
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions.');
+        }
+
+        $platform = isset($_GET['platform']) ? sanitize_text_field($_GET['platform']) : '';
+        if (!in_array($platform, ['google', 'meta'], true)) {
+            wp_die('Invalid platform.');
+        }
+
+        self::disconnect($platform);
+
+        wp_redirect(admin_url('admin.php?page=solodrive-social&' . $platform . '_disconnected=1'));
+        exit;
+    }
 }

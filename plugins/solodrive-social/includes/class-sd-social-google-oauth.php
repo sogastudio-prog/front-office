@@ -1,0 +1,100 @@
+<?php
+if (!defined('ABSPATH')) { exit; }
+
+/**
+ * SD_Social_Google_OAuth
+ * Handles Google OAuth2 flow for Business Profile API (Internal)
+ */
+final class SD_Social_Google_OAuth {
+
+    private const REDIRECT_ACTION = 'sd_social_google_callback';
+
+    public static function init(): void {
+        add_action('admin_post_sd_social_connect_google', [__CLASS__, 'start_oauth_flow']);
+        add_action('admin_post_' . self::REDIRECT_ACTION, [__CLASS__, 'handle_callback']);
+        add_action('admin_post_sd_social_disconnect_google', ['SD_Social_Credentials', 'handle_disconnect']);
+    }
+
+    public static function start_oauth_flow(): void {
+        check_admin_referer('sd_social_connect_google');
+
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions.');
+        }
+
+        $client = self::get_google_client();
+        $client->addScope('https://www.googleapis.com/auth/business.manage');
+        $client->addScope('https://www.googleapis.com/auth/userinfo.email');
+
+        $auth_url = $client->createAuthUrl();
+
+        set_transient('sd_social_google_oauth_state', wp_create_nonce('google_oauth_state'), 600);
+
+        wp_redirect($auth_url);
+        exit;
+    }
+
+    public static function handle_callback(): void {
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions.');
+        }
+
+        $state = $_GET['state'] ?? '';
+        if (!wp_verify_nonce($state, 'google_oauth_state')) {
+            wp_die('Security check failed.');
+        }
+
+        $code = $_GET['code'] ?? '';
+        if (empty($code)) {
+            wp_die('Authorization code missing.');
+        }
+
+        $client = self::get_google_client();
+        $token = $client->fetchAccessTokenWithAuthCode($code);
+
+        if (isset($token['error'])) {
+            wp_die('Token exchange failed: ' . esc_html($token['error']));
+        }
+
+        $client->setAccessToken($token);
+        $oauth2 = new Google_Service_Oauth2($client);
+        $userInfo = $oauth2->userinfo->get();
+
+        $data = [
+            'access_token'  => $token['access_token'],
+            'refresh_token' => $token['refresh_token'] ?? null,
+            'expires_in'    => $token['expires_in'] ?? 3600,
+            'created'       => time(),
+            'email'         => $userInfo->getEmail() ?? '',
+        ];
+
+        $saved = SD_Social_Credentials::save('google', $data);
+
+        if ($saved) {
+            SD_Social_Publisher::log_to_ledger('SOCIAL_ACCOUNT_CONNECTED', [
+                'platform' => 'google',
+                'email'    => $userInfo->getEmail() ?? 'unknown'
+            ]);
+
+            $redirect = admin_url('admin.php?page=solodrive-social&google_connected=1');
+        } else {
+            $redirect = admin_url('admin.php?page=solodrive-social&google_error=1');
+        }
+
+        wp_redirect($redirect);
+        exit;
+    }
+
+    private static function get_google_client(): Google_Client {
+        require_once SD_SOCIAL_PATH . 'vendor/autoload.php';
+
+        $client = new Google_Client();
+        $client->setClientId(SD_GOOGLE_SOCIAL_CLIENT_ID);      // New constant
+        $client->setClientSecret(SD_GOOGLE_SOCIAL_CLIENT_SECRET);
+        $client->setRedirectUri(admin_url('admin-post.php?action=' . self::REDIRECT_ACTION));
+        $client->setAccessType('offline');
+        $client->setPrompt('consent');
+
+        return $client;
+    }
+}
