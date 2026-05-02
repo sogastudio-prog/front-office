@@ -17,12 +17,15 @@
  *   _sdct_answer            — short direct answer, displayed at top of page
  *   _sdct_body_sections     — JSON: [{heading, heading_level, body}]
  *   _sdct_faq               — JSON: [{question, answer}]
+ *   _sdct_related_pages     — JSON: [{label, url}]
  *   _sdct_meta_description  — meta description (reuses existing key)
  *   _sdct_canonical_url     — canonical URL
  *   _sdct_schema_type       — Article | FAQPage | HowTo (reuses existing key)
  *   _sdct_author_name       — author for schema
  *   _sdct_published_date    — datePublished for schema
  *   _sdct_noindex           — 1 | 0
+ *   _sdct_cta_heading       — CTA card heading
+ *   _sdct_cta_body          — CTA card body
  *   _sdct_cta_label         — CTA button text
  *   _sdct_cta_url           — CTA button URL
  */
@@ -129,6 +132,7 @@ class SDCT_Meta_Authority {
 		$answer        = get_post_meta( $post->ID, '_sdct_answer', true );
 		$body_sections = self::get_json_meta( $post->ID, '_sdct_body_sections' );
 		$faq           = self::get_json_meta( $post->ID, '_sdct_faq' );
+		$related_pages = self::get_json_meta( $post->ID, '_sdct_related_pages' );
 
 		?>
 		<div class="sdct-meta-box">
@@ -274,6 +278,38 @@ class SDCT_Meta_Authority {
 				</template>
 			</div>
 
+			<!-- Related Pages Repeater -->
+			<div class="sdct-repeater-section">
+				<div class="sdct-repeater-header">
+					<h3>Related Pages</h3>
+					<button
+						type="button"
+						class="button sdct-add-row"
+						data-target="sdct-related-pages"
+						data-type="related-page"
+					>
+						+ Add Link
+					</button>
+				</div>
+				<p class="sdct-hint" style="margin-bottom:10px;">
+					Internal links rendered in the Related SoloDrive Pages card.
+				</p>
+
+				<div id="sdct-related-pages" class="sdct-repeater" data-type="related-page">
+					<?php
+					if ( ! empty( $related_pages ) ) {
+						foreach ( $related_pages as $i => $link ) {
+							self::render_related_page_row( $i, $link );
+						}
+					}
+					?>
+				</div>
+
+				<template id="sdct-related-page-template">
+					<?php self::render_related_page_row( '__INDEX__', [] ); ?>
+				</template>
+			</div>
+
 		</div>
 		<?php
 	}
@@ -397,9 +433,17 @@ class SDCT_Meta_Authority {
 	// =========================================================================
 
 	public static function render_cta_box( $post ) {
-		$cta_label = get_post_meta( $post->ID, '_sdct_cta_label', true );
-		$cta_url   = get_post_meta( $post->ID, '_sdct_cta_url', true );
+		$cta_heading = get_post_meta( $post->ID, '_sdct_cta_heading', true );
+		$cta_body    = get_post_meta( $post->ID, '_sdct_cta_body', true );
+		$cta_label   = get_post_meta( $post->ID, '_sdct_cta_label', true );
+		$cta_url     = get_post_meta( $post->ID, '_sdct_cta_url', true );
 
+		if ( ! $cta_heading ) {
+			$cta_heading = 'Build the direct path.';
+		}
+		if ( ! $cta_body ) {
+			$cta_body = 'Give riders who already trust you a professional way to book you again.';
+		}
 		if ( ! $cta_label ) {
 			$cta_label = 'Get Your Booking Page';
 		}
@@ -409,6 +453,23 @@ class SDCT_Meta_Authority {
 
 		?>
 		<div class="sdct-meta-box">
+			<div class="sdct-field">
+				<label for="sdct_cta_heading">Heading</label>
+				<input
+					type="text"
+					id="sdct_cta_heading"
+					name="sdct_cta_heading"
+					value="<?php echo esc_attr( $cta_heading ); ?>"
+				/>
+			</div>
+			<div class="sdct-field">
+				<label for="sdct_cta_body">Body</label>
+				<textarea
+					id="sdct_cta_body"
+					name="sdct_cta_body"
+					rows="4"
+				><?php echo esc_textarea( $cta_body ); ?></textarea>
+			</div>
 			<div class="sdct-field">
 				<label for="sdct_cta_label">
 					Button Text <span class="sdct-required">*</span>
@@ -561,6 +622,46 @@ class SDCT_Meta_Authority {
 		<?php
 	}
 
+
+	private static function render_related_page_row( $index, $data ) {
+		$label = isset( $data['label'] ) ? $data['label'] : '';
+		$url   = isset( $data['url'] ) ? $data['url'] : '';
+		?>
+		<div class="sdct-repeater-row" data-index="<?php echo esc_attr( $index ); ?>">
+			<div class="sdct-repeater-row__handle">
+				<span class="dashicons dashicons-menu"></span>
+			</div>
+			<div class="sdct-repeater-row__fields">
+				<div class="sdct-field-row sdct-field-row--two">
+					<div class="sdct-field">
+						<input
+							type="text"
+							name="sdct_related_pages[<?php echo esc_attr( $index ); ?>][label]"
+							value="<?php echo esc_attr( $label ); ?>"
+							placeholder="Link label"
+						/>
+					</div>
+					<div class="sdct-field">
+						<input
+							type="text"
+							name="sdct_related_pages[<?php echo esc_attr( $index ); ?>][url]"
+							value="<?php echo esc_attr( $url ); ?>"
+							placeholder="/related-page/"
+						/>
+					</div>
+				</div>
+			</div>
+			<div class="sdct-repeater-row__actions">
+				<button
+					type="button"
+					class="sdct-remove-row"
+					title="Remove this link"
+				>&times;</button>
+			</div>
+		</div>
+		<?php
+	}
+
 	// =========================================================================
 	// SAVE
 	// =========================================================================
@@ -596,6 +697,7 @@ class SDCT_Meta_Authority {
 			'sdct_schema_type'    => '_sdct_schema_type',
 			'sdct_author_name'    => '_sdct_author_name',
 			'sdct_published_date' => '_sdct_published_date',
+			'sdct_cta_heading'    => '_sdct_cta_heading',
 			'sdct_cta_label'      => '_sdct_cta_label',
 			'sdct_cta_url'        => '_sdct_cta_url',
 			'sdct_last_reviewed'  => '_sdct_last_reviewed',
@@ -615,6 +717,7 @@ class SDCT_Meta_Authority {
 		$textarea_fields = [
 			'sdct_answer'           => '_sdct_answer',
 			'sdct_meta_description' => '_sdct_meta_description',
+			'sdct_cta_body'         => '_sdct_cta_body',
 		];
 
 		foreach ( $textarea_fields as $post_key => $meta_key ) {
@@ -673,6 +776,25 @@ class SDCT_Meta_Authority {
 			}
 		}
 		update_post_meta( $post_id, '_sdct_faq', wp_json_encode( $faq ) );
+
+		// ---- Related pages repeater ----
+		$related_pages = [];
+		if ( isset( $_POST['sdct_related_pages'] ) && is_array( $_POST['sdct_related_pages'] ) ) {
+			foreach ( $_POST['sdct_related_pages'] as $row ) {
+				$label = sanitize_text_field( wp_unslash( $row['label'] ?? '' ) );
+				$url   = esc_url_raw( wp_unslash( $row['url'] ?? '' ) );
+
+				if ( '' === $label && '' === $url ) {
+					continue;
+				}
+
+				$related_pages[] = [
+					'label' => $label,
+					'url'   => $url,
+				];
+			}
+		}
+		update_post_meta( $post_id, '_sdct_related_pages', wp_json_encode( $related_pages ) );
 
 		// ---- Enforce empty post_content ----
 		// Template owns rendering. Clear any residual content without triggering

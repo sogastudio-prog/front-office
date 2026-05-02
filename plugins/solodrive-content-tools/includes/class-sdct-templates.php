@@ -30,6 +30,7 @@ class SDCT_Templates {
 	public static function register() {
 		add_filter( 'template_include', [ __CLASS__, 'template_include' ] );
 		add_filter( 'body_class', [ __CLASS__, 'body_class' ] );
+		add_filter( 'pre_get_document_title', [ __CLASS__, 'document_title' ] );
 		add_action( 'wp_head', [ __CLASS__, 'inject_meta_tags' ], 1 );
 		add_action( 'wp_head', [ __CLASS__, 'inject_schema' ], 2 );
 	}
@@ -89,6 +90,25 @@ class SDCT_Templates {
 		return array_unique( $classes );
 	}
 
+
+	/**
+	 * Override the browser title for managed CPT pages early enough for wp_get_document_title().
+	 */
+	public static function document_title( $title ) {
+		if ( ! is_singular( [ 'sd_authority', 'sd_conversion', 'sd_landing' ] ) ) {
+			return $title;
+		}
+
+		$post_id    = get_the_ID();
+		$page_title = get_post_meta( $post_id, '_sdct_page_title', true ) ?: get_the_title( $post_id );
+
+		if ( ! $page_title ) {
+			return $title;
+		}
+
+		return esc_html( $page_title ) . ' | SoloDrive';
+	}
+
 	// =========================================================================
 	// META TAGS (wp_head priority 1)
 	// =========================================================================
@@ -102,15 +122,6 @@ class SDCT_Templates {
 		$description = get_post_meta( $post_id, '_sdct_meta_description', true );
 		$canonical   = get_post_meta( $post_id, '_sdct_canonical_url', true );
 		$noindex     = get_post_meta( $post_id, '_sdct_noindex', true );
-		$page_title  = get_post_meta( $post_id, '_sdct_page_title', true ) ?: get_the_title();
-
-		// <title> tag
-		if ( $page_title ) {
-			add_filter( 'pre_get_document_title', function() use ( $page_title ) {
-				return esc_html( $page_title ) . ' | SoloDrive';
-			} );
-		}
-
 		// Meta description
 		if ( $description ) {
 			echo '<meta name="description" content="' . esc_attr( $description ) . '">' . "\n";
