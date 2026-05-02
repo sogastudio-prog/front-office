@@ -32,6 +32,7 @@ class SD_Social_Internal {
 
         add_action('admin_menu', [__CLASS__, 'add_admin_menu'], 99);
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+        add_action('admin_post_sd_social_quick_publish', [__CLASS__, 'handle_quick_publish']);
 
         // Ledger events
         add_filter('sd_time_space_event_types', [__CLASS__, 'register_event_types']);
@@ -71,6 +72,7 @@ class SD_Social_Internal {
 
     public static function render_admin_page(): void {
         include SD_SOCIAL_PATH . 'includes/admin/social-connections.php';
+        include SD_SOCIAL_PATH . 'includes/admin/quick-publish.php';
     }
 
     public static function register_event_types(array $types): array {
@@ -81,6 +83,39 @@ class SD_Social_Internal {
         $types[] = 'SOCIAL_CAMPAIGN_LAUNCHED';
         return $types;
     }
+
+     /**
+     * Handle Quick Publish form submission
+     */
+    public static function handle_quick_publish(): void {
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions.');
+        }
+
+        check_admin_referer('sd_social_quick_publish');
+
+        $message = sanitize_textarea_field($_POST['message'] ?? '');
+        $link    = esc_url_raw($_POST['link'] ?? '');
+
+        if (empty($message)) {
+            wp_redirect(admin_url('admin.php?page=solodrive-social&publish_error=Message+required'));
+            exit;
+        }
+
+        $post_data = [
+            'message' => $message,
+            'link'    => $link
+        ];
+
+        $result = self::publish_to_google($post_data);
+
+        if ($result['success']) {
+            wp_redirect(admin_url('admin.php?page=solodrive-social&publish_success=1'));
+        } else {
+            wp_redirect(admin_url('admin.php?page=solodrive-social&publish_error=' . urlencode($result['error'] ?? 'Unknown error')));
+        }
+        exit;
+    }   
 }
 
 add_action('plugins_loaded', ['SD_Social_Internal', 'init']);
