@@ -1,15 +1,11 @@
 <?php
 if (!defined('ABSPATH')) { exit; }
 
-// Prevent re-declaration if file is included multiple times
+// Prevent re-declaration
 if (class_exists('SD_Social_Google_OAuth')) {
     return;
 }
 
-/**
- * SD_Social_Google_OAuth
- * Handles Google OAuth2 flow for Business Profile API (Internal)
- */
 final class SD_Social_Google_OAuth {
 
     private const REDIRECT_ACTION = 'sd_social_google_callback';
@@ -26,11 +22,11 @@ final class SD_Social_Google_OAuth {
             wp_die('Insufficient permissions.');
         }
 
-        if (!class_exists('Google_Client')) {
-            wp_die('Google Client Library not installed.<br><br>Run this command in the plugin folder:<br><code>composer require google/apiclient:^2.15</code>');
+        $client = self::get_google_client_safe();
+        if (is_wp_error($client)) {
+            wp_die($client->get_error_message());
         }
 
-        $client = self::get_google_client();
         $client->addScope('https://www.googleapis.com/auth/business.manage');
         $client->addScope('https://www.googleapis.com/auth/userinfo.email');
 
@@ -47,8 +43,9 @@ final class SD_Social_Google_OAuth {
             wp_die('Insufficient permissions.');
         }
 
-        if (!class_exists('Google_Client')) {
-            wp_die('Google Client Library not found.');
+        $client = self::get_google_client_safe();
+        if (is_wp_error($client)) {
+            wp_die($client->get_error_message());
         }
 
         $state = $_GET['state'] ?? '';
@@ -61,7 +58,6 @@ final class SD_Social_Google_OAuth {
             wp_die('Authorization code missing.');
         }
 
-        $client = self::get_google_client();
         $token = $client->fetchAccessTokenWithAuthCode($code);
 
         if (isset($token['error'])) {
@@ -97,22 +93,31 @@ final class SD_Social_Google_OAuth {
         exit;
     }
 
-    private static function get_google_client(): Google_Client {
-        $autoload = SD_SOCIAL_PATH . 'vendor/autoload.php';
-            
-        if (!file_exists($autoload)) {
-            wp_die('Google Client Library not found.<br><br>Run this in the plugin folder:<br><code>composer install --no-dev --optimize-autoloader</code>');
+    /**
+     * Hardened Google Client loader with multiple fallback paths
+     */
+    private static function get_google_client_safe() {
+        $possible_paths = [
+            SD_SOCIAL_PATH . 'vendor/autoload.php',
+            '/home/u995421351/domains/solodrive.pro/public_html/git-deploy/front-office/plugins/solodrive-social/vendor/autoload.php',
+            plugin_dir_path(__FILE__) . '../../vendor/autoload.php',
+        ];
+
+        foreach ($possible_paths as $path) {
+            if (file_exists($path)) {
+                require_once $path;
+                if (class_exists('Google_Client')) {
+                    $client = new Google_Client();
+                    $client->setClientId(SD_GOOGLE_SOCIAL_CLIENT_ID);
+                    $client->setClientSecret(SD_GOOGLE_SOCIAL_CLIENT_SECRET);
+                    $client->setRedirectUri(admin_url('admin-post.php?action=' . self::REDIRECT_ACTION));
+                    $client->setAccessType('offline');
+                    $client->setPrompt('consent');
+                    return $client;
+                }
+            }
         }
 
-        require_once $autoload;
-
-        $client = new Google_Client();
-        $client->setClientId(SD_GOOGLE_SOCIAL_CLIENT_ID);
-        $client->setClientSecret(SD_GOOGLE_SOCIAL_CLIENT_SECRET);
-        $client->setRedirectUri(admin_url('admin-post.php?action=' . self::REDIRECT_ACTION));
-        $client->setAccessType('offline');
-        $client->setPrompt('consent');
-
-        return $client;
+        return new WP_Error('google_lib_missing', 'Google Client Library not found. Paths checked:<br>' . implode('<br>', $possible_paths));
     }
 }
