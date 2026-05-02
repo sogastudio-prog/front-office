@@ -2,16 +2,21 @@
 /**
  * Plugin Name:       SoloDrive Social (Internal)
  * Description:       Internal social media management for Sales, Marketing, and Customer Support.
- * Version:           0.1.2
+ * Version:           0.1.3
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-define('SD_SOCIAL_VERSION', '0.1.2');
+define('SD_SOCIAL_VERSION', '0.1.3');
 define('SD_SOCIAL_PATH', plugin_dir_path(__FILE__));
 define('SD_SOCIAL_URL', plugin_dir_url(__FILE__));
+
+// Load classes FIRST - before any static calls
+require_once SD_SOCIAL_PATH . 'includes/class-sd-social-credentials.php';
+require_once SD_SOCIAL_PATH . 'includes/class-sd-social-publisher.php';
+require_once SD_SOCIAL_PATH . 'includes/class-sd-social-google-oauth.php';
 
 class SD_Social_Internal {
 
@@ -20,29 +25,19 @@ class SD_Social_Internal {
             return;
         }
 
-        // Use a later priority to ensure parent menu exists
-        add_action('admin_menu', [__CLASS__, 'add_admin_menu'], 99);
-
-        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
-
-        // Disconnect handler
-        add_action('admin_post_sd_social_disconnect', ['SD_Social_Credentials', 'handle_disconnect']);
-
-        // Ledger events
-        add_filter('sd_time_space_event_types', [__CLASS__, 'register_event_types']);
-
-        // Core classes
-        require_once SD_SOCIAL_PATH . 'includes/class-sd-social-credentials.php';
-        require_once SD_SOCIAL_PATH . 'includes/class-sd-social-publisher.php';
-        require_once SD_SOCIAL_PATH . 'includes/class-sd-social-google-oauth.php';
-
+        // Initialize classes
         SD_Social_Credentials::init();
         SD_Social_Publisher::init();
         SD_Social_Google_OAuth::init();
+
+        add_action('admin_menu', [__CLASS__, 'add_admin_menu'], 99);
+        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+
+        // Ledger events
+        add_filter('sd_time_space_event_types', [__CLASS__, 'register_event_types']);
     }
 
     public static function add_admin_menu(): void {
-        // Fallback: If parent 'solodrive' doesn't exist, make it a top-level menu
         $parent = menu_page_url('solodrive', false) ? 'solodrive' : '';
 
         add_menu_page(
@@ -52,10 +47,9 @@ class SD_Social_Internal {
             'solodrive-social',
             [__CLASS__, 'render_admin_page'],
             'dashicons-share',
-            80  // Position in menu
+            80
         );
 
-        // Try to attach as submenu if parent exists
         if ($parent) {
             add_submenu_page(
                 $parent,
