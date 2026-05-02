@@ -8,9 +8,42 @@ if (!defined('ABSPATH')) { exit; }
 final class SD_Social_Publisher {
 
     public static function init(): void {
-        // Register admin-post handlers for publishing later
+        add_action('admin_post_sd_social_quick_publish', [__CLASS__, 'handle_quick_publish']);
     }
 
+
+    /**
+     * Handle Quick Publish form submission
+     */
+    public static function handle_quick_publish(): void {
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions.');
+        }
+
+        check_admin_referer('sd_social_quick_publish');
+
+        $message = sanitize_textarea_field($_POST['message'] ?? '');
+        $link    = esc_url_raw($_POST['link'] ?? '');
+
+        if (empty($message)) {
+            wp_redirect(admin_url('admin.php?page=solodrive-social&publish_error=Message+is+required'));
+            exit;
+        }
+
+        $post_data = [
+            'message' => $message,
+            'link'    => $link
+        ];
+
+        $result = self::publish_to_google($post_data);
+
+        if ($result['success']) {
+            wp_redirect(admin_url('admin.php?page=solodrive-social&publish_success=1'));
+        } else {
+            wp_redirect(admin_url('admin.php?page=solodrive-social&publish_error=' . urlencode($result['error'] ?? 'Unknown error')));
+        }
+        exit;
+    }
     /**
      * Publish content to Google Business Profile (Local Post)
      */
