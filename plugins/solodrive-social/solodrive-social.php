@@ -2,14 +2,15 @@
 /**
  * Plugin Name:       SoloDrive Social (Internal)
  * Description:       Internal social media management for Sales, Marketing, and Customer Support.
- * Version:           0.1.1
+ * Version:           0.1.2
+ * Author:            SoloDrive Team
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-define('SD_SOCIAL_VERSION', '0.1.1');
+define('SD_SOCIAL_VERSION', '0.1.2');
 define('SD_SOCIAL_PATH', plugin_dir_path(__FILE__));
 define('SD_SOCIAL_URL', plugin_dir_url(__FILE__));
 
@@ -20,8 +21,10 @@ class SD_Social_Internal {
             return;
         }
 
-        add_action('admin_menu', [__CLASS__, 'add_admin_menu']);
+        add_action('admin_menu', [__CLASS__, 'add_admin_menu'], 20); // Higher priority
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+
+        // Disconnect handler
         add_action('admin_post_sd_social_disconnect', ['SD_Social_Credentials', 'handle_disconnect']);
 
         // Ledger events
@@ -38,8 +41,15 @@ class SD_Social_Internal {
     }
 
     public static function add_admin_menu(): void {
+        // Fallback: Add as top-level menu if parent 'solodrive' doesn't exist
+        $parent_slug = 'solodrive';
+
+        if (!menu_page_url($parent_slug, false)) {
+            $parent_slug = 'solodrive-social'; // Make it top-level as fallback
+        }
+
         add_submenu_page(
-            'solodrive',
+            $parent_slug,
             'Social Management',
             'Social',
             'manage_options',
@@ -52,8 +62,6 @@ class SD_Social_Internal {
         if (strpos($hook, 'solodrive-social') === false) {
             return;
         }
-
-        // Reuse existing ledger admin styles
         wp_enqueue_style('sd-ts-ledger-admin');
     }
 
