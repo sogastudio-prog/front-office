@@ -44,28 +44,82 @@ final class SD_Social_Publisher {
         }
         exit;
     }
+    
     /**
      * Publish content to Google Business Profile (Local Post)
      */
     public static function publish_to_google(array $post_data): array {
         $creds = SD_Social_Credentials::get('google');
-        if (!$creds) {
+        if (!$creds || empty($creds['access_token'])) {
             return ['success' => false, 'error' => 'Google not connected'];
         }
 
-        // TODO: Implement Google Business Profile Local Posts API call
-        // Use Google_Client or HTTP request with access token
+        $message = $post_data['message'] ?? '';
+        $link    = $post_data['link'] ?? '';
 
-        $result = ['success' => true, 'platform' => 'google', 'post_id' => 'temp-' . time()];
+        if (empty($message)) {
+            return ['success' => false, 'error' => 'Message is required'];
+        }
 
-        self::log_to_ledger('SOCIAL_POST_PUBLISHED', [
-            'platform' => 'google',
-            'content'  => wp_trim_words($post_data['message'] ?? '', 50),
-            'post_id'  => $result['post_id']
-        ]);
+        try {
+            $client = new Google_Client();
+            $client->setAccessToken($creds['access_token']);
 
-        return $result;
-    }
+            // Refresh token if needed
+            if ($client->isAccessTokenExpired() && !empty($creds['refresh_token'])) {
+                $client->fetchAccessTokenWithRefreshToken($creds['refresh_token']);
+                // TODO: Update stored credentials with new token
+            }
+
+            $service = new Google_Service_MyBusiness($client);
+
+            // Get the first location (you can expand this later to select location)
+            $accounts = $service->accounts->listAccounts();
+            if (empty($accounts->getAccounts())) {
+                return ['success' => false, 'error' => 'No Google Business accounts found'];
+            }
+
+            $account = $accounts->getAccounts()[0];
+            $locations = $service->accounts_locations->listAccountsLocations($account->getName());
+
+            if (empty($locations->getLocations())) {
+                return ['success' => false, 'error' => 'No locations found in your Google Business Profile'];
+            }
+
+            $location = $locations->getLocations()[0];
+
+            $localPost = new Google_Service_MyBusiness_LocalPost();
+            $localPost->setLanguageCode('en');
+            $localPost->setSummary($message);
+
+            if (!empty($link)) {
+                $callToAction = new Google_Service_MyBusiness_CallToAction();
+                $callToAction->setActionType('LEARN_MORE');
+                $callToAction->setUrl($link);
+                $localPost->setCallToAction($callToAction);
+            }
+
+            $result = $service->accounts_locations_localPosts->create(
+                $location->getName(), 
+                $localPost
+            );
+
+            $post_id = $result->getName() ?? 'google-' . time();
+
+            self::log_to_ledger('SOCIAL_POST_PUBLISHED', [
+                'platform' => 'google',
+                'content'  => wp_trim_words($message, 80),
+                'post_id'  => $post_id,
+                'location' => $location->getTitle() ?? 'Unknown'
+            ]);
+
+            return ['success' => true, 'post_id' => $post_id];
+
+        } catch (Exception $e) {
+            error_log('Google Local Post Error: ' . $e->getMessage());
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }   
 
     /**
      * Publish to Meta Page (and optionally Instagram)
