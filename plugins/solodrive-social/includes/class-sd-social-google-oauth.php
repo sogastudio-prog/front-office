@@ -31,12 +31,9 @@ final class SD_Social_Google_OAuth {
 
         $state = wp_create_nonce('google_oauth_state');
         set_transient('sd_social_google_oauth_state', $state, 600);
+        $client->setState($state);
 
-        $client->setState($state);   // ← This was missing!
-
-        $auth_url = $client->createAuthUrl();
-
-        wp_redirect($auth_url);
+        wp_redirect($client->createAuthUrl());
         exit;
     }
 
@@ -48,11 +45,9 @@ final class SD_Social_Google_OAuth {
         $received_state = $_GET['state'] ?? '';
         $stored_state   = get_transient('sd_social_google_oauth_state');
 
-        error_log('Google OAuth Callback - State check | Received: ' . $received_state . ' | Stored: ' . ($stored_state ?: 'NONE'));
-
         if (empty($received_state) || empty($stored_state) || $received_state !== $stored_state) {
             delete_transient('sd_social_google_oauth_state');
-            wp_die('Security check failed (state mismatch). Please try connecting again.');
+            wp_die('Security check failed. Please try connecting again.');
         }
 
         delete_transient('sd_social_google_oauth_state');
@@ -88,10 +83,13 @@ final class SD_Social_Google_OAuth {
         $saved = SD_Social_Credentials::save('google', $data);
 
         if ($saved) {
-            SD_Social_Publisher::log_to_ledger('SOCIAL_ACCOUNT_CONNECTED', [
-                'platform' => 'google',
-                'email'    => $userInfo->getEmail() ?? 'unknown'
-            ]);
+            // Use public method or direct call
+            if (method_exists('SD_Social_Publisher', 'log_to_ledger')) {
+                SD_Social_Publisher::log_to_ledger('SOCIAL_ACCOUNT_CONNECTED', [
+                    'platform' => 'google',
+                    'email'    => $userInfo->getEmail() ?? 'unknown'
+                ]);
+            }
 
             $redirect = admin_url('admin.php?page=solodrive-social&google_connected=1');
         } else {
