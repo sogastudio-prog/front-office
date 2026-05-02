@@ -999,7 +999,16 @@ final class SD_Front_Office_Scaffold {
                     Your booking link <strong><?php echo esc_html($reserved_slug); ?></strong> is reserved.
                 </p>
                 <p class="sd-front-body">
-                    After checkout, we prepare your operator account and booking page.<br><br><strong>Subscription: $20/month.</strong><br>You will review and confirm payment securely with Stripe.<br><br>Your future booking link: <strong><?php echo esc_html('app.solodrive.pro/t/' . $reserved_slug); ?></strong>
+                    After checkout, we prepare your operator account and booking page.<br><br><?php
+                        $sdfo_pkg_key   = (string) get_post_meta( $prospect_post_id, 'sd_package_key', true );
+                        $sdfo_pkg       = $sdfo_pkg_key ? SDFO_Commercial_CPTs::get_package_any_status( $sdfo_pkg_key ) : null;
+                        $sdfo_price_str = ( $sdfo_pkg && ! empty( $sdfo_pkg['display_price_cents'] ) )
+                            ? '$' . number_format( $sdfo_pkg['display_price_cents'] / 100, 0 ) . '/month'
+                            : '';
+                        if ( $sdfo_price_str !== '' ) :
+                    ?><strong>Subscription: <?php echo esc_html( $sdfo_price_str ); ?>.</strong><br><?php
+                        endif;
+                    ?>You will review and confirm payment securely with Stripe.<br><br>Your future booking link: <strong><?php echo esc_html('app.solodrive.pro/t/' . $reserved_slug); ?></strong>
                 </p>
             </div>
 
@@ -1622,8 +1631,25 @@ final class SD_Front_Office_Scaffold {
                 >
                     <div class="sdfo-pkg-card__name"><?php echo esc_html($pkg['label']); ?></div>
                     <div class="sdfo-pkg-card__price"><?php echo esc_html($price_str); ?></div>
-                    <?php if (!empty($pkg['description'])) : ?>
-                        <div class="sdfo-pkg-card__desc"><?php echo esc_html($pkg['description']); ?></div>
+                    <?php
+                        // Use description only if it looks like customer-facing copy (no fee-policy keywords).
+                        $sdfo_raw_desc = trim( $pkg['description'] ?? '' );
+                        $sdfo_policy_markers = ['Application fee', 'fee mode', 'Percentage:', 'Minimum fee:', 'Applies to:', 'Discount policy'];
+                        $sdfo_desc_clean = $sdfo_raw_desc;
+                        foreach ( $sdfo_policy_markers as $marker ) {
+                            $pos = strpos( $sdfo_desc_clean, $marker );
+                            if ( $pos !== false ) {
+                                $sdfo_desc_clean = trim( substr( $sdfo_desc_clean, 0, $pos ) );
+                                break;
+                            }
+                        }
+                        // Cap at 160 chars, trim to last space
+                        if ( mb_strlen( $sdfo_desc_clean ) > 160 ) {
+                            $sdfo_desc_clean = rtrim( mb_substr( $sdfo_desc_clean, 0, 157 ) ) . '…';
+                        }
+                        if ( $sdfo_desc_clean !== '' ) :
+                    ?>
+                        <div class="sdfo-pkg-card__desc"><?php echo esc_html( $sdfo_desc_clean ); ?></div>
                     <?php endif; ?>
                     <div class="sdfo-pkg-card__cta">Select</div>
                 </div>
