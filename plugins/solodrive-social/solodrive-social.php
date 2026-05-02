@@ -3,7 +3,6 @@
  * Plugin Name:       SoloDrive Social (Internal)
  * Description:       Internal social media management for Sales, Marketing, and Customer Support.
  * Version:           0.1.2
- * Author:            SoloDrive Team
  */
 
 if (!defined('ABSPATH')) {
@@ -21,7 +20,9 @@ class SD_Social_Internal {
             return;
         }
 
-        add_action('admin_menu', [__CLASS__, 'add_admin_menu'], 20); // Higher priority
+        // Use a later priority to ensure parent menu exists
+        add_action('admin_menu', [__CLASS__, 'add_admin_menu'], 99);
+
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
 
         // Disconnect handler
@@ -41,21 +42,30 @@ class SD_Social_Internal {
     }
 
     public static function add_admin_menu(): void {
-        // Fallback: Add as top-level menu if parent 'solodrive' doesn't exist
-        $parent_slug = 'solodrive';
+        // Fallback: If parent 'solodrive' doesn't exist, make it a top-level menu
+        $parent = menu_page_url('solodrive', false) ? 'solodrive' : '';
 
-        if (!menu_page_url($parent_slug, false)) {
-            $parent_slug = 'solodrive-social'; // Make it top-level as fallback
-        }
-
-        add_submenu_page(
-            $parent_slug,
+        add_menu_page(
             'Social Management',
             'Social',
             'manage_options',
             'solodrive-social',
-            [__CLASS__, 'render_admin_page']
+            [__CLASS__, 'render_admin_page'],
+            'dashicons-share',
+            80  // Position in menu
         );
+
+        // Try to attach as submenu if parent exists
+        if ($parent) {
+            add_submenu_page(
+                $parent,
+                'Social Management',
+                'Social',
+                'manage_options',
+                'solodrive-social',
+                [__CLASS__, 'render_admin_page']
+            );
+        }
     }
 
     public static function enqueue_assets(string $hook): void {
