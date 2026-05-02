@@ -11,12 +11,12 @@ final class SD_Social_Credentials {
     private const OPTION_META   = 'sd_social_meta_credentials';
 
     public static function init(): void {
-        add_action('admin_post_sd_social_connect_google', [__CLASS__, 'handle_google_connect']); // legacy if needed
+        // No legacy connect handler needed
         add_action('admin_post_sd_social_disconnect', [__CLASS__, 'handle_disconnect']);
     }
 
     /**
-     * Store credentials securely using site salt + openssl
+     * Store credentials securely
      */
     public static function save(string $platform, array $data): bool {
         $json = wp_json_encode($data);
@@ -26,9 +26,6 @@ final class SD_Social_Credentials {
         return update_option($option_key, $encrypted, false);
     }
 
-    /**
-     * Retrieve and decrypt credentials
-     */
     public static function get(string $platform): ?array {
         $option_key = $platform === 'google' ? self::OPTION_GOOGLE : self::OPTION_META;
         $encrypted = get_option($option_key);
@@ -52,9 +49,9 @@ final class SD_Social_Credentials {
 
     private static function decrypt(string $data): string {
         $key = defined('SD_SOCIAL_ENCRYPTION_KEY') ? SD_SOCIAL_ENCRYPTION_KEY : wp_salt('auth');
-        $data = base64_decode($data);
-        $iv = substr($data, 0, 16);
-        $encrypted = substr($data, 16);
+        $decoded = base64_decode($data);
+        $iv = substr($decoded, 0, 16);
+        $encrypted = substr($decoded, 16);
         return openssl_decrypt($encrypted, 'aes-256-cbc', $key, 0, $iv);
     }
 
