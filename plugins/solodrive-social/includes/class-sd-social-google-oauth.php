@@ -1,6 +1,11 @@
 <?php
 if (!defined('ABSPATH')) { exit; }
 
+// Prevent re-declaration if file is included multiple times
+if (class_exists('SD_Social_Google_OAuth')) {
+    return;
+}
+
 /**
  * SD_Social_Google_OAuth
  * Handles Google OAuth2 flow for Business Profile API (Internal)
@@ -12,7 +17,6 @@ final class SD_Social_Google_OAuth {
     public static function init(): void {
         add_action('admin_post_sd_social_connect_google', [__CLASS__, 'start_oauth_flow']);
         add_action('admin_post_' . self::REDIRECT_ACTION, [__CLASS__, 'handle_callback']);
-        add_action('admin_post_sd_social_disconnect_google', ['SD_Social_Credentials', 'handle_disconnect']);
     }
 
     public static function start_oauth_flow(): void {
@@ -20,6 +24,10 @@ final class SD_Social_Google_OAuth {
 
         if (!current_user_can('manage_options')) {
             wp_die('Insufficient permissions.');
+        }
+
+        if (!class_exists('Google_Client')) {
+            wp_die('Google Client Library not installed.<br><br>Run this command in the plugin folder:<br><code>composer require google/apiclient:^2.15</code>');
         }
 
         $client = self::get_google_client();
@@ -37,6 +45,10 @@ final class SD_Social_Google_OAuth {
     public static function handle_callback(): void {
         if (!current_user_can('manage_options')) {
             wp_die('Insufficient permissions.');
+        }
+
+        if (!class_exists('Google_Client')) {
+            wp_die('Google Client Library not found.');
         }
 
         $state = $_GET['state'] ?? '';
@@ -89,7 +101,7 @@ final class SD_Social_Google_OAuth {
         require_once SD_SOCIAL_PATH . 'vendor/autoload.php';
 
         $client = new Google_Client();
-        $client->setClientId(SD_GOOGLE_SOCIAL_CLIENT_ID);      // New constant
+        $client->setClientId(SD_GOOGLE_SOCIAL_CLIENT_ID);
         $client->setClientSecret(SD_GOOGLE_SOCIAL_CLIENT_SECRET);
         $client->setRedirectUri(admin_url('admin-post.php?action=' . self::REDIRECT_ACTION));
         $client->setAccessType('offline');
