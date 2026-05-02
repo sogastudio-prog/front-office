@@ -65,10 +65,11 @@ class SDCT_Post_Types {
 				'show_in_rest'       => false, // Block editor OFF. Template owns rendering.
 				'has_archive'        => false,
 				'hierarchical'       => false,
-				'rewrite'            => [
-					'slug'       => '/',
-					'with_front' => false,
-				],
+				// Rewrite disabled: sd_authority content is absorbed into native WP pages
+				// via the repo markdown workflow (Content-Management-System.md).
+				// A root slug of '/' generates a broad catch-all rewrite rule that
+				// intercepts all single-segment URLs and breaks native page routing.
+				'rewrite'            => false,
 				'supports'           => [ 'title' ], // Only title. No editor. No excerpt.
 				'menu_icon'          => 'dashicons-text-page',
 				'menu_position'      => 20,
@@ -110,10 +111,11 @@ class SDCT_Post_Types {
 				'show_in_rest'       => false,
 				'has_archive'        => false,
 				'hierarchical'       => false,
-				'rewrite'            => [
-					'slug'       => '/',
-					'with_front' => false,
-				],
+				// Rewrite disabled: sd_conversion content is absorbed into native WP pages
+				// via the repo markdown workflow (Content-Management-System.md).
+				// A root slug of '/' generates a broad catch-all rewrite rule that
+				// intercepts all single-segment URLs and breaks native page routing.
+				'rewrite'            => false,
 				'supports'           => [ 'title' ],
 				'menu_icon'          => 'dashicons-megaphone',
 				'menu_position'      => 21,
