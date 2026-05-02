@@ -1,7 +1,6 @@
 <?php
 if (!defined('ABSPATH')) { exit; }
 
-// Prevent re-declaration
 if (class_exists('SD_Social_Google_OAuth')) {
     return;
 }
@@ -30,9 +29,12 @@ final class SD_Social_Google_OAuth {
         $client->addScope('https://www.googleapis.com/auth/business.manage');
         $client->addScope('https://www.googleapis.com/auth/userinfo.email');
 
-        $auth_url = $client->createAuthUrl();
+        $state = wp_create_nonce('google_oauth_state');
+        set_transient('sd_social_google_oauth_state', $state, 600);
 
-        set_transient('sd_social_google_oauth_state', wp_create_nonce('google_oauth_state'), 600);
+        $client->setState($state);   // ← This was missing!
+
+        $auth_url = $client->createAuthUrl();
 
         wp_redirect($auth_url);
         exit;
@@ -43,18 +45,17 @@ final class SD_Social_Google_OAuth {
             wp_die('Insufficient permissions.');
         }
 
-        // Debug: Log what we received
-        error_log('Google OAuth Callback - GET: ' . print_r($_GET, true));
+        $received_state = $_GET['state'] ?? '';
+        $stored_state   = get_transient('sd_social_google_oauth_state');
 
-        $state = $_GET['state'] ?? '';
-        $stored_state = get_transient('sd_social_google_oauth_state');
+        error_log('Google OAuth Callback - State check | Received: ' . $received_state . ' | Stored: ' . ($stored_state ?: 'NONE'));
 
-        if (empty($state) || empty($stored_state) || !wp_verify_nonce($state, 'google_oauth_state')) {
-            error_log('State mismatch - Received: ' . $state . ' | Stored: ' . $stored_state);
-            wp_die('Security check failed. Please try connecting again.');
+        if (empty($received_state) || empty($stored_state) || $received_state !== $stored_state) {
+            delete_transient('sd_social_google_oauth_state');
+            wp_die('Security check failed (state mismatch). Please try connecting again.');
         }
 
-        delete_transient('sd_social_google_oauth_state'); // Clean up
+        delete_transient('sd_social_google_oauth_state');
 
         $code = $_GET['code'] ?? '';
         if (empty($code)) {
@@ -92,7 +93,7 @@ final class SD_Social_Google_OAuth {
                 'email'    => $userInfo->getEmail() ?? 'unknown'
             ]);
 
-            $redirect = admin_url('admin.php?page=solodrive-social&google_connected=1&success=1');
+            $redirect = admin_url('admin.php?page=solodrive-social&google_connected=1');
         } else {
             $redirect = admin_url('admin.php?page=solodrive-social&google_error=1');
         }
@@ -101,14 +102,10 @@ final class SD_Social_Google_OAuth {
         exit;
     }
 
-    /**
-     * Hardened Google Client loader with multiple fallback paths
-     */
     private static function get_google_client_safe() {
         $possible_paths = [
             SD_SOCIAL_PATH . 'vendor/autoload.php',
             '/home/u995421351/domains/solodrive.pro/public_html/git-deploy/front-office/plugins/solodrive-social/vendor/autoload.php',
-            plugin_dir_path(__FILE__) . '../../vendor/autoload.php',
         ];
 
         foreach ($possible_paths as $path) {
@@ -126,6 +123,6 @@ final class SD_Social_Google_OAuth {
             }
         }
 
-        return new WP_Error('google_lib_missing', 'Google Client Library not found. Paths checked:<br>' . implode('<br>', $possible_paths));
+        return new WP_Error('google_lib_missing', 'Google Client Library not found.');
     }
 }
