@@ -43,19 +43,27 @@ final class SD_Social_Google_OAuth {
             wp_die('Insufficient permissions.');
         }
 
-        $client = self::get_google_client_safe();
-        if (is_wp_error($client)) {
-            wp_die($client->get_error_message());
-        }
+        // Debug: Log what we received
+        error_log('Google OAuth Callback - GET: ' . print_r($_GET, true));
 
         $state = $_GET['state'] ?? '';
-        if (!wp_verify_nonce($state, 'google_oauth_state')) {
-            wp_die('Security check failed.');
+        $stored_state = get_transient('sd_social_google_oauth_state');
+
+        if (empty($state) || empty($stored_state) || !wp_verify_nonce($state, 'google_oauth_state')) {
+            error_log('State mismatch - Received: ' . $state . ' | Stored: ' . $stored_state);
+            wp_die('Security check failed. Please try connecting again.');
         }
+
+        delete_transient('sd_social_google_oauth_state'); // Clean up
 
         $code = $_GET['code'] ?? '';
         if (empty($code)) {
             wp_die('Authorization code missing.');
+        }
+
+        $client = self::get_google_client_safe();
+        if (is_wp_error($client)) {
+            wp_die($client->get_error_message());
         }
 
         $token = $client->fetchAccessTokenWithAuthCode($code);
@@ -84,7 +92,7 @@ final class SD_Social_Google_OAuth {
                 'email'    => $userInfo->getEmail() ?? 'unknown'
             ]);
 
-            $redirect = admin_url('admin.php?page=solodrive-social&google_connected=1');
+            $redirect = admin_url('admin.php?page=solodrive-social&google_connected=1&success=1');
         } else {
             $redirect = admin_url('admin.php?page=solodrive-social&google_error=1');
         }

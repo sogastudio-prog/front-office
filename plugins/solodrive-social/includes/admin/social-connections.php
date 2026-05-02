@@ -1,8 +1,14 @@
 <?php
-// Called via do_action('sd_social_admin_tabs')
-
 $google_connected = SD_Social_Credentials::is_connected('google');
 $meta_connected   = SD_Social_Credentials::is_connected('meta');
+
+// Success / Error messages
+if (isset($_GET['google_connected'])) {
+    echo '<div class="notice notice-success is-dismissible"><p><strong>Google Business Profile Connected Successfully!</strong></p></div>';
+}
+if (isset($_GET['google_error'])) {
+    echo '<div class="notice notice-error is-dismissible"><p>Failed to connect Google account.</p></div>';
+}
 ?>
 
 <div class="sd-social-card">
