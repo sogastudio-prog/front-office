@@ -98,7 +98,13 @@ final class SD_Social_Google_OAuth {
     }
 
     private static function get_google_client(): Google_Client {
-        require_once SD_SOCIAL_PATH . 'vendor/autoload.php';
+        $autoload = SD_SOCIAL_PATH . 'vendor/autoload.php';
+            
+        if (!file_exists($autoload)) {
+            wp_die('Google Client Library not found.<br><br>Run this in the plugin folder:<br><code>composer install --no-dev --optimize-autoloader</code>');
+        }
+
+        require_once $autoload;
 
         $client = new Google_Client();
         $client->setClientId(SD_GOOGLE_SOCIAL_CLIENT_ID);
