@@ -45,9 +45,6 @@ final class SD_Social_Publisher {
         exit;
     }
     
-    /**
-     * Publish content to Google Business Profile (Local Post)
-     */
     public static function publish_to_google(array $post_data): array {
         $creds = SD_Social_Credentials::get('google');
         if (!$creds || empty($creds['access_token'])) {
@@ -61,25 +58,34 @@ final class SD_Social_Publisher {
             return ['success' => false, 'error' => 'Message is required'];
         }
 
-        // Load Google libraries
+        // === HARDENED GOOGLE LIBRARY LOADING ===
         $autoload = SD_SOCIAL_PATH . 'vendor/autoload.php';
         if (!file_exists($autoload)) {
             return ['success' => false, 'error' => 'Google Client Library not found'];
         }
         require_once $autoload;
 
+        // Force load the MyBusiness service
+        $service_file = SD_SOCIAL_PATH . 'vendor/google/apiclient-services/src/MyBusiness.php';
+        if (file_exists($service_file)) {
+            require_once $service_file;
+        }
+
+        if (!class_exists('Google_Service_MyBusiness')) {
+            return ['success' => false, 'error' => 'Google MyBusiness service still not loaded.'];
+        }
+
         try {
             $client = new Google_Client();
             $client->setAccessToken($creds['access_token']);
 
-            // Refresh token if needed
             if ($client->isAccessTokenExpired() && !empty($creds['refresh_token'])) {
                 $client->fetchAccessTokenWithRefreshToken($creds['refresh_token']);
             }
 
             $service = new Google_Service_MyBusiness($client);
 
-            // Get accounts and first location
+            // Rest of the code (same as before)
             $accounts = $service->accounts->listAccounts();
             if (empty($accounts->getAccounts())) {
                 return ['success' => false, 'error' => 'No Google Business accounts found'];
@@ -89,12 +95,11 @@ final class SD_Social_Publisher {
             $locations = $service->accounts_locations->listAccountsLocations($accountName);
 
             if (empty($locations->getLocations())) {
-                return ['success' => false, 'error' => 'No locations found in your Google Business Profile'];
+                return ['success' => false, 'error' => 'No locations found'];
             }
 
             $locationName = $locations->getLocations()[0]->getName();
 
-            // Create Local Post
             $localPost = new Google_Service_MyBusiness_LocalPost();
             $localPost->setLanguageCode('en');
             $localPost->setSummary($message);
@@ -119,7 +124,7 @@ final class SD_Social_Publisher {
             return ['success' => true, 'post_id' => $post_id];
 
         } catch (Exception $e) {
-            error_log('Google Business Profile Publish Error: ' . $e->getMessage());
+            error_log('Google Publish Error: ' . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
