@@ -54,38 +54,32 @@ final class SD_Social_Publisher {
             return ['success' => false, 'error' => 'Google not connected'];
         }
 
-        $message = $post_data['message'] ?? '';
-        $link    = $post_data['link'] ?? '';
+        $message = trim($post_data['message'] ?? '');
+        $link    = esc_url_raw($post_data['link'] ?? '');
 
         if (empty($message)) {
             return ['success' => false, 'error' => 'Message is required'];
         }
 
-        // Load Google libraries safely
+        // Load Google libraries
         $autoload = SD_SOCIAL_PATH . 'vendor/autoload.php';
         if (!file_exists($autoload)) {
-            return ['success' => false, 'error' => 'Google Client Library not found. Run composer install.'];
+            return ['success' => false, 'error' => 'Google Client Library not found'];
         }
         require_once $autoload;
-
-        // Make sure services are available
-        if (!class_exists('Google_Service_MyBusiness')) {
-            return ['success' => false, 'error' => 'Google MyBusiness service not found. Run: composer require google/apiclient-services'];
-        }
 
         try {
             $client = new Google_Client();
             $client->setAccessToken($creds['access_token']);
 
-            // Refresh token if expired
+            // Refresh token if needed
             if ($client->isAccessTokenExpired() && !empty($creds['refresh_token'])) {
-                $newToken = $client->fetchAccessTokenWithRefreshToken($creds['refresh_token']);
-                // TODO: Update stored credentials with $newToken
+                $client->fetchAccessTokenWithRefreshToken($creds['refresh_token']);
             }
 
             $service = new Google_Service_MyBusiness($client);
 
-            // List accounts and locations
+            // Get accounts and first location
             $accounts = $service->accounts->listAccounts();
             if (empty($accounts->getAccounts())) {
                 return ['success' => false, 'error' => 'No Google Business accounts found'];
@@ -98,37 +92,34 @@ final class SD_Social_Publisher {
                 return ['success' => false, 'error' => 'No locations found in your Google Business Profile'];
             }
 
-            $location = $locations->getLocations()[0];
+            $locationName = $locations->getLocations()[0]->getName();
 
+            // Create Local Post
             $localPost = new Google_Service_MyBusiness_LocalPost();
             $localPost->setLanguageCode('en');
             $localPost->setSummary($message);
 
             if (!empty($link)) {
-                $callToAction = new Google_Service_MyBusiness_CallToAction();
-                $callToAction->setActionType('LEARN_MORE');
-                $callToAction->setUrl($link);
-                $localPost->setCallToAction($callToAction);
+                $cta = new Google_Service_MyBusiness_CallToAction();
+                $cta->setActionType('LEARN_MORE');
+                $cta->setUrl($link);
+                $localPost->setCallToAction($cta);
             }
 
-            $result = $service->accounts_locations_localPosts->create(
-                $location->getName(), 
-                $localPost
-            );
+            $result = $service->accounts_locations_localPosts->create($locationName, $localPost);
 
-            $post_id = $result->getName() ?? 'google-' . time();
+            $post_id = $result->getName() ?? 'google-post-' . time();
 
             self::log_to_ledger('SOCIAL_POST_PUBLISHED', [
                 'platform' => 'google',
-                'content'  => wp_trim_words($message, 80),
+                'content'  => wp_trim_words($message, 100),
                 'post_id'  => $post_id,
-                'location' => $location->getTitle() ?? 'Unknown'
             ]);
 
             return ['success' => true, 'post_id' => $post_id];
 
         } catch (Exception $e) {
-            error_log('Google Local Post Error: ' . $e->getMessage());
+            error_log('Google Business Profile Publish Error: ' . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
