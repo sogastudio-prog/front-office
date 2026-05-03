@@ -61,26 +61,33 @@ final class SD_Social_Publisher {
             return ['success' => false, 'error' => 'Message is required'];
         }
 
+        // Load Google library safely
+        $autoload = SD_SOCIAL_PATH . 'vendor/autoload.php';
+        if (!file_exists($autoload)) {
+            return ['success' => false, 'error' => 'Google Client Library not found. Run composer install.'];
+        }
+        require_once $autoload;
+
         try {
             $client = new Google_Client();
             $client->setAccessToken($creds['access_token']);
 
-            // Refresh token if needed
+            // Refresh token if expired
             if ($client->isAccessTokenExpired() && !empty($creds['refresh_token'])) {
-                $client->fetchAccessTokenWithRefreshToken($creds['refresh_token']);
-                // TODO: Update stored credentials with new token
+                $newToken = $client->fetchAccessTokenWithRefreshToken($creds['refresh_token']);
+                // TODO: Update stored credentials with $newToken
             }
 
             $service = new Google_Service_MyBusiness($client);
 
-            // Get the first location (you can expand this later to select location)
+            // List accounts and locations
             $accounts = $service->accounts->listAccounts();
             if (empty($accounts->getAccounts())) {
                 return ['success' => false, 'error' => 'No Google Business accounts found'];
             }
 
-            $account = $accounts->getAccounts()[0];
-            $locations = $service->accounts_locations->listAccountsLocations($account->getName());
+            $accountName = $accounts->getAccounts()[0]->getName();
+            $locations = $service->accounts_locations->listAccountsLocations($accountName);
 
             if (empty($locations->getLocations())) {
                 return ['success' => false, 'error' => 'No locations found in your Google Business Profile'];
@@ -119,7 +126,7 @@ final class SD_Social_Publisher {
             error_log('Google Local Post Error: ' . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
         }
-    }   
+    }
 
     /**
      * Publish to Meta Page (and optionally Instagram)
