@@ -79,6 +79,7 @@ class SD_Social_Internal {
     public static function render_admin_page(): void {
         include SD_SOCIAL_PATH . 'includes/admin/social-connections.php';
         include SD_SOCIAL_PATH . 'includes/admin/quick-publish.php';
+        include SD_SOCIAL_PATH . 'includes/admin/location-diagnostic.php';   // ← Add this
     }
 
     public static function register_event_types(array $types): array {
