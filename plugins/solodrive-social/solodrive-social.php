@@ -18,6 +18,14 @@ require_once SD_SOCIAL_PATH . 'includes/class-sd-social-credentials.php';
 require_once SD_SOCIAL_PATH . 'includes/class-sd-social-publisher.php';
 require_once SD_SOCIAL_PATH . 'includes/class-sd-social-google-oauth.php';
 
+// Robust Composer autoload (matching your front-office pattern)
+$autoload_path = SD_SOCIAL_PATH . 'vendor/autoload.php';
+if (file_exists($autoload_path)) {
+    require_once $autoload_path;
+} else {
+    error_log('SoloDrive Social: Autoload not found at ' . $autoload_path);
+}
+
 class SD_Social_Internal {
 
     public static function init(): void {

@@ -46,22 +46,72 @@ final class SD_Social_Publisher {
     }
     
     public static function publish_to_google(array $post_data): array {
+        $creds = SD_Social_Credentials::get('google');
+        if (!$creds || empty($creds['access_token'])) {
+            return ['success' => false, 'error' => 'Google not connected'];
+        }
+
         $message = trim($post_data['message'] ?? '');
+        $link    = esc_url_raw($post_data['link'] ?? '');
 
         if (empty($message)) {
             return ['success' => false, 'error' => 'Message is required'];
         }
 
-        // TODO: Real Google API call will go here
-        // For now, simulate success and log it
-        self::log_to_ledger('SOCIAL_POST_PUBLISHED', [
-            'platform' => 'google',
-            'content'  => wp_trim_words($message, 100),
-            'post_id'  => 'simulated-' . time(),
-            'note'     => 'Real API call pending due to autoloader issue'
-        ]);
+        $autoload_path = SD_SOCIAL_PATH . 'vendor/autoload.php';
+        if (file_exists($autoload_path)) {
+            require_once $autoload_path;
+        }
 
-        return ['success' => true, 'post_id' => 'simulated-' . time()];
+        try {
+            $client = new Google_Client();
+            $client->setAccessToken($creds['access_token']);
+
+            if ($client->isAccessTokenExpired() && !empty($creds['refresh_token'])) {
+                $client->fetchAccessTokenWithRefreshToken($creds['refresh_token']);
+            }
+
+            $service = new Google_Service_MyBusiness($client);
+
+            $accounts = $service->accounts->listAccounts();
+            if (empty($accounts->getAccounts())) {
+                return ['success' => false, 'error' => 'No Business accounts found'];
+            }
+
+            $accountName = $accounts->getAccounts()[0]->getName();
+            $locations = $service->accounts_locations->listAccountsLocations($accountName);
+
+            if (empty($locations->getLocations())) {
+                return ['success' => false, 'error' => 'No locations found'];
+            }
+
+            $locationName = $locations->getLocations()[0]->getName();
+
+            $localPost = new Google_Service_MyBusiness_LocalPost();
+            $localPost->setLanguageCode('en');
+            $localPost->setSummary($message);
+
+            if (!empty($link)) {
+                $cta = new Google_Service_MyBusiness_CallToAction();
+                $cta->setActionType('LEARN_MORE');
+                $cta->setUrl($link);
+                $localPost->setCallToAction($cta);
+            }
+
+            $result = $service->accounts_locations_localPosts->create($locationName, $localPost);
+
+            self::log_to_ledger('SOCIAL_POST_PUBLISHED', [
+                'platform' => 'google',
+                'content'  => wp_trim_words($message, 100),
+                'post_id'  => $result->getName(),
+            ]);
+
+            return ['success' => true];
+
+        } catch (Exception $e) {
+            error_log('Google Post Error: ' . $e->getMessage());
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
     }
 
     /**
