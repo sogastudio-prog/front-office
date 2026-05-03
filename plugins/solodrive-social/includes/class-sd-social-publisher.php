@@ -58,22 +58,63 @@ final class SD_Social_Publisher {
             return ['success' => false, 'error' => 'Message is required'];
         }
 
-        $access_token = $creds['access_token'];
+        // Load autoloader
+        $autoload = SD_SOCIAL_PATH . 'vendor/autoload.php';
+        if (file_exists($autoload)) {
+            require_once $autoload;
+        }
 
-        // Direct REST API call to Google Business Profile
-        $url = 'https://mybusiness.googleapis.com/v4/accounts/{accountId}/locations/{locationId}/localPosts';
+        try {
+            $client = new Google_Client();
+            $client->setAccessToken($creds['access_token']);
 
-        // TODO: You need to fill in your accountId and locationId
-        // For now we log and return success
-        self::log_to_ledger('SOCIAL_POST_PUBLISHED', [
-            'platform' => 'google',
-            'method'   => 'direct_rest',
-            'content'  => wp_trim_words($message, 100),
-            'link'     => $link,
-            'status'   => 'sent'
-        ]);
+            if ($client->isAccessTokenExpired() && !empty($creds['refresh_token'])) {
+                $client->fetchAccessTokenWithRefreshToken($creds['refresh_token']);
+            }
 
-        return ['success' => true];
+            // Use your Business Profile ID
+            $accountId = 'accounts/7676303778105762492';
+
+            // For now we use a direct REST call (most reliable in this setup)
+            $post_body = [
+                'languageCode' => 'en',
+                'summary'      => $message,
+            ];
+
+            if (!empty($link)) {
+                $post_body['callToAction'] = [
+                    'actionType' => 'LEARN_MORE',
+                    'url'        => $link
+                ];
+            }
+
+            $response = wp_remote_post(
+                "https://mybusiness.googleapis.com/v4/{$accountId}/locations/7676303778105762492/localPosts",
+                [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $creds['access_token'],
+                        'Content-Type'  => 'application/json',
+                    ],
+                    'body' => json_encode($post_body),
+                ]
+            );
+
+            if (is_wp_error($response)) {
+                return ['success' => false, 'error' => $response->get_error_message()];
+            }
+
+            self::log_to_ledger('SOCIAL_POST_PUBLISHED', [
+                'platform' => 'google',
+                'content'  => wp_trim_words($message, 100),
+                'link'     => $link,
+            ]);
+
+            return ['success' => true];
+
+        } catch (Exception $e) {
+            error_log('Google Publish Error: ' . $e->getMessage());
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
     }
 
     /**
