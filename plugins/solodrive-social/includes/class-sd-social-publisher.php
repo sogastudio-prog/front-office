@@ -71,7 +71,7 @@ final class SD_Social_Publisher {
                 $client->fetchAccessTokenWithRefreshToken($creds['refresh_token']);
             }
 
-            $service = new Google_Service_MyBusiness($client);
+            $service = Google_Service_MyBusiness($client);
 
             $accounts = $service->accounts->listAccounts();
             if (empty($accounts->getAccounts())) {
