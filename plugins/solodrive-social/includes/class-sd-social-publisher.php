@@ -61,12 +61,17 @@ final class SD_Social_Publisher {
             return ['success' => false, 'error' => 'Message is required'];
         }
 
-        // Load Google library safely
+        // Load Google libraries safely
         $autoload = SD_SOCIAL_PATH . 'vendor/autoload.php';
         if (!file_exists($autoload)) {
             return ['success' => false, 'error' => 'Google Client Library not found. Run composer install.'];
         }
         require_once $autoload;
+
+        // Make sure services are available
+        if (!class_exists('Google_Service_MyBusiness')) {
+            return ['success' => false, 'error' => 'Google MyBusiness service not found. Run: composer require google/apiclient-services'];
+        }
 
         try {
             $client = new Google_Client();
