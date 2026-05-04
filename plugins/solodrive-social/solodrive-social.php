@@ -17,6 +17,7 @@ define('SD_SOCIAL_URL', plugin_dir_url(__FILE__));
 require_once SD_SOCIAL_PATH . 'includes/class-sd-social-credentials.php';
 require_once SD_SOCIAL_PATH . 'includes/class-sd-social-publisher.php';
 require_once SD_SOCIAL_PATH . 'includes/class-sd-social-google-oauth.php';
+require_once SD_SOCIAL_PATH . 'includes/class-sd-social-meta-oauth.php';
 
 // Robust Composer autoload (matching your front-office pattern)
 $autoload_path = SD_SOCIAL_PATH . 'vendor/autoload.php';
@@ -36,6 +37,7 @@ class SD_Social_Internal {
         SD_Social_Credentials::init();
         SD_Social_Publisher::init();
         SD_Social_Google_OAuth::init();
+        SD_Social_Meta_OAuth::init();
 
         add_action('admin_menu', [__CLASS__, 'add_admin_menu'], 99);
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
