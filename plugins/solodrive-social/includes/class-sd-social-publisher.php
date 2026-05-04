@@ -9,6 +9,7 @@ final class SD_Social_Publisher {
 
     public static function init(): void {
         add_action('admin_post_sd_social_quick_publish', [__CLASS__, 'handle_quick_publish']);
+        add_action('admin_post_sd_social_connect_meta', [__CLASS__, 'handle_connect_meta']);
     }
 
 
@@ -73,7 +74,7 @@ final class SD_Social_Publisher {
             }
 
             // Use your Business Profile ID
-            $accountId = 'accounts/7676303778105762492';
+            $accountId = 'accounts/11276864927781004781';
 
             // For now we use a direct REST call (most reliable in this setup)
             $post_body = [
@@ -118,28 +119,6 @@ final class SD_Social_Publisher {
     }
 
     /**
-     * Publish to Meta Page (and optionally Instagram)
-     */
-    public static function publish_to_meta(array $post_data): array {
-        $creds = SD_Social_Credentials::get('meta');
-        if (!$creds) {
-            return ['success' => false, 'error' => 'Meta not connected'];
-        }
-
-        // TODO: Implement Meta Graph API /pages/{page-id}/feed or Instagram Graph API
-
-        $result = ['success' => true, 'platform' => 'meta', 'post_id' => 'temp-' . time()];
-
-        self::log_to_ledger('SOCIAL_POST_PUBLISHED', [
-            'platform' => 'meta',
-            'content'  => wp_trim_words($post_data['message'] ?? '', 50),
-            'post_id'  => $result['post_id']
-        ]);
-
-        return $result;
-    }
-
-    /**
      * Log social activity to canonical Time-Space Ledger
      */
     private static function log_to_ledger(string $event_type, array $payload): void {
@@ -153,5 +132,34 @@ final class SD_Social_Publisher {
                 'payload_json' => wp_json_encode($payload),
             ]);
         }
+    }
+
+        /**
+     * Handle Meta Connection Start
+     */
+    public static function handle_connect_meta(): void {
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions.');
+        }
+
+        check_admin_referer('sd_social_connect_meta');
+
+        // TODO: Meta OAuth flow will go here
+        // For now, just log and redirect with placeholder
+        self::log_to_ledger('SOCIAL_ACCOUNT_CONNECTED', [
+            'platform' => 'meta',
+            'status'   => 'connection_started'
+        ]);
+
+        wp_redirect(admin_url('admin.php?page=solodrive-social&meta_connected=1'));
+        exit;
+    }
+
+    /**
+     * Placeholder for future Meta publish
+     */
+    public static function publish_to_meta(array $post_data): array {
+        // TODO: Implement later
+        return ['success' => false, 'error' => 'Meta publishing not implemented yet'];
     }
 }
