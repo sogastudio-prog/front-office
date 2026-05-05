@@ -9,7 +9,6 @@ final class SD_Social_Publisher {
 
     public static function init(): void {
         add_action('admin_post_sd_social_quick_publish', [__CLASS__, 'handle_quick_publish']);
-        add_action('admin_post_sd_social_connect_meta', [__CLASS__, 'handle_connect_meta']);
     }
 
 
@@ -132,27 +131,6 @@ final class SD_Social_Publisher {
                 'payload_json' => wp_json_encode($payload),
             ]);
         }
-    }
-
-        /**
-     * Handle Meta Connection Start
-     */
-    public static function handle_connect_meta(): void {
-        if (!current_user_can('manage_options')) {
-            wp_die('Insufficient permissions.');
-        }
-
-        check_admin_referer('sd_social_connect_meta');
-
-        // TODO: Meta OAuth flow will go here
-        // For now, just log and redirect with placeholder
-        self::log_to_ledger('SOCIAL_ACCOUNT_CONNECTED', [
-            'platform' => 'meta',
-            'status'   => 'connection_started'
-        ]);
-
-        wp_redirect(admin_url('admin.php?page=solodrive-social&meta_connected=1'));
-        exit;
     }
 
     /**
