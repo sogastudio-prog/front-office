@@ -54,7 +54,74 @@ final class SD_Social_Meta_OAuth {
 
     public static function handle_callback(): void {
         error_log('=== SD_Meta_OAuth: Callback received ===');
-        // ... (rest of your callback code remains the same)
-        // (I kept it unchanged for brevity — just add error_log lines similarly if needed)
+
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions.');
+        }
+
+        $received_state = $_GET['state'] ?? '';
+        $stored_state   = get_transient('sd_social_meta_oauth_state');
+
+        if (empty($received_state) || $received_state !== $stored_state) {
+            delete_transient('sd_social_meta_oauth_state');
+            wp_die('Security check failed. Please try again.');
+        }
+
+        delete_transient('sd_social_meta_oauth_state');
+
+        $code = $_GET['code'] ?? '';
+        if (empty($code)) {
+            wp_die('Authorization code missing.');
+        }
+
+        error_log('Meta OAuth: Received code, exchanging for token...');
+
+        // === TOKEN EXCHANGE ===
+        $client_id     = defined('SD_META_APP_ID') ? SD_META_APP_ID : '';
+        $client_secret = defined('SD_META_APP_SECRET') ? SD_META_APP_SECRET : '';   // ← Add this to wp-config.php
+
+        $token_url = 'https://graph.facebook.com/v20.0/oauth/access_token?' . http_build_query([
+            'client_id'     => $client_id,
+            'client_secret' => $client_secret,
+            'redirect_uri'  => admin_url('admin-post.php?action=sd_social_meta_callback'),
+            'code'          => $code,
+        ]);
+
+        $response = wp_remote_get($token_url);
+
+        if (is_wp_error($response)) {
+            error_log('Meta Token Exchange Error: ' . $response->get_error_message());
+            wp_die('Failed to get access token.');
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (empty($data['access_token'])) {
+            error_log('Meta Token Error: ' . $body);
+            wp_die('Failed to exchange code for token.');
+        }
+
+        // Store credentials
+        $credentials = [
+            'access_token'  => $data['access_token'],
+            'token_type'    => $data['token_type'] ?? 'bearer',
+            'expires_in'    => $data['expires_in'] ?? 0,
+            'connected_at'  => time(),
+        ];
+
+        $saved = SD_Social_Credentials::save('meta', $credentials);
+
+        if ($saved) {
+            SD_Social_Publisher::log_to_ledger('SOCIAL_ACCOUNT_CONNECTED', [
+                'platform' => 'meta',
+                'status'   => 'connected'
+            ]);
+
+            wp_redirect(admin_url('admin.php?page=solodrive-social&meta_connected=1'));
+        } else {
+            wp_redirect(admin_url('admin.php?page=solodrive-social&meta_error=1'));
+        }
+        exit;
     }
 }
