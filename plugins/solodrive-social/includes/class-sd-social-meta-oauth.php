@@ -36,8 +36,8 @@ final class SD_Social_Meta_OAuth {
         $state = wp_create_nonce('meta_oauth_state');
         set_transient('sd_social_meta_oauth_state', $state, 600);
 
-        // Development-friendly scopes
-        $scopes = 'pages_show_list,pages_read_engagement,pages_manage_posts,email';
+        // Minimal working scopes for development
+        $scopes = 'pages_show_list,pages_read_engagement,pages_manage_metadata';
 
         $auth_url = 'https://www.facebook.com/v20.0/dialog/oauth?' . http_build_query([
             'client_id'     => $client_id,
