@@ -29,14 +29,15 @@ final class SD_Social_Meta_OAuth {
         error_log('Meta OAuth: Using App ID: ' . substr($client_id, 0, 8) . '...');
 
         if (empty($client_id)) {
-            wp_die('Meta App ID not configured. Check wp-config.php');
+            wp_die('Meta App ID not configured.');
         }
 
         $redirect_uri = admin_url('admin-post.php?action=sd_social_meta_callback');
         $state = wp_create_nonce('meta_oauth_state');
         set_transient('sd_social_meta_oauth_state', $state, 600);
 
-        $scopes = 'pages_manage_posts,pages_read_engagement,pages_show_list,instagram_basic,instagram_manage_insights';
+        // Development-friendly scopes
+        $scopes = 'pages_show_list,pages_read_engagement,pages_manage_posts,email';
 
         $auth_url = 'https://www.facebook.com/v20.0/dialog/oauth?' . http_build_query([
             'client_id'     => $client_id,
