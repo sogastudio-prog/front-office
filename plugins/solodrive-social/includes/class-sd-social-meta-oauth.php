@@ -9,7 +9,7 @@ final class SD_Social_Meta_OAuth {
 
     public static function init(): void {
         add_action('admin_post_sd_social_connect_meta', [__CLASS__, 'start_oauth_flow']);
-        // Callback will be added next
+        add_action('admin_post_sd_social_meta_callback', [__CLASS__, 'handle_callback']);
     }
 
     public static function start_oauth_flow(): void {
@@ -19,14 +19,68 @@ final class SD_Social_Meta_OAuth {
 
         check_admin_referer('sd_social_connect_meta');
 
-        // TODO: Meta OAuth URL construction (Facebook Login for Business)
-        // For now, placeholder redirect with success
-        SD_Social_Publisher::log_to_ledger('SOCIAL_ACCOUNT_CONNECTED', [
-            'platform' => 'meta',
-            'status'   => 'oauth_started'
+        $client_id = defined('SD_META_APP_ID') ? SD_META_APP_ID : '';
+        if (empty($client_id)) {
+            wp_die('Meta App ID not configured. Add SD_META_APP_ID to wp-config.php');
+        }
+
+        $redirect_uri = admin_url('admin-post.php?action=sd_social_meta_callback');
+        $state = wp_create_nonce('meta_oauth_state');
+        set_transient('sd_social_meta_oauth_state', $state, 600);
+
+        $scopes = 'pages_manage_posts,pages_read_engagement,pages_show_list,instagram_basic,instagram_manage_insights';
+
+        $auth_url = 'https://www.facebook.com/v20.0/dialog/oauth?' . http_build_query([
+            'client_id'     => $client_id,
+            'redirect_uri'  => $redirect_uri,
+            'scope'         => $scopes,
+            'state'         => $state,
+            'response_type' => 'code',
         ]);
 
-        wp_redirect(admin_url('admin.php?page=solodrive-social&meta_connected=1'));
+        wp_redirect($auth_url);
+        exit;
+    }
+
+    public static function handle_callback(): void {
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions.');
+        }
+
+        $received_state = $_GET['state'] ?? '';
+        $stored_state   = get_transient('sd_social_meta_oauth_state');
+
+        if (empty($received_state) || $received_state !== $stored_state) {
+            delete_transient('sd_social_meta_oauth_state');
+            wp_die('Security check failed. Please try again.');
+        }
+
+        delete_transient('sd_social_meta_oauth_state');
+
+        $code = $_GET['code'] ?? '';
+        if (empty($code)) {
+            wp_die('Authorization code missing.');
+        }
+
+        // TODO: Exchange code for access token (long-lived token recommended for Pages)
+        // For now we store the code and log success
+        $data = [
+            'auth_code' => $code,
+            'connected' => time(),
+        ];
+
+        $saved = SD_Social_Credentials::save('meta', $data);
+
+        if ($saved) {
+            SD_Social_Publisher::log_to_ledger('SOCIAL_ACCOUNT_CONNECTED', [
+                'platform' => 'meta',
+                'status'   => 'connected'
+            ]);
+
+            wp_redirect(admin_url('admin.php?page=solodrive-social&meta_connected=1'));
+        } else {
+            wp_redirect(admin_url('admin.php?page=solodrive-social&meta_error=1'));
+        }
         exit;
     }
 }
