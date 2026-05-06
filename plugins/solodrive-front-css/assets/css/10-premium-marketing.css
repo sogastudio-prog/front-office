@@ -140,6 +140,37 @@ body:has(.sd-start-premium) header.entry-header {
 }
 
 /* Hero */
+.sd-start-hero--premium {
+  position: relative !important;
+  min-height: 92vh !important;
+  display: flex !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  color: #ffffff !important;
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.9) 0%,
+      rgba(0, 0, 0, 0.78) 34%,
+      rgba(0, 0, 0, 0.42) 62%,
+      rgba(0, 0, 0, 0.18) 100%
+    ),
+    url("https://solodrive.pro/wp-content/uploads/2026/05/solodrive-hero.png") !important;
+  background-size: cover !important;
+  background-position: center right !important;
+  background-repeat: no-repeat !important;
+}
+.sd-start-hero__inner {
+  width: 100% !important;
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+  padding: 96px 28px !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+
+
 .sd-premium-hero {
   position: relative !important;
   min-height: 92vh !important;
