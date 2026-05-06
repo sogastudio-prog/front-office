@@ -1145,7 +1145,8 @@ body:has(.sd-start-premium) header.entry-header {
   text-shadow: 0 18px 48px rgba(0, 0, 0, 0.48) !important;
 }
 
-.sd-home-hero__lede {
+.sd-home-hero__lede,
+.sd-home-hero__lead {
   max-width: 640px !important;
   margin: 0 0 22px !important;
   font-size: clamp(1.18rem, 2vw, 1.55rem) !important;
