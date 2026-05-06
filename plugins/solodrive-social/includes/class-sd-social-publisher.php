@@ -120,7 +120,7 @@ final class SD_Social_Publisher {
     /**
      * Log social activity to canonical Time-Space Ledger
      */
-    private static function log_to_ledger(string $event_type, array $payload): void {
+    public static function log_to_ledger(string $event_type, array $payload): void {
         if (class_exists('SD_TimeSpaceLedger', false) && method_exists('SD_TimeSpaceLedger', 'record')) {
             SD_TimeSpaceLedger::record([
                 'event_type'   => $event_type,

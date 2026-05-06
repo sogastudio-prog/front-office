@@ -59,9 +59,9 @@ final class SD_Social_Meta_OAuth {
             wp_die('Insufficient permissions.');
         }
 
-        // State validation
         $received_state = $_GET['state'] ?? '';
         $stored_state   = get_transient('sd_social_meta_oauth_state');
+
         if (empty($received_state) || $received_state !== $stored_state) {
             delete_transient('sd_social_meta_oauth_state');
             wp_die('Security check failed.');
@@ -77,10 +77,10 @@ final class SD_Social_Meta_OAuth {
         $client_secret = defined('SD_META_APP_SECRET') ? SD_META_APP_SECRET : '';
 
         if (empty($client_secret)) {
-            wp_die('Meta App Secret missing in wp-config.php');
+            wp_die('Meta App Secret not set in wp-config.php');
         }
 
-        // Exchange code for User Access Token
+        // Token Exchange + Long-lived + Pages
         $token_response = wp_remote_post('https://graph.facebook.com/v20.0/oauth/access_token', [
             'body' => [
                 'client_id'     => $client_id,
@@ -95,23 +95,18 @@ final class SD_Social_Meta_OAuth {
 
         if (empty($token_data['access_token'])) {
             error_log('Meta Token Error: ' . $token_body);
-            wp_die('Failed to get access token.');
+            wp_die('Failed to exchange code for token.');
         }
 
-        $user_token = $token_data['access_token'];
+        $long_token = $token_data['access_token'];
 
-        // Get Long-Lived Token
-        $long_url = "https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id={$client_id}&client_secret={$client_secret}&fb_exchange_token={$user_token}";
-        $long_response = wp_remote_get($long_url);
-        $long_data = json_decode(wp_remote_retrieve_body($long_response), true);
-
-        $long_token = $long_data['access_token'] ?? $user_token;
-
-        // Fetch Managed Pages
+        // Fetch Pages
         $pages_response = wp_remote_get("https://graph.facebook.com/v20.0/me/accounts?access_token=" . urlencode($long_token));
         $pages_data = json_decode(wp_remote_retrieve_body($pages_response), true);
 
         $pages = [];
+        $default_page = null;
+
         if (!empty($pages_data['data'])) {
             foreach ($pages_data['data'] as $page) {
                 $pages[] = [
@@ -120,10 +115,8 @@ final class SD_Social_Meta_OAuth {
                     'access_token' => $page['access_token'],
                 ];
             }
+            $default_page = $pages[0] ?? null;
         }
-
-        // Save credentials (first page as default for now)
-        $default_page = $pages[0] ?? null;
 
         $credentials = [
             'access_token' => $long_token,
@@ -134,12 +127,15 @@ final class SD_Social_Meta_OAuth {
 
         $saved = SD_Social_Credentials::save('meta', $credentials);
 
-        if ($saved && $default_page) {
-            SD_Social_Publisher::log_to_ledger('SOCIAL_ACCOUNT_CONNECTED', [
-                'platform' => 'meta',
-                'page_name'=> $default_page['name'],
-                'status'   => 'connected'
-            ]);
+        if ($saved) {
+            // Safe ledger call
+            if (method_exists('SD_Social_Publisher', 'log_to_ledger')) {
+                SD_Social_Publisher::log_to_ledger('SOCIAL_ACCOUNT_CONNECTED', [
+                    'platform' => 'meta',
+                    'page_name'=> $default_page ? $default_page['name'] : 'Unknown',
+                    'status'   => 'connected'
+                ]);
+            }
 
             wp_redirect(admin_url('admin.php?page=solodrive-social&meta_connected=1'));
         } else {
