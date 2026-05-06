@@ -1684,11 +1684,6 @@ body:has(.sd-start-premium) header.entry-header {
     letter-spacing: -0.055em !important;
   }
 
-  .sd-home-hero__lede {
-    font-size: 1.05rem !important;
-    line-height: 1.42 !important;
-  }
-
   .sd-home-hero__actions {
     display: grid !important;
     gap: 14px !important;
