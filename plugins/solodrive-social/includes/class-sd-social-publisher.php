@@ -137,7 +137,36 @@ final class SD_Social_Publisher {
      * Placeholder for future Meta publish
      */
     public static function publish_to_meta(array $post_data): array {
-        // TODO: Implement later
-        return ['success' => false, 'error' => 'Meta publishing not implemented yet'];
+        $creds = SD_Social_Credentials::get('meta');
+        if (!$creds || empty($creds['default_page']['access_token'])) {
+            return ['success' => false, 'error' => 'Meta not connected or no Page selected'];
+        }
+
+        $page_id = $creds['default_page']['id'];
+        $page_token = $creds['default_page']['access_token'];
+        $message = trim($post_data['message'] ?? '');
+
+        if (empty($message)) {
+            return ['success' => false, 'error' => 'Message is required'];
+        }
+
+        $response = wp_remote_post("https://graph.facebook.com/v20.0/{$page_id}/feed", [
+            'body' => [
+                'message'      => $message,
+                'access_token' => $page_token
+            ]
+        ]);
+
+        if (is_wp_error($response)) {
+            return ['success' => false, 'error' => $response->get_error_message()];
+        }
+
+        self::log_to_ledger('SOCIAL_POST_PUBLISHED', [
+            'platform' => 'meta',
+            'page'     => $creds['default_page']['name'],
+            'content'  => wp_trim_words($message, 80),
+        ]);
+
+        return ['success' => true];
     }
 }
