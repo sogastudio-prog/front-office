@@ -1,0 +1,285 @@
+/*
+SoloDrive Front CSS — Premium Marketing System
+Purpose: move the new home/start inline styles into the repo-owned CSS layer.
+
+Scope:
+- Home page: .sd-home-premium
+- Start page: .sd-start-premium
+- Shared marketing primitives: .sd-premium-*
+
+This file intentionally loads last so it can override older clean-slate page rules
+without relying on Gutenberg inline styles.
+*/
+
+:root {
+  --sd-premium-navy: #121b36;
+  --sd-premium-navy-2: #162447;
+  --sd-premium-ink: #121b36;
+  --sd-premium-muted: #5e687d;
+  --sd-premium-faint: #8a94aa;
+  --sd-premium-cream: #f3f1eb;
+  --sd-premium-cream-2: #f5f3ec;
+  --sd-premium-dark: #101827;
+  --sd-premium-line: rgba(18, 27, 54, 0.09);
+  --sd-premium-shadow: 0 22px 56px rgba(18, 27, 54, 0.08);
+  --sd-premium-shadow-strong: 0 28px 70px rgba(18, 27, 54, 0.18);
+  --sd-premium-hero-image: url("https://solodrive.pro/wp-content/uploads/2026/05/solodrive-hero.png");
+}
+
+body:has(.sd-home-premium),
+body:has(.sd-start-premium) {
+  background: var(--sd-premium-cream);
+}
+
+body:has(.sd-home-premium) .site-content,
+body:has(.sd-start-premium) .site-content,
+body:has(.sd-home-premium) .ast-container,
+body:has(.sd-start-premium) .ast-container,
+body:has(.sd-home-premium) .entry-content,
+body:has(.sd-start-premium) .entry-content {
+  max-width: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+body:has(.sd-home-premium) .entry-title,
+body:has(.sd-start-premium) .entry-title,
+body:has(.sd-home-premium) header.entry-header,
+body:has(.sd-start-premium) header.entry-header {
+  display: none !important;
+}
+
+.sd-home-premium,
+.sd-start-premium {
+  background: var(--sd-premium-cream);
+  color: var(--sd-premium-ink);
+  overflow: hidden;
+}
+
+.sd-premium-container {
+  width: min(100%, 1180px);
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+.sd-premium-eyebrow {
+  margin: 0 0 14px !important;
+  font-size: 0.82rem !important;
+  line-height: 1.2 !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: var(--sd-premium-faint) !important;
+}
+
+.sd-premium-title,
+.sd-premium-section-title {
+  margin: 0 !important;
+  color: var(--sd-premium-ink) !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.055em !important;
+}
+
+.sd-premium-title {
+  font-size: clamp(3rem, 6.4vw, 5.75rem) !important;
+  line-height: 0.96 !important;
+}
+
+.sd-premium-section-title {
+  max-width: 900px;
+  font-size: clamp(2.2rem, 4.8vw, 4.4rem) !important;
+  line-height: 0.98 !important;
+}
+
+.sd-premium-lede,
+.sd-premium-intro {
+  max-width: 760px;
+  margin: 18px 0 0 !important;
+  font-size: clamp(1.08rem, 1.8vw, 1.28rem) !important;
+  line-height: 1.58 !important;
+  color: var(--sd-premium-muted) !important;
+}
+
+.sd-premium-btn,
+.sd-premium-link-btn,
+.sd-home-premium .wp-block-button__link,
+.sd-start-premium .wp-block-button__link {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  min-height: 54px !important;
+  padding: 16px 24px !important;
+  border-radius: 999px !important;
+  font-size: 1rem !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  border: 0 !important;
+}
+
+.sd-premium-btn--light {
+  background: #ffffff !important;
+  color: #111111 !important;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.32) !important;
+}
+
+.sd-premium-btn--dark,
+.sd-start-premium input[type="submit"],
+.sd-start-premium button[type="submit"] {
+  background: var(--sd-premium-navy) !important;
+  color: #ffffff !important;
+}
+
+.sd-premium-text-link {
+  color: inherit !important;
+  font-weight: 800 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px !important;
+}
+
+/* Hero */
+.sd-premium-hero {
+  position: relative !important;
+  min-height: 92vh !important;
+  display: flex !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  color: #ffffff !important;
+  background-image:
+    linear-gradient(90deg, rgba(0,0,0,.9) 0%, rgba(0,0,0,.78) 34%, rgba(0,0,0,.42) 62%, rgba(0,0,0,.18) 100%),
+    var(--sd-premium-hero-image) !important;
+  background-size: cover !important;
+  background-position: center right !important;
+  background-repeat: no-repeat !important;
+}
+
+.sd-premium-hero__inner {
+  width: 100% !important;
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+  padding: 96px 28px !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.sd-premium-hero__content { max-width: 690px; }
+.sd-premium-hero .sd-premium-eyebrow { color: rgba(255,255,255,.74) !important; }
+.sd-premium-hero .sd-premium-title { color: #ffffff !important; text-shadow: 0 18px 48px rgba(0,0,0,.48) !important; }
+.sd-premium-hero__lede {
+  max-width: 650px;
+  margin: 24px 0 0 !important;
+  font-size: clamp(1.18rem, 2vw, 1.55rem) !important;
+  line-height: 1.36 !important;
+  font-weight: 550 !important;
+  color: rgba(255,255,255,.9) !important;
+}
+.sd-premium-hero__promise {
+  margin: 22px 0 0 !important;
+  font-size: clamp(1.05rem, 1.6vw, 1.22rem) !important;
+  line-height: 1.4 !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+}
+.sd-premium-hero__actions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 34px; }
+.sd-premium-hero__secondary { color: rgba(255,255,255,.86) !important; border-bottom: 1px solid rgba(255,255,255,.44); padding-bottom: 3px; text-decoration: none !important; }
+.sd-premium-trust { display: flex; flex-wrap: wrap; gap: 12px; max-width: 700px; margin-top: 38px; }
+.sd-premium-trust span { display: inline-flex; align-items: center; min-height: 34px; padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,.105); border: 1px solid rgba(255,255,255,.16); color: rgba(255,255,255,.86); font-size: .9rem; font-weight: 700; }
+
+/* Light proof sections */
+.sd-premium-section {
+  padding: 80px 0;
+  background: var(--sd-premium-cream);
+}
+.sd-premium-section--soft { background: var(--sd-premium-cream-2); }
+.sd-premium-proof-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 36px; }
+.sd-premium-card { background: #ffffff; border: 1px solid var(--sd-premium-line); border-radius: 24px; box-shadow: var(--sd-premium-shadow); padding: 24px; }
+.sd-premium-card h3 { margin: 0 0 10px !important; font-size: 1.18rem !important; line-height: 1.15 !important; color: var(--sd-premium-ink) !important; font-weight: 850 !important; }
+.sd-premium-card p { margin: 0 !important; line-height: 1.55 !important; color: var(--sd-premium-muted) !important; }
+
+/* Product proof cards */
+.sd-product-proof-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 40px; }
+.sd-product-card { display: flex; flex-direction: column; background: #ffffff; border: 1px solid var(--sd-premium-line); border-radius: 28px; overflow: hidden; box-shadow: 0 18px 42px rgba(18,27,54,.06); }
+.sd-product-card__media { background: #e9edf5; padding: 16px; min-height: 420px; }
+.sd-product-card__media img { display: block; width: 100%; height: 520px; object-fit: cover; object-position: top center; border-radius: 22px; border: 1px solid rgba(18,27,54,.08); background: #eef1f6; }
+.sd-product-card__placeholder { min-height: 500px; display: flex; align-items: flex-start; padding: 14px; border-radius: 22px; border: 1px solid rgba(18,27,54,.08); background: #eef1f6; color: #121b36; font-size: .92rem; line-height: 1.35; }
+.sd-product-card__body { padding: 22px 22px 24px; }
+.sd-product-card__body h3 { margin: 0 0 10px !important; font-size: 1.35rem !important; line-height: 1.15 !important; font-weight: 850 !important; color: var(--sd-premium-ink) !important; }
+.sd-product-card__body p { margin: 0 !important; font-size: 1rem !important; line-height: 1.55 !important; color: var(--sd-premium-muted) !important; }
+
+/* Dark outcome */
+.sd-driver-outcome { background: var(--sd-premium-dark) !important; color: #ffffff !important; padding: 88px 0 !important; }
+.sd-driver-outcome .sd-premium-eyebrow { color: rgba(255,255,255,.58) !important; }
+.sd-driver-outcome .sd-premium-section-title { color: #ffffff !important; }
+.sd-driver-outcome .sd-premium-intro { color: rgba(255,255,255,.72) !important; }
+.sd-driver-outcome__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-top: 42px; }
+.sd-driver-benefit { min-height: 310px; padding: 24px; border-radius: 26px; background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 24px 54px rgba(0,0,0,.18); }
+.sd-driver-benefit__num { margin-bottom: 54px; font-size: .78rem; font-weight: 850; letter-spacing: .12em; color: rgba(255,255,255,.42); }
+.sd-driver-benefit h3 { margin: 0 0 12px !important; font-size: 1.35rem !important; line-height: 1.12 !important; font-weight: 850 !important; color: #ffffff !important; }
+.sd-driver-benefit p { margin: 0 !important; font-size: .98rem !important; line-height: 1.55 !important; color: rgba(255,255,255,.68) !important; }
+
+/* Final CTA */
+.sd-premium-final-cta { background: var(--sd-premium-cream); padding: 72px 0 96px; }
+.sd-premium-final-cta__panel { background: linear-gradient(135deg, var(--sd-premium-navy) 0%, var(--sd-premium-navy-2) 100%); color: #ffffff; border-radius: 32px; padding: 56px 48px; box-shadow: var(--sd-premium-shadow-strong); }
+.sd-premium-final-cta .sd-premium-eyebrow { color: rgba(255,255,255,.58) !important; }
+.sd-premium-final-cta h2 { max-width: 760px; margin: 0 0 10px !important; font-size: clamp(2.3rem, 5vw, 4.8rem) !important; line-height: .98 !important; letter-spacing: -.055em !important; font-weight: 850 !important; color: #ffffff !important; }
+.sd-premium-final-cta h3 { margin: 0 0 18px !important; font-size: clamp(1.2rem, 2vw, 1.6rem) !important; color: #dce4f6 !important; }
+.sd-premium-final-cta p { max-width: 700px; color: rgba(255,255,255,.74) !important; }
+.sd-premium-final-cta__actions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 28px; }
+
+/* Start page */
+.sd-start-main { background: var(--sd-premium-cream); padding: 34px 0 96px; }
+.sd-start-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(320px, .75fr); gap: 28px; align-items: start; }
+.sd-start-layout__main { display: grid; gap: 28px; }
+.sd-start-card { background: #ffffff; border: 1px solid var(--sd-premium-line); border-radius: 30px; box-shadow: var(--sd-premium-shadow); padding: clamp(28px, 4vw, 42px); }
+.sd-start-card h2 { margin-top: 0 !important; font-size: clamp(2.2rem, 4vw, 3.7rem) !important; line-height: 1 !important; letter-spacing: -.05em !important; color: var(--sd-premium-ink) !important; }
+.sd-start-side-card { position: sticky; top: 36px; padding: 34px; border-radius: 30px; background: linear-gradient(135deg, var(--sd-premium-dark), var(--sd-premium-navy-2)); color: #fff; box-shadow: var(--sd-premium-shadow-strong); }
+.sd-start-side-card h2 { margin: 0 0 28px !important; font-size: clamp(2rem, 3vw, 3rem) !important; line-height: 1 !important; letter-spacing: -.045em !important; color: #fff !important; }
+.sd-start-side-card ol { display: grid; gap: 16px; margin: 0; padding: 0; list-style: none; counter-reset: startSteps; }
+.sd-start-side-card li { counter-increment: startSteps; position: relative; padding: 18px 18px 18px 58px; border-radius: 20px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.68); }
+.sd-start-side-card li:before { content: counter(startSteps, decimal-leading-zero); position: absolute; left: 18px; top: 19px; font-size: .75rem; font-weight: 850; color: rgba(255,255,255,.45); }
+.sd-start-side-card strong { display: block; margin-bottom: 6px; color: #fff; }
+.sd-start-side-card span { display: block; color: rgba(255,255,255,.68); line-height: 1.45; }
+.sd-start-premium .wpcf7 form p { margin-bottom: 22px; }
+.sd-start-premium .wpcf7 label { display: block; color: var(--sd-premium-ink); font-weight: 750; margin-bottom: 8px; }
+.sd-start-premium input:not([type="submit"]):not([type="checkbox"]),
+.sd-start-premium textarea,
+.sd-start-premium select { width: 100%; min-height: 48px; border: 1px solid rgba(18,27,54,.12); border-radius: 10px; padding: 10px 12px; background: #ffffff; }
+.sd-start-premium .sdfo-package-grid,
+.sd-start-premium .sd-package-grid { gap: 18px; }
+
+@media (max-width: 1024px) {
+  .sd-product-proof-grid,
+  .sd-premium-proof-grid { grid-template-columns: 1fr; }
+  .sd-driver-outcome__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sd-driver-benefit { min-height: 260px; }
+  .sd-product-card__media { min-height: auto; }
+  .sd-product-card__media img { height: auto; max-height: none; object-fit: contain; }
+}
+
+@media (max-width: 900px) {
+  .sd-start-layout { grid-template-columns: 1fr; }
+  .sd-start-side-card { position: static; }
+}
+
+@media (max-width: 767px) {
+  .sd-premium-container { padding-inline: 14px; }
+  .sd-premium-hero { min-height: auto !important; align-items: flex-end !important; background-image: linear-gradient(180deg, rgba(0,0,0,.28) 0%, rgba(0,0,0,.58) 38%, rgba(0,0,0,.92) 100%), var(--sd-premium-hero-image) !important; background-position: 68% center !important; }
+  .sd-premium-hero__inner { padding: 58vh 20px 42px !important; }
+  .sd-premium-title { font-size: clamp(2.45rem, 13vw, 3.65rem) !important; line-height: .98 !important; letter-spacing: -.055em !important; }
+  .sd-premium-hero__lede { font-size: 1.05rem !important; line-height: 1.42 !important; }
+  .sd-premium-hero__actions { display: grid; gap: 14px; }
+  .sd-premium-btn, .sd-premium-link-btn, .sd-home-premium .wp-block-button__link, .sd-start-premium .wp-block-button__link { width: 100%; min-height: 58px !important; }
+  .sd-premium-section { padding: 56px 0; }
+  .sd-premium-section-title { font-size: clamp(2rem, 10vw, 3rem) !important; line-height: .98 !important; }
+  .sd-driver-outcome { padding: 64px 0 !important; }
+  .sd-driver-outcome__grid { grid-template-columns: 1fr; gap: 14px; }
+  .sd-driver-benefit { min-height: auto; padding: 22px; border-radius: 22px; }
+  .sd-driver-benefit__num { margin-bottom: 34px; }
+  .sd-premium-final-cta { padding: 56px 0 74px; }
+  .sd-premium-final-cta__panel { padding: 34px 22px; border-radius: 24px; }
+  .sd-premium-final-cta__actions { flex-direction: column; align-items: stretch; }
+  .sd-start-main { padding: 18px 0 72px; }
+  .sd-start-card, .sd-start-side-card { padding: 24px; border-radius: 24px; }
+}

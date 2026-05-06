@@ -28,6 +28,7 @@ function sd_front_css_enqueue_assets() {
 		'07-footer.css',
 		'08-responsive.css',
 		'09-authority.css',
+		'10-premium-marketing.css',
 
 		//'99-legacy-import.css',
 	);
