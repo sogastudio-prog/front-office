@@ -314,3 +314,779 @@ body:has(.sd-start-premium) header.entry-header {
   .sd-start-main { padding: 18px 0 72px; }
   .sd-start-card, .sd-start-side-card { padding: 24px; border-radius: 24px; }
 }
+.sd-start-hero--premium {
+  position: relative !important;
+  min-height: 92vh !important;
+  display: flex !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  color: #ffffff !important;
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.9) 0%,
+      rgba(0, 0, 0, 0.78) 34%,
+      rgba(0, 0, 0, 0.42) 62%,
+      rgba(0, 0, 0, 0.18) 100%
+    ),
+    url("https://solodrive.pro/wp-content/uploads/2026/05/solodrive-hero.png") !important;
+  background-size: cover !important;
+  background-position: center right !important;
+  background-repeat: no-repeat !important;
+}
+.sd-start-hero__inner {
+  width: 100% !important;
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+  padding: 96px 28px !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.sd-start-hero__content {
+  max-width: 680px !important;
+}
+
+.sd-start-hero__eyebrow,
+.sd-start-side-card .sd-eyebrow {
+  margin: 0 0 16px !important;
+  font-size: .82rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .14em !important;
+  text-transform: uppercase !important;
+  color: rgba(255,255,255,.62) !important;
+}
+
+.sd-start-hero h1 {
+  max-width: 720px !important;
+  margin: 0 0 22px !important;
+  font-size: clamp(3rem, 6vw, 5.4rem) !important;
+  line-height: .96 !important;
+  letter-spacing: -.06em !important;
+  color: #fff !important;
+}
+
+.sd-start-hero__lead {
+  max-width: 620px !important;
+  margin: 0 0 18px !important;
+  font-size: clamp(1.15rem, 2vw, 1.45rem) !important;
+  line-height: 1.42 !important;
+  color: rgba(255,255,255,.9) !important;
+}
+
+.sd-start-hero__note {
+  margin: 0 !important;
+  font-weight: 750 !important;
+  color: #fff !important;
+}
+
+.sd-start-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, .75fr) !important;
+  gap: 28px !important;
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+  padding: 34px 20px 96px !important;
+  background: #f3f1eb !important;
+}
+
+.sd-start-layout__main {
+  display: grid !important;
+  gap: 28px !important;
+}
+
+.sd-start-layout .sd-card,
+.sd-start-side-card {
+  border-radius: 30px !important;
+  border: 1px solid rgba(18,27,54,.08) !important;
+  box-shadow: 0 20px 50px rgba(18,27,54,.07) !important;
+}
+
+.sd-start-plan-card,
+.sd-start-form-card {
+  padding: 42px !important;
+  background: #fff !important;
+}
+
+.sd-start-form-card h2 {
+  font-size: clamp(2.2rem, 4vw, 3.7rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -.05em !important;
+  color: #121b36 !important;
+}
+
+.sd-start-side-card {
+  position: sticky !important;
+  top: 36px !important;
+  padding: 34px !important;
+}
+
+.sd-start-side-card--dark {
+  background: linear-gradient(135deg, #101827, #162447) !important;
+  color: #fff !important;
+}
+
+.sd-start-side-card h2 {
+  margin: 0 0 28px !important;
+  font-size: clamp(2rem, 3vw, 3rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -.045em !important;
+  color: #fff !important;
+}
+
+.sd-start-side-card ol {
+  display: grid !important;
+  gap: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  counter-reset: startSteps !important;
+}
+
+.sd-start-side-card li {
+  counter-increment: startSteps !important;
+  position: relative !important;
+  padding: 18px 18px 18px 58px !important;
+  border-radius: 20px !important;
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+}
+
+.sd-start-side-card li:before {
+  content: counter(startSteps, decimal-leading-zero) !important;
+  position: absolute !important;
+  left: 18px !important;
+  top: 19px !important;
+  font-size: .75rem !important;
+  font-weight: 850 !important;
+  color: rgba(255,255,255,.45) !important;
+}
+
+.sd-start-side-card strong,
+.sd-start-side-card span {
+  display: block !important;
+}
+
+.sd-start-side-card strong {
+  margin-bottom: 6px !important;
+  color: #fff !important;
+}
+
+.sd-start-side-card span {
+  color: rgba(255,255,255,.68) !important;
+  line-height: 1.45 !important;
+}
+
+@media (max-width: 900px) {
+  .sd-start-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sd-start-side-card {
+    position: static !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .sd-start-hero {
+    padding: 24px 14px !important;
+  }
+
+  .sd-start-hero__inner {
+    padding: 52vh 22px 34px !important;
+    border-radius: 26px !important;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.2), rgba(0,0,0,.9)),
+      url("https://solodrive.pro/wp-content/uploads/2026/05/solodrive-hero.png") 68% center / cover no-repeat !important;
+  }
+
+  .sd-start-layout {
+    padding: 18px 14px 72px !important;
+  }
+
+  .sd-start-plan-card,
+  .sd-start-form-card,
+  .sd-start-side-card {
+    padding: 24px !important;
+    border-radius: 24px !important;
+  }
+}
+
+.sd-start-hero__eyebrow {
+  margin: 0 0 18px !important;
+  font-size: 0.82rem !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: rgba(255, 255, 255, 0.74) !important;
+}
+
+.sd-start-hero__title {
+  margin: 0 0 24px !important;
+  font-size: clamp(3rem, 6.4vw, 5.75rem) !important;
+  line-height: 0.96 !important;
+  letter-spacing: -0.065em !important;
+  font-weight: 850 !important;
+  color: #ffffff !important;
+  text-shadow: 0 18px 48px rgba(0, 0, 0, 0.48) !important;
+}
+
+.sd-start-hero__lede {
+  max-width: 640px !important;
+  margin: 0 0 22px !important;
+  font-size: clamp(1.18rem, 2vw, 1.55rem) !important;
+  line-height: 1.36 !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.sd-start-hero__promise {
+  margin: 0 0 34px !important;
+  font-size: clamp(1.05rem, 1.6vw, 1.22rem) !important;
+  line-height: 1.4 !important;
+  font-weight: 750 !important;
+  color: #ffffff !important;
+}
+
+.sd-start-hero__actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 18px !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 38px !important;
+}
+
+.sd-start-hero__primary {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  min-height: 56px !important;
+  padding: 16px 26px !important;
+  border-radius: 999px !important;
+  background: #ffffff !important;
+  color: #111111 !important;
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.32) !important;
+}
+
+.sd-start-hero__secondary {
+  color: rgba(255, 255, 255, 0.86) !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.44) !important;
+  padding-bottom: 3px !important;
+}
+
+.sd-start-hero__trust {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+  max-width: 700px !important;
+}
+
+.sd-start-hero__trust span {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 34px !important;
+  padding: 7px 12px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.105) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: rgba(255, 255, 255, 0.86) !important;
+  font-size: 0.9rem !important;
+  font-weight: 650 !important;
+}
+
+.sd-start-proof {
+  background: #f5f3ec !important;
+  color: #171714 !important;
+  padding: 72px 20px !important;
+}
+
+.sd-start-proof .sd-container {
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+}
+
+.sd-start-proof h2 {
+  max-width: 820px !important;
+  font-size: clamp(2rem, 4vw, 3.5rem) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.045em !important;
+  margin-bottom: 20px !important;
+}
+
+.sd-start-proof > .sd-container > p:not(.sd-eyebrow) {
+  max-width: 760px !important;
+  font-size: clamp(1.08rem, 1.8vw, 1.28rem) !important;
+  line-height: 1.55 !important;
+  color: #4a4842 !important;
+  margin-bottom: 34px !important;
+}
+
+.sd-start-proof__grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
+
+.sd-start-proof__grid .sd-card {
+  padding: 24px !important;
+  border-radius: 20px !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(23, 23, 20, 0.09) !important;
+  box-shadow: 0 16px 36px rgba(23, 23, 20, 0.06) !important;
+}
+
+.sd-start-proof__grid h3 {
+  margin: 0 0 10px !important;
+  font-size: 1.08rem !important;
+  line-height: 1.2 !important;
+}
+
+.sd-start-proof__grid p {
+  margin: 0 !important;
+  color: #5a5750 !important;
+  line-height: 1.5 !important;
+}
+
+/* =====================================
+   HOMEPAGE FINAL CTA
+   ===================================== */
+
+.sd-start-cta-final {
+  background: #f3f1eb !important;
+  padding: 72px 20px 96px !important;
+}
+
+.sd-start-cta-final .sd-container {
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+}
+
+.sd-start-cta-final__panel {
+  background: linear-gradient(135deg, #121b36 0%, #162447 100%) !important;
+  color: #ffffff !important;
+  border-radius: 32px !important;
+  padding: 56px 48px !important;
+  box-shadow: 0 28px 70px rgba(18, 27, 54, 0.18) !important;
+}
+
+.sd-start-cta-final__eyebrow {
+  margin: 0 0 14px !important;
+  font-size: 0.82rem !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: rgba(255, 255, 255, 0.58) !important;
+}
+
+.sd-start-cta-final__title {
+  margin: 0 0 10px !important;
+  max-width: 760px !important;
+  font-size: clamp(2.3rem, 5vw, 4.8rem) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.055em !important;
+  font-weight: 850 !important;
+  color: #ffffff !important;
+}
+
+.sd-start-cta-final__subtitle {
+  margin: 0 0 18px !important;
+  font-size: clamp(1.2rem, 2vw, 1.6rem) !important;
+  line-height: 1.2 !important;
+  font-weight: 700 !important;
+  color: #dce4f6 !important;
+}
+
+.sd-start-cta-final__copy {
+  max-width: 700px !important;
+  margin: 0 0 28px !important;
+  font-size: 1.05rem !important;
+  line-height: 1.65 !important;
+  color: rgba(255, 255, 255, 0.74) !important;
+}
+
+.sd-start-cta-final__actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 18px !important;
+  flex-wrap: wrap !important;
+}
+
+.sd-start-cta-final__link {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px !important;
+}
+
+@media (max-width: 767px) {
+  .sd-start-cta-final {
+    padding: 56px 14px 74px !important;
+  }
+
+  .sd-start-cta-final__panel {
+    padding: 34px 22px !important;
+    border-radius: 24px !important;
+  }
+
+  .sd-start-cta-final__title {
+    font-size: clamp(2rem, 10vw, 3rem) !important;
+  }
+
+  .sd-start-cta-final__subtitle {
+    font-size: 1.15rem !important;
+  }
+
+  .sd-start-cta-final__copy {
+    font-size: 1rem !important;
+  }
+
+  .sd-start-cta-final__actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .sd-start-cta-final__actions .sd-btn,
+  .sd-start-cta-final__link {
+    width: 100% !important;
+    text-align: center !important;
+  }
+}
+
+/* =====================================
+   HOMEPAGE PRODUCT PROOF SECTION
+   ===================================== */
+
+.sd-start-product-proof {
+  background: #f3f1eb !important;
+  padding: 80px 20px !important;
+  color: #171714 !important;
+}
+
+.sd-start-product-proof .sd-container {
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+}
+
+.sd-start-product-proof__eyebrow {
+  margin: 0 0 14px !important;
+  font-size: 0.82rem !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: #7e889d !important;
+}
+
+.sd-start-product-proof__title {
+  max-width: 900px !important;
+  margin: 0 0 20px !important;
+  font-size: clamp(2.2rem, 4.8vw, 4.4rem) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.05em !important;
+  font-weight: 850 !important;
+  color: #121b36 !important;
+}
+
+.sd-start-product-proof__intro {
+  max-width: 760px !important;
+  margin: 0 0 38px !important;
+  font-size: clamp(1.06rem, 1.8vw, 1.26rem) !important;
+  line-height: 1.6 !important;
+  color: #5e687d !important;
+}
+
+.sd-start-product-proof__grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 24px !important;
+}
+
+.sd-product-card {
+  display: flex !important;
+  flex-direction: column !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(18, 27, 54, 0.08) !important;
+  border-radius: 28px !important;
+  overflow: hidden !important;
+  box-shadow: 0 18px 42px rgba(18, 27, 54, 0.06) !important;
+}
+
+.sd-product-card__media {
+  background: #e9edf5 !important;
+  padding: 16px !important;
+}
+
+.sd-product-card__media img {
+  display: block !important;
+  width: 100% !important;
+  height: 520px !important;
+  object-fit: cover !important;
+  object-position: top center !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(18, 27, 54, 0.08) !important;
+  background: #eef1f6 !important;
+}
+
+.sd-product-card__body {
+  padding: 22px 22px 24px !important;
+}
+
+.sd-product-card__body h3 {
+  margin: 0 0 10px !important;
+  font-size: 1.35rem !important;
+  line-height: 1.15 !important;
+  font-weight: 800 !important;
+  color: #121b36 !important;
+}
+
+.sd-product-card__body p {
+  margin: 0 !important;
+  font-size: 1rem !important;
+  line-height: 1.55 !important;
+  color: #5e687d !important;
+}
+
+/* =====================================
+   HOMEPAGE DRIVER OUTCOME SECTION
+   ===================================== */
+
+.sd-driver-outcome {
+  background: #101827 !important;
+  color: #ffffff !important;
+  padding: 88px 20px !important;
+}
+
+.sd-driver-outcome .sd-container {
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+}
+
+.sd-driver-outcome__header {
+  max-width: 880px !important;
+  margin-bottom: 42px !important;
+}
+
+.sd-driver-outcome__eyebrow {
+  margin: 0 0 14px !important;
+  font-size: 0.82rem !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: rgba(255, 255, 255, 0.58) !important;
+}
+
+.sd-driver-outcome__title {
+  margin: 0 0 22px !important;
+  max-width: 900px !important;
+  font-size: clamp(2.35rem, 5vw, 4.8rem) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.055em !important;
+  font-weight: 850 !important;
+  color: #ffffff !important;
+}
+
+.sd-driver-outcome__intro {
+  max-width: 760px !important;
+  margin: 0 !important;
+  font-size: clamp(1.08rem, 1.8vw, 1.28rem) !important;
+  line-height: 1.6 !important;
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+.sd-driver-outcome__grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
+
+.sd-driver-benefit {
+  min-height: 310px !important;
+  padding: 24px !important;
+  border-radius: 26px !important;
+  background: rgba(255, 255, 255, 0.055) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 24px 54px rgba(0, 0, 0, 0.18) !important;
+}
+
+.sd-driver-benefit__num {
+  margin-bottom: 54px !important;
+  font-size: 0.78rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.12em !important;
+  color: rgba(255, 255, 255, 0.42) !important;
+}
+
+.sd-driver-benefit h3 {
+  margin: 0 0 12px !important;
+  font-size: 1.35rem !important;
+  line-height: 1.12 !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+}
+
+.sd-driver-benefit p {
+  margin: 0 !important;
+  font-size: 0.98rem !important;
+  line-height: 1.55 !important;
+  color: rgba(255, 255, 255, 0.68) !important;
+}
+
+@media (max-width: 1024px) {
+  .sd-driver-outcome__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .sd-driver-benefit {
+    min-height: 260px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .sd-driver-outcome {
+    padding: 64px 14px !important;
+  }
+
+  .sd-driver-outcome__header {
+    margin-bottom: 30px !important;
+  }
+
+  .sd-driver-outcome__title {
+    font-size: clamp(2.1rem, 10vw, 3.2rem) !important;
+    line-height: 0.98 !important;
+  }
+
+  .sd-driver-outcome__intro {
+    font-size: 1.02rem !important;
+  }
+
+  .sd-driver-outcome__grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .sd-driver-benefit {
+    min-height: auto !important;
+    padding: 22px !important;
+    border-radius: 22px !important;
+  }
+
+  .sd-driver-benefit__num {
+    margin-bottom: 34px !important;
+  }
+}
+
+
+@media (max-width: 1024px) {
+  .sd-start-product-proof__grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sd-product-card__media img {
+    height: auto !important;
+    max-height: none !important;
+    object-fit: contain !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .sd-start-product-proof {
+    padding: 56px 14px !important;
+  }
+
+  .sd-start-product-proof__title {
+    font-size: clamp(2rem, 10vw, 3rem) !important;
+    line-height: 0.98 !important;
+  }
+
+  .sd-start-product-proof__intro {
+    margin-bottom: 28px !important;
+    font-size: 1.02rem !important;
+    line-height: 1.6 !important;
+  }
+
+  .sd-start-product-proof__grid {
+    gap: 18px !important;
+  }
+
+  .sd-product-card {
+    border-radius: 24px !important;
+  }
+
+  .sd-product-card__media {
+    padding: 12px !important;
+  }
+
+  .sd-product-card__media img {
+    border-radius: 18px !important;
+  }
+
+  .sd-product-card__body {
+    padding: 18px 18px 20px !important;
+  }
+
+  .sd-product-card__body h3 {
+    font-size: 1.2rem !important;
+  }
+
+
+}
+
+@media (max-width: 767px) {
+  .sd-start-hero--premium {
+    min-height: auto !important;
+    align-items: flex-end !important;
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.28) 0%,
+        rgba(0, 0, 0, 0.58) 38%,
+        rgba(0, 0, 0, 0.92) 100%
+      ),
+      url("https://solodrive.pro/wp-content/uploads/2026/05/solodrive-hero.png") !important;
+    background-position: 68% center !important;
+  }
+
+  .sd-start-hero__inner {
+    padding: 58vh 20px 42px !important;
+  }
+
+  .sd-start-hero__content {
+    max-width: none !important;
+  }
+
+  .sd-start-hero__title {
+    font-size: clamp(2.45rem, 13vw, 3.65rem) !important;
+    line-height: 0.98 !important;
+    letter-spacing: -0.055em !important;
+  }
+
+  .sd-start-hero__lede {
+    font-size: 1.05rem !important;
+    line-height: 1.42 !important;
+  }
+
+  .sd-start-hero__actions {
+    display: grid !important;
+    gap: 14px !important;
+  }
+
+  .sd-start-hero__primary {
+    width: 100% !important;
+    min-height: 58px !important;
+  }
+
+  .sd-start-proof__grid {
+    grid-template-columns: 1fr !important;
+  }
+}
