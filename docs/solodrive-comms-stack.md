@@ -165,7 +165,7 @@ Questions? Just reply to this email.
 
 ### T1.2 — Activation Confirmed
 
-Trigger: sd_tenant created in SDPRO, operator session established
+Trigger: runtime_tenant_id written back from SDPRO/runtime, operator session established
 Channel: Email preferred · SMS fallback
 Timing: Immediately post-provisioning
 
@@ -451,7 +451,7 @@ SD_Comms_Service::create_or_update_quo_contact(array $data): void
 | Lifecycle event | Template(s) | Recipient |
 |---|---|---|
 | Prospect form submitted | T1.1 | Prospect |
-| `sd_tenant` provisioned | T1.2 | Operator |
+| Runtime tenant provisioned / runtime_tenant_id writeback | T1.2 | Operator |
 | 24hr cron, Connect incomplete | T1.3 | Operator |
 | Stripe Connect confirmed | T1.4 | Operator |
 | Quote → `presented` state | T2.1 | Customer |
@@ -529,9 +529,9 @@ define('SD_EMAIL_FROM_NAME',   'SoloDrive');
 | Variable | Source | Notes |
 |---|---|---|
 | `{{first_name}}` | Contact record | Prospect or operator first name |
-| `{{slug}}` | `sd_tenant` meta | Tenant storefront slug |
+| `{{slug}}` | runtime tenant/provision package mirror | Tenant storefront slug |
 | `{{token}}` | Lead / quote | /trip/ surface token |
-| `{{tenant_name}}` | `sd_tenant` meta | Business display name |
+| `{{tenant_name}}` | provision package / runtime tenant mirror | Business display name |
 | `{{pickup_short}}` | Lead place_id resolved | Short place name, not full address |
 | `{{dropoff_short}}` | Lead place_id resolved | Short place name |
 | `{{date}}` | Lead `requested_datetime` | Formatted local date |

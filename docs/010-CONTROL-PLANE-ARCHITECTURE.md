@@ -1,7 +1,7 @@
 # SoloDrive Control Plane — Architecture (LOCKED)
 
 Status: ACTIVE  
-Purpose: Define the canonical frontend/control-plane architecture for prospect intake, Stripe onboarding, billing, tenant promotion, and provisioning handoff.
+Purpose: Define the canonical frontend/control-plane architecture for prospect intake, Stripe onboarding, billing, provision package sales, runtime tenant materialization, and provisioning writeback.
 
 ---
 
@@ -40,9 +40,10 @@ Owns:
 - Stripe Connect onboarding start
 - platform subscription checkout
 - control-plane Stripe webhooks
-- tenant promotion decision
-- provisioning handoff to runtime
-- activation status tracking
+- package inventory and invite-code package sales
+- provision package creation
+- runtime provisioning handoff / pull contract
+- activation and runtime tenant writeback tracking
 
 Does not own:
 
@@ -62,6 +63,7 @@ app.solodrive.pro
 Owns:
 
 - runtime tenant materialization
+- canonical operational `runtime_tenant_id`
 - storefront execution
 - quote / auth / ride / capture lifecycle
 - operator operational surfaces
@@ -79,9 +81,17 @@ Does not own:
 
 ## Core Lifecycle Model (LOCKED)
 
-A tenant is not a prospect.
-A prospect is not a tenant.
-A tenant is a Stripe-linked, promotion-approved, provisionable business entity.
+WordPress v0 uses Option B:
+
+```txt
+front office sells provision packages
+Stripe gates customer/subscription truth
+runtime creates/materializes the operational tenant
+runtime_tenant_id is canonical for operations
+runtime_tenant_id is written back to the front office for CRM/views
+```
+
+The front office is the commercial gatekeeper. The runtime is the operational source of truth.
 
 ### Canonical lifecycle
 
@@ -89,19 +99,25 @@ A tenant is a Stripe-linked, promotion-approved, provisionable business entity.
 Anonymous
 → Prospect
 → Invited Prospect (optional fast lane)
-→ Lead (Stripe started)
-→ Tenant (Inactive)
-→ Tenant (Active)
+→ Package Selected
+→ Checkout / Billing Pending
+→ Provision Package Purchased
+→ Runtime Provisioning
+→ Runtime Tenant Materialized
+→ Active / Delivered
 ```
 
 ### Meaning
 
 - **Anonymous** = public traffic only; no system record yet
 - **Prospect** = validated onboarding interest captured by control plane
-- **Invited Prospect** = prospect with priority-lane validation
-- **Lead** = Stripe onboarding has started; still not a tenant
-- **Tenant (Inactive)** = promoted business entity exists, but is not yet fully activated/live
-- **Tenant (Active)** = provisioned and activation-approved
+- **Invited Prospect** = prospect with priority-lane validation or custom package access
+- **Package Selected** = public or invite-code package chosen
+- **Checkout / Billing Pending** = Stripe checkout/customer/subscription path is in progress
+- **Provision Package Purchased** = billing truth confirmed and provision package locked
+- **Runtime Provisioning** = runtime pulls or receives signed provision package
+- **Runtime Tenant Materialized** = runtime created the canonical operational tenant
+- **Active / Delivered** = front office has runtime_tenant_id and CRM/support views into operations
 
 ---
 
@@ -123,20 +139,34 @@ This CPT covers:
 
 Rule:
 
-> Do not create `sd_tenant` until required Stripe and promotion gates are satisfied.
+> Do not treat a prospect as an operational tenant. Operational tenancy is materialized by runtime after Stripe/package gates and provision package handoff.
 
-### `sd_tenant`
+### `sd_provision_package`
 
 Purpose:
 
-- actual tenant business entity
-- control-plane tenant identity
-- provisioning source for runtime handoff
+- locked/versioned commercial handoff artifact
+- purchased package snapshot
+- runtime provisioning payload source
+- bridge from Stripe/front-office sale to runtime materialization
 
 This CPT covers:
 
-- Tenant (Inactive)
-- Tenant (Active)
+- checkout pending package
+- purchased provision package
+- runtime provisioning status
+- delivered/runtime-linked package
+
+### Runtime tenant mirror
+
+Purpose:
+
+- front-office CRM/support reference to the operational tenant
+- stores `runtime_tenant_id`, runtime URL/path, activation status, billing status, and health/status snapshots
+
+Rule:
+
+> The same tenant exists commercially in front office and operationally in runtime. Stripe/runtime is the source of truth for operations; front office mirrors runtime_tenant_id for CRM and MRR support.
 
 ### Anonymous
 
@@ -191,37 +221,45 @@ Anonymous exists only as public traffic until validated intake submission.
 - `sd_billing_status`
 - `sd_promoted_to_tenant_id`
 
-### `sd_tenant`
+### `sd_provision_package`
 
 #### Identity
 
-- `sd_tenant_id`
-- `sd_slug`
-- `sd_domain`
-- `sd_status`
+- `sd_provision_package_id`
+- `sd_origin_prospect_id`
+- `sd_package_key`
+- `sd_package_status`
+- `sd_reserved_slug`
 - `sd_created_at`
 - `sd_updated_at`
 
-#### Relationship back to prospect
+#### Stripe / billing
 
-- `sd_origin_prospect_id`
-
-#### Stripe
-
-- `sd_connected_account_id`
 - `sd_stripe_customer_id`
 - `sd_stripe_subscription_id`
-- `sd_charges_enabled`
-- `sd_payouts_enabled`
-- `sd_stripe_status_snapshot`
+- `sd_resolved_stripe_price_id`
+- `sd_billing_status`
+- `sd_billing_truth_source`
+- `sd_billing_truth_event_id`
 
-#### Activation / provisioning
+#### Snapshot / payload
 
-- `sd_storefront_status`
-- `sd_activation_ready`
-- `sd_activation_status`
-- `sd_activated_at`
-- `sd_last_provisioning_response`
+- `sd_payload_version`
+- `sd_payload_hash`
+- `sd_payload_locked_at_gmt`
+- `sd_commercial_terms_snapshot_json`
+- `sd_invitation_code`
+- `sd_custom_terms_snapshot_json`
+
+#### Runtime writeback
+
+- `sd_runtime_tenant_id`
+- `sd_runtime_tenant_slug`
+- `sd_runtime_storefront_url`
+- `sd_runtime_operator_url`
+- `sd_runtime_provisioning_status`
+- `sd_runtime_health_status`
+- `sd_last_runtime_response`
 
 ---
 
@@ -343,53 +381,54 @@ Typical truth events:
 
 State becomes eligible for promotion only when required gates pass.
 
-### Step 7 — Tenant promotion
+### Step 7 — Provision package lock
 
-Only after required Stripe gates are confirmed:
+Only after required Stripe/package gates are confirmed:
 
 System:
 
-- creates `sd_tenant`
-- links prospect via `sd_origin_prospect_id`
-- attaches Stripe identifiers
-- marks tenant inactive pending provisioning completion
+- locks the `sd_provision_package`
+- snapshots package/commercial terms
+- records billing truth source/event
+- marks package ready for runtime provisioning
 
 State:
 
-- `inactive`
+- `READY_FOR_PROVISIONING`
 
-### Step 8 — Provisioning handoff
+### Step 8 — Runtime provisioning handoff / pull
 
-Control plane sends signed provisioning payload to runtime.
+Runtime receives or pulls the signed provision package.
 
 Runtime:
 
-- provisions tenant runtime state
+- creates/materializes canonical operational tenant
 - configures storefront/runtime identity
-- returns provisioning result
+- returns provisioning result and `runtime_tenant_id`
 
 State:
 
-- `provisioning`
+- `PROVISIONING_REQUESTED` / `PROVISIONED`
 
-### Step 9 — Activation
+### Step 9 — Activation / delivered status
 
-After successful provisioning:
+After successful runtime materialization:
 
 System:
 
-- marks tenant activation-ready
-- activates tenant/storefront when approved
+- stores `runtime_tenant_id`
+- marks delivered/activation-ready
+- exposes CRM/support views into runtime status
 
 State:
 
-- `active`
+- `DELIVERED`
 
 ---
 
 ## Promotion & Activation Gates (LOCKED)
 
-A tenant may only be promoted/activated when required gates are satisfied.
+A provision package may only be locked/provisioned and a runtime tenant may only be activated when required gates are satisfied.
 
 ### Gate A — Stripe account ready
 
@@ -400,9 +439,10 @@ A tenant may only be promoted/activated when required gates are satisfied.
 
 - required initial billing event confirmed
 
-### Gate C — Provisioning complete
+### Gate C — Runtime materialization complete
 
-- runtime accepted provisioning request
+- runtime accepted provisioning request or pull
+- `runtime_tenant_id` is returned
 - storefront/runtime path is returned as valid
 
 ### Gate D — Activation approved
@@ -417,12 +457,12 @@ A tenant may only be promoted/activated when required gates are satisfied.
 1. No browser redirect creates or activates a tenant.
 2. Redirects are UX only.
 3. Webhooks are truth.
-4. `sd_prospect` remains the record until Stripe/promotion gates pass.
-5. `sd_tenant` is created only after required Stripe conditions are confirmed.
-6. `sd_tenant` becomes active only after provisioning success.
-7. Runtime never handles control-plane onboarding.
+4. `sd_prospect` remains the intake/commercial lead record until Stripe/package gates pass.
+5. `sd_provision_package` becomes the locked handoff artifact after purchase.
+6. Runtime creates/materializes the canonical operational tenant and writes back `runtime_tenant_id`.
+7. Runtime never handles front-office package sales or control-plane billing decisions.
 8. Control plane never handles ride execution.
-9. Prospect and tenant are different objects and must not be conflated.
+9. Prospect, provision package, and runtime tenant are different objects and must not be conflated.
 10. Email is not the source of truth.
 11. Form submission must create/update records first; notifications are side effects.
 
@@ -434,11 +474,11 @@ The control plane does not directly execute runtime internals.
 
 The practical bridge is:
 
-1. control-plane workflow decides tenant is promotion-ready
-2. control plane sends signed HTTP request to runtime
-3. runtime provisions tenant-side resources
-4. runtime responds with provisioning result
-5. control plane updates tenant activation/provisioning state
+1. control-plane workflow decides provision package is purchased/ready
+2. runtime pulls or receives signed provision package payload
+3. runtime creates/materializes tenant-side resources
+4. runtime responds with provisioning result and `runtime_tenant_id`
+5. control plane updates provision/delivered status and CRM mirror fields
 
 Rule:
 
@@ -449,10 +489,12 @@ Rule:
 ## Identity & Ownership Rules
 
 - control plane owns onboarding identity as `sd_prospect`
-- control plane owns commercial tenant identity as `sd_tenant`
+- control plane owns package inventory and purchased `sd_provision_package`
+- runtime owns canonical operational tenant identity as `runtime_tenant_id`
+- front office mirrors `runtime_tenant_id` for CRM/support/MRR visibility
 - runtime may create or bind runtime-side user/operator identity
-- runtime does not decide commercial promotion from prospect to tenant
-- promotion decision belongs to control plane
+- package purchase/provision readiness belongs to front office/Stripe
+- operational tenant materialization belongs to runtime
 
 ---
 
@@ -486,8 +528,72 @@ Rule:
 
 The locked control-plane architecture is:
 
-- `solodrive.pro` owns prospect onboarding, Stripe readiness, billing, tenant promotion, and provisioning handoff
-- runtime owns tenant materialization consumption, storefront execution, and ride operations
-- Stripe webhooks, not redirects, are the source of truth
-- `sd_prospect` remains the pre-tenant object until required gates pass
-- `sd_tenant` is the promoted business entity and activation source for runtime provisioning
+- `solodrive.pro` owns prospect onboarding, package inventory, Stripe billing, provision packages, and CRM/support mirrors
+- runtime owns operational tenant materialization, storefront execution, and ride operations
+- Stripe webhooks, not redirects, are the source of truth for purchase/billing gates
+- `sd_prospect` remains the intake/commercial lead object
+- `sd_provision_package` is the locked commercial handoff artifact
+- `runtime_tenant_id` is the canonical operational tenant identity and is written back to front office
+---
+
+## Package Inventory vs Delivered Package Doctrine
+
+The front office must distinguish what is for sale from what was delivered.
+
+Inventory package states:
+
+```txt
+DRAFT
+ACTIVE_PUBLIC
+ACTIVE_INVITE_ONLY
+HIDDEN
+ARCHIVED
+```
+
+Delivered/provision package states:
+
+```txt
+DRAFT
+CHECKOUT_PENDING
+PURCHASED
+READY_FOR_PROVISIONING
+PROVISIONING_REQUESTED
+PROVISIONED
+DELIVERED
+FAILED_RETRYABLE
+FAILED_BLOCKED
+CANCELLED
+```
+
+Public packages, invite-code packages, and customized packages all resolve into a locked provision package snapshot after purchase.
+---
+
+## Runtime Tenant ID Writeback
+
+After runtime materializes the tenant, runtime must write back:
+
+```txt
+runtime_tenant_id
+runtime_tenant_slug
+runtime_storefront_url
+runtime_operator_url
+runtime_provisioning_status
+runtime_health_status
+runtime_last_seen_at
+```
+
+Front office uses these fields for CRM, support, billing/MRR views, and tenant lifecycle status. Runtime remains authoritative for operational ride execution.
+---
+
+## V0 Control-Plane Clarification
+
+Earlier architecture notes may describe a promoted control-plane `sd_tenant` as the tenant birth point. For WordPress v0, the locked doctrine is Option B:
+
+```txt
+sd_prospect
+→ sd_provision_package
+→ runtime tenant materialization
+→ runtime_tenant_id writeback
+```
+
+A front-office tenant/account mirror may exist for CRM, but it is not the operational tenant authority.

@@ -657,4 +657,69 @@ Can explain allocation/sharing rule application.
 9. Wire Stripe capture to use the fee engine.
 10. Update public package selector to use public-display fields.
 11. Add admin warnings and validation.
+---
 
+## Package Inventory vs Delivered Package
+
+Commercial packages have two distinct lives.
+
+Inventory package:
+
+```txt
+what is displayed or made available for purchase
+public package, hidden package, invite-code package, or custom package
+```
+
+Delivered package:
+
+```txt
+what was actually purchased, snapshotted, provisioned, and linked to runtime_tenant_id
+```
+
+Inventory package states:
+
+```txt
+DRAFT
+ACTIVE_PUBLIC
+ACTIVE_INVITE_ONLY
+HIDDEN
+ARCHIVED
+```
+
+Delivered package / provision package states:
+
+```txt
+DRAFT
+CHECKOUT_PENDING
+PURCHASED
+READY_FOR_PROVISIONING
+PROVISIONING_REQUESTED
+PROVISIONED
+DELIVERED
+FAILED_RETRYABLE
+FAILED_BLOCKED
+CANCELLED
+```
+
+Public pricing must only display packages that pass package health validation and have valid Stripe readiness for the intended purchase path.
+---
+
+## Provision Package Commercial Snapshot
+
+At purchase, the delivered package must snapshot:
+
+```txt
+package_key
+display_name
+stripe_price_id
+billing_interval
+included_features
+application_fee_policy
+invite_code
+custom_terms
+payload_version
+payload_hash
+runtime_tenant_id
+```
+
+Runtime stores the starting commercial policy for enforcement. Capture-time application fee math still resolves through the runtime/commercial fee engine and snapshots the resolved result on the capture artifact.

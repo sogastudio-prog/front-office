@@ -26,13 +26,13 @@ Produce a canonical onboarding transaction that safely progresses:
 ```txt
 prospect intake
 → invitation/qualification
-→ Stripe Connect start
-→ Stripe hosted onboarding
-→ subscription checkout
-→ webhook truth confirmation
-→ tenant promotion
-→ runtime provisioning request
-→ activation ready
+→ package selection
+→ Stripe checkout / billing truth
+→ provision package snapshot
+→ runtime provisioning pull or signed handoff
+→ runtime tenant materialization
+→ runtime_tenant_id writeback
+→ activation / delivered status
 ```
 
 Rule:
@@ -205,23 +205,23 @@ POST /wp-json/sd/v1/stripe/webhook
 
 ---
 
-## Phase 6 — Tenant Promotion Service
+## Phase 6 — Provision Package Lock Service
 
-Add a control-plane promotion service that creates `sd_tenant` only after gates pass.
+Add a control-plane service that locks `sd_provision_package` only after package/Stripe gates pass.
 
 ### Responsibilities
 
-- verify prospect is promotion-eligible
-- create `sd_tenant`
-- link `sd_origin_prospect_id`
-- copy canonical slug/domain/billing identifiers
+- verify prospect/package is purchase-eligible
+- verify Stripe billing truth
+- lock package/commercial terms snapshot
+- calculate payload version/hash
 - attach Stripe identifiers
-- mark tenant inactive pending provisioning result
-- write back `sd_promoted_to_tenant_id` on prospect
+- mark package ready for runtime provisioning
+- keep idempotent linkage back to `sd_prospect`
 
 ### Rule
 
-This is the only canonical place where a control-plane tenant is born.
+This is the only canonical place where a purchased package becomes a locked runtime handoff artifact.
 
 ### Idempotency
 
@@ -229,7 +229,7 @@ Must be safe against:
 
 - repeated webhooks
 - repeated checkout confirmation paths
-- repeated promotion attempts
+- repeated lock attempts
 - duplicate Stripe callbacks
 
 ---
@@ -240,14 +240,14 @@ Add the practical bridge from control plane into runtime.
 
 ### Trigger
 
-Fire after tenant promotion gates pass.
+Fire or allow runtime pull after provision package gates pass.
 
 ### Recommended behavior
 
 - generate deterministic request id
 - sign payload with shared secret or HMAC
-- `wp_remote_post()` to runtime provisioning route
-- store request and response on control-plane tenant record
+- expose/push locked provision package payload
+- store request and response on `sd_provision_package`
 
 ### Expected runtime route
 
@@ -257,21 +257,26 @@ POST /wp-json/sd/v1/control-plane/provision-tenant
 
 ### Minimum payload
 
-- tenant id
-- tenant slug
+- provision package id
+- package key
+- reserved tenant slug
 - prospect id
 - prospect post id
 - contact info
-- Stripe account/customer/subscription ids
+- Stripe customer/subscription ids
 - billing status
+- commercial terms snapshot
 - activation mode
 
 ### Required write-back
 
+- runtime_tenant_id
+- runtime tenant slug
+- runtime storefront path
+- runtime operator path
 - last provisioning request id
 - last provisioning response
 - provisioning status
-- runtime storefront path
 - activation readiness boolean
 
 ### Note
@@ -316,9 +321,9 @@ System must explicitly handle:
 
 ### 3. Billing paid, provisioning failed
 
-- keep tenant inactive
+- keep provision package in failed/retryable or failed/blocked state
 - allow safe retry of provisioning handoff
-- do not duplicate tenant
+- do not duplicate runtime tenant
 
 ### 4. Provisioning partial
 
@@ -340,7 +345,7 @@ The full control-plane flow must be safe against:
 - double Stripe callbacks
 - repeated confirm clicks
 - repeated billing endpoint hits
-- duplicate tenant creation
+- duplicate runtime tenant creation
 - repeated provisioning attempts
 - slug collisions
 
@@ -381,9 +386,10 @@ Style target:
 
 These are not part of the active canonical implementation plan:
 
-- any architecture where tenant birth occurs only inside runtime after browser redirect
-- local WordPress actions pretending to cross systems without HTTP bridge
+- any architecture where tenant birth occurs from browser redirect alone
+- local WordPress actions pretending to cross systems without HTTP bridge or signed runtime pull
 - mixing control-plane Stripe onboarding with runtime ride-payment webhooks
+- competing push and pull provisioning contracts without declaring one canonical v0 path
 
 If retained in code temporarily, they should be marked as transitional and non-canonical.
 
@@ -399,15 +405,17 @@ If retained in code temporarily, they should be marked as transitional and non-c
 - Stripe Account Link endpoint
 - subscription checkout endpoint
 - dedicated control-plane webhook receiver
-- tenant promotion service
-- runtime provisioning bridge
-- activation-state finalization
+- provision package lock service
+- runtime provisioning bridge or signed runtime-pull endpoint
+- runtime_tenant_id writeback handling
+- activation/delivered-state finalization
 
 ### Runtime must receive
 
 - signed provisioning request
-- canonical tenant payload
+- canonical provision package payload
 - dedupe-safe request id
+- runtime_tenant_id writeback
 
 ---
 
@@ -417,8 +425,83 @@ The next-pass build should produce one canonical control-plane onboarding pipeli
 
 - prospect captured on `solodrive.pro`
 - Stripe readiness and billing confirmed by webhook truth
-- tenant promoted in control plane
-- runtime provisioned through signed cross-system handoff
-- tenant activated only after provisioning success
+- provision package locked in control plane
+- runtime tenant materialized through signed cross-system handoff or pull
+- runtime_tenant_id written back to front office
+- delivered/active status granted only after provisioning success
 
 This plan intentionally replaces split or contradictory older notes with one build-ready control-plane sequence.
+---
+
+## V0 Option B Implementation Doctrine
+
+WordPress v0 does not require a separate authoritative control-plane `sd_tenant` before runtime provisioning.
+
+Implementation target:
+
+```txt
+sd_prospect
+→ package selection
+→ sd_provision_package
+→ Stripe billing truth
+→ locked provision payload
+→ runtime creates/materializes tenant
+→ runtime_tenant_id written back to front office
+```
+
+Runtime tenant identity is canonical for operations. Front office remains commercial gatekeeper and CRM/support mirror.
+---
+
+## Provision Package Hardening
+
+After purchase, the provision package becomes a locked handoff artifact.
+
+Required fields:
+
+```txt
+sd_payload_version
+sd_payload_hash
+sd_payload_status
+sd_payload_locked_at_gmt
+sd_origin_prospect_id
+sd_package_key
+sd_invite_code
+sd_custom_terms_snapshot_json
+sd_stripe_customer_id
+sd_stripe_subscription_id
+sd_resolved_stripe_price_id
+sd_runtime_tenant_id
+sd_runtime_response_code
+sd_runtime_response_message
+sd_retry_count
+```
+
+Commercial changes after purchase require a new version, explicit admin override, or new package snapshot.
+---
+
+## Runtime Pull / Writeback Contract
+
+The current preferred v0 contract may be runtime-pull:
+
+```txt
+runtime verifies checkout/session context
+runtime calls front office for signed provision package
+runtime materializes tenant
+runtime writes back runtime_tenant_id and provisioning result
+```
+
+A future push model may be added, but v0 must not implement conflicting push and pull paths without declaring one canonical path.
+---
+
+## Updated Delivery Checklist Additions
+
+Control plane must also deliver:
+
+```txt
+public package inventory states
+invite-code/custom package support
+package health validation before public display
+locked provision package snapshot after billing
+runtime_tenant_id writeback storage
+front-office CRM/support views into runtime tenant status
+```
