@@ -3,28 +3,41 @@ SoloDrive Front CSS — Clean Slate Tokens
 */
 
 :root {
-  --sd-bg: #f8fafc;
+  --sd-premium-navy: #121b36;
+  --sd-premium-navy-2: #162447;
+  --sd-premium-ink: #121b36;
+  --sd-premium-muted: #5e687d;
+  --sd-premium-faint: #8a94aa;
+  --sd-premium-cream: #f3f1eb;
+  --sd-premium-cream-2: #f5f3ec;
+  --sd-premium-dark: #101827;
+  --sd-premium-line: rgba(18, 27, 54, 0.09);
+  --sd-premium-shadow: 0 22px 56px rgba(18, 27, 54, 0.08);
+  --sd-premium-shadow-strong: 0 28px 70px rgba(18, 27, 54, 0.18);
+  --sd-premium-hero-image: url("https://solodrive.pro/wp-content/uploads/2026/05/solodrive-hero.png");
+
+  --sd-bg: var(--sd-premium-cream);
   --sd-surface: #ffffff;
-  --sd-surface-soft: #f1f5f9;
+  --sd-surface-soft: var(--sd-premium-cream-2);
 
-  --sd-ink: #0f172a;
-  --sd-muted: #64748b;
-  --sd-faint: #94a3b8;
+  --sd-ink: var(--sd-premium-ink);
+  --sd-muted: var(--sd-premium-muted);
+  --sd-faint: var(--sd-premium-faint);
 
-  --sd-line: rgba(15, 23, 42, 0.10);
-  --sd-line-strong: rgba(15, 23, 42, 0.16);
+  --sd-line: var(--sd-premium-line);
+  --sd-line-strong: rgba(18, 27, 54, 0.16);
 
-  --sd-blue: #287fae;
-  --sd-blue-dark: #1f668c;
+  --sd-blue: var(--sd-premium-navy);
+  --sd-blue-dark: var(--sd-premium-navy-2);
   --sd-green: #15803d;
 
-  --sd-radius-sm: 10px;
-  --sd-radius-md: 16px;
-  --sd-radius-lg: 22px;
-  --sd-radius-xl: 30px;
+  --sd-radius-sm: 12px;
+  --sd-radius-md: 20px;
+  --sd-radius-lg: 26px;
+  --sd-radius-xl: 32px;
 
-  --sd-shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.045);
-  --sd-shadow-card: 0 16px 44px rgba(15, 23, 42, 0.06);
+  --sd-shadow-soft: var(--sd-premium-shadow);
+  --sd-shadow-card: 0 18px 42px rgba(18, 27, 54, 0.06);
 
   --sd-width-narrow: 760px;
   --sd-width-content: 920px;

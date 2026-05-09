@@ -4,10 +4,11 @@ SoloDrive Front CSS — Footer
 
 .site-footer,
 footer {
-  background: var(--sd-bg);
+  background: var(--sd-premium-dark);
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .site-footer a,
 footer a {
-  color: var(--sd-blue);
+  color: #ffffff;
 }

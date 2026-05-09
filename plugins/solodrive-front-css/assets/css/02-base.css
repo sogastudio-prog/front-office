@@ -12,7 +12,9 @@ body {
 }
 
 a {
-  color: var(--sd-blue);
+  color: var(--sd-ink);
+  font-weight: 750;
+  text-underline-offset: 4px;
 }
 
 a:hover {
@@ -29,25 +31,26 @@ a:hover {
 .entry-content li {
   color: var(--sd-muted);
   font-size: 16px;
-  line-height: 1.65;
+  line-height: 1.68;
 }
 
 .entry-content h1,
 .entry-content h2,
 .entry-content h3 {
   color: var(--sd-ink);
-  line-height: 1.08;
-  letter-spacing: -0.035em;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: -0.055em;
 }
 
 .entry-content h1 {
-  font-size: clamp(42px, 6vw, 76px);
+  font-size: clamp(46px, 6vw, 84px);
 }
 
 .entry-content h2 {
-  font-size: clamp(30px, 4.2vw, 48px);
+  font-size: clamp(34px, 4.8vw, 62px);
 }
 
 .entry-content h3 {
-  font-size: clamp(21px, 2.6vw, 30px);
+  font-size: clamp(22px, 2.7vw, 34px);
 }

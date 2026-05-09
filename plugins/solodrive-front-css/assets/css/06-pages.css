@@ -5,8 +5,9 @@ Page-specific exceptions should be rare.
 
 /* Authority pages: article rhythm */
 .sd-managed-page--authority > p:first-of-type {
-  font-size: 18px;
-  line-height: 1.7;
+  max-width: 760px;
+  font-size: clamp(18px, 1.8vw, 21px);
+  line-height: 1.6;
   color: var(--sd-muted);
 }
 
@@ -23,6 +24,32 @@ Page-specific exceptions should be rare.
 .sd-managed-page--conversion > .wp-block-group,
 .sd-managed-page--product > .wp-block-group {
   margin-bottom: var(--sd-space-5);
+}
+
+.sd-managed-page--conversion > .wp-block-group:first-child,
+.sd-managed-page--product > .wp-block-group:first-child,
+.sd-managed-page--landing > .wp-block-group:first-child {
+  background: linear-gradient(135deg, var(--sd-premium-navy) 0%, var(--sd-premium-navy-2) 100%);
+  color: #ffffff;
+  border: 0;
+  border-radius: var(--sd-radius-xl);
+  padding: clamp(36px, 6vw, 72px);
+  box-shadow: var(--sd-premium-shadow-strong);
+}
+
+.sd-managed-page--conversion > .wp-block-group:first-child h1,
+.sd-managed-page--conversion > .wp-block-group:first-child h2,
+.sd-managed-page--conversion > .wp-block-group:first-child h3,
+.sd-managed-page--conversion > .wp-block-group:first-child p,
+.sd-managed-page--product > .wp-block-group:first-child h1,
+.sd-managed-page--product > .wp-block-group:first-child h2,
+.sd-managed-page--product > .wp-block-group:first-child h3,
+.sd-managed-page--product > .wp-block-group:first-child p,
+.sd-managed-page--landing > .wp-block-group:first-child h1,
+.sd-managed-page--landing > .wp-block-group:first-child h2,
+.sd-managed-page--landing > .wp-block-group:first-child h3,
+.sd-managed-page--landing > .wp-block-group:first-child p {
+  color: #ffffff;
 }
 
 /* Product pages: slightly stronger content cards */
@@ -51,5 +78,5 @@ body.page-id-472 .entry-content,
 body.page-id-485 .entry-content {
   max-width: var(--sd-width-content);
   margin: 0 auto;
-  padding: var(--sd-space-6) var(--sd-space-4) var(--sd-space-8);
+  padding: var(--sd-space-7) var(--sd-space-4) var(--sd-space-8);
 }

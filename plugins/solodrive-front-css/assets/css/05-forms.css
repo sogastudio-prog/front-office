@@ -7,14 +7,14 @@ SoloDrive Front CSS — Forms / Intake Placeholder
 .sd-prospect-flow {
   max-width: var(--sd-width-content);
   margin: 0 auto;
-  padding: var(--sd-space-6) var(--sd-space-4) var(--sd-space-8);
+  padding: var(--sd-space-7) var(--sd-space-4) var(--sd-space-8);
 }
 
 .sd-intake-card,
 .sd-checkout-card {
   background: var(--sd-surface);
   border: 1px solid var(--sd-line);
-  border-radius: var(--sd-radius-lg);
+  border-radius: var(--sd-radius-xl);
   box-shadow: var(--sd-shadow-soft);
   padding: clamp(24px, 4vw, 44px);
 }
@@ -25,7 +25,43 @@ textarea {
   max-width: 100%;
 }
 
+input:not([type="submit"]):not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid rgba(18, 27, 54, 0.12);
+  border-radius: 12px;
+  padding: 11px 13px;
+  background: #ffffff;
+  color: var(--sd-ink);
+}
+
+textarea {
+  min-height: 140px;
+}
+
+label {
+  color: var(--sd-ink);
+  font-weight: 750;
+}
+
 button,
 input[type="submit"] {
   cursor: pointer;
+}
+
+input[type="submit"],
+button[type="submit"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 16px 24px;
+  border-radius: 999px;
+  background: var(--sd-premium-navy);
+  color: #ffffff;
+  font-weight: 850;
+  line-height: 1;
+  border: 0;
 }

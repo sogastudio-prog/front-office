@@ -44,7 +44,7 @@ SoloDrive Front CSS — Responsive
   .sd-panel,
   .sd-intake-card,
   .sd-checkout-card {
-    border-radius: var(--sd-radius-md);
+    border-radius: var(--sd-radius-lg);
     padding: var(--sd-space-4);
   }
 
@@ -74,8 +74,12 @@ SoloDrive Front CSS — Responsive
 
   .sd-hero {
     padding: var(--sd-space-5) var(--sd-space-4);
-    /* Keep card border and shadow — do not collapse */
     border-radius: var(--sd-radius-lg);
+    background-image:
+      linear-gradient(180deg, rgba(0,0,0,.28) 0%, rgba(0,0,0,.62) 42%, rgba(0,0,0,.94) 100%),
+      var(--sd-premium-hero-image);
+    background-position: 68% center;
+    padding-top: 52vh;
   }
 
   /* Logo brand container — keep it as a contained block */
@@ -83,10 +87,9 @@ SoloDrive Front CSS — Responsive
     width: 100%;
     max-width: 100%;
     padding: var(--sd-space-3) var(--sd-space-4);
-    /* Maintain white card treatment on mobile */
     background: #ffffff;
-    border: 1px solid var(--sd-line);
-    border-radius: var(--sd-radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -106,7 +109,7 @@ SoloDrive Front CSS — Responsive
   /* Hero headline and body text */
   .sd-hero h1,
   .sd-hero .sd-hero__lead {
-    text-align: center;
+    text-align: left;
   }
 
   .sd-hero h1 {
@@ -124,6 +127,7 @@ SoloDrive Front CSS — Responsive
     align-items: flex-start;
     gap: var(--sd-space-2);
     padding: var(--sd-space-3) var(--sd-space-4);
+    border-radius: var(--sd-radius-lg);
   }
 
   /* Path cards — full width single column */
