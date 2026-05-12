@@ -1580,6 +1580,22 @@ final class SD_Front_Office_Scaffold {
             return '<div class="sd-front-placeholder">Package selection block</div>';
         }
 
+        // Feature gate display labels — canonical order from build list.
+        $gate_labels = [
+            'tenant_storefront'    => 'Your booking page',
+            'lead_capture'         => 'Ride requests',
+            'stripe_authorization' => 'Secure checkout',
+            'payment_capture'      => 'Automatic payment collection',
+            'operator_console'     => 'Your dashboard',
+            'driver_portal'        => 'Operator app',
+            'reservations'         => 'Scheduled rides',
+            'quote_workflow'       => 'Custom quote approval',
+            'stacked_availability' => 'Back-to-back ride scheduling',
+            'advanced_reporting'   => 'Advanced reporting',
+            'custom_domain'        => 'Custom web address',
+            'white_label'          => 'Remove SoloDrive branding',
+        ];
+
         // Fetch packages from CPT.
         $packages = SDFO_Commercial_CPTs::get_public_packages();
 
@@ -1594,7 +1610,6 @@ final class SD_Front_Office_Scaffold {
             foreach ($all_posts as $post) {
                 $price_id = (string) get_post_meta($post->ID, 'sd_stripe_price_id', true);
                 if ($price_id !== '') {
-                    // Hydrate via public API method
                     $pkg = SDFO_Commercial_CPTs::get_package_any_status(
                         (string) get_post_meta($post->ID, 'sd_package_key', true)
                     );
@@ -1606,7 +1621,6 @@ final class SD_Front_Office_Scaffold {
         }
 
         if (empty($packages)) {
-            // Nothing to show yet — silent during setup.
             return '';
         }
 
@@ -1619,10 +1633,38 @@ final class SD_Front_Office_Scaffold {
 
             <div class="sdfo-package-select__grid">
             <?php foreach ($packages as $pkg) :
+
+                // Price from billing fields.
                 $price_cents = (int) ($pkg['display_price_cents'] ?? 0);
+                $interval    = $pkg['billing_interval'] ?? 'month';
                 $price_str   = $price_cents > 0
-                    ? '$' . number_format($price_cents / 100, 0) . '/' . ($pkg['billing_interval'] ?? 'month')
+                    ? '$' . number_format($price_cents / 100, 0) . '/' . $interval
                     : 'Contact us';
+
+                // Description is optional tagline only — shown raw, no parsing.
+                $tagline = trim($pkg['description'] ?? '');
+
+                // Load linked default profile to derive feature gates, fee, and provisioning.
+                $profile     = SDFO_Commercial_CPTs::get_default_profile_for_package((int) $pkg['post_id']);
+                $features    = $profile ? ($profile['features']             ?? []) : [];
+                $fee_policy  = $profile ? ($profile['application_fee_policy'] ?? []) : [];
+                $prov_policy = $profile ? ($profile['provisioning_policy']  ?? []) : [];
+
+                // Active feature list: only ON gates, in canonical label order.
+                $active_features = [];
+                foreach ($gate_labels as $gate_key => $gate_label) {
+                    if (!empty($features[$gate_key])) {
+                        $active_features[] = $gate_label;
+                    }
+                }
+
+                // Fee line derived from application_fee_policy.
+                $fee_line = self::build_fee_line($fee_policy);
+
+                // Provisioning note.
+                $prov_note = (!empty($prov_policy['auto_provision']) && empty($prov_policy['requires_manual_review']))
+                    ? 'Starts immediately after checkout'
+                    : 'Account reviewed before activation';
             ?>
                 <div
                     class="sdfo-pkg-card"
@@ -1633,26 +1675,25 @@ final class SD_Front_Office_Scaffold {
                 >
                     <div class="sdfo-pkg-card__name"><?php echo esc_html($pkg['label']); ?></div>
                     <div class="sdfo-pkg-card__price"><?php echo esc_html($price_str); ?></div>
-                    <?php
-                        // Use description only if it looks like customer-facing copy (no fee-policy keywords).
-                        $sdfo_raw_desc = trim( $pkg['description'] ?? '' );
-                        $sdfo_policy_markers = ['Application fee', 'fee mode', 'Percentage:', 'Minimum fee:', 'Applies to:', 'Discount policy'];
-                        $sdfo_desc_clean = $sdfo_raw_desc;
-                        foreach ( $sdfo_policy_markers as $marker ) {
-                            $pos = strpos( $sdfo_desc_clean, $marker );
-                            if ( $pos !== false ) {
-                                $sdfo_desc_clean = trim( substr( $sdfo_desc_clean, 0, $pos ) );
-                                break;
-                            }
-                        }
-                        // Cap at 160 chars, trim to last space
-                        if ( mb_strlen( $sdfo_desc_clean ) > 160 ) {
-                            $sdfo_desc_clean = rtrim( mb_substr( $sdfo_desc_clean, 0, 157 ) ) . '…';
-                        }
-                        if ( $sdfo_desc_clean !== '' ) :
-                    ?>
-                        <div class="sdfo-pkg-card__desc"><?php echo esc_html( $sdfo_desc_clean ); ?></div>
+
+                    <?php if ($tagline !== '') : ?>
+                        <div class="sdfo-pkg-card__tagline"><?php echo esc_html($tagline); ?></div>
                     <?php endif; ?>
+
+                    <?php if (!empty($active_features)) : ?>
+                        <ul class="sdfo-pkg-card__features">
+                            <?php foreach ($active_features as $feat_label) : ?>
+                                <li><?php echo esc_html($feat_label); ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+
+                    <?php if ($fee_line !== '') : ?>
+                        <div class="sdfo-pkg-card__fee"><?php echo esc_html($fee_line); ?></div>
+                    <?php endif; ?>
+
+                    <div class="sdfo-pkg-card__provision"><?php echo esc_html($prov_note); ?></div>
+
                     <div class="sdfo-pkg-card__cta">Select</div>
                 </div>
             <?php endforeach; ?>
@@ -1670,19 +1711,37 @@ final class SD_Front_Office_Scaffold {
             border: 2px solid #e2e8f0; border-radius: 16px; padding: 22px 20px;
             cursor: pointer; transition: border-color .15s, box-shadow .15s;
             background: #fff; text-align: left; user-select: none;
+            display: flex; flex-direction: column;
         }
         .sdfo-pkg-card:hover { border-color: #94a3b8; box-shadow: 0 4px 16px rgba(15,23,42,.07); }
         .sdfo-pkg-card.is-selected {
             border-color: #111827;
             box-shadow: 0 0 0 3px rgba(17,24,39,.12), 0 4px 16px rgba(15,23,42,.08);
         }
-        .sdfo-pkg-card__name  { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
-        .sdfo-pkg-card__price { font-size: 22px; font-weight: 900; color: #111827; margin-bottom: 10px; }
-        .sdfo-pkg-card__desc  { font-size: 13px; color: #475569; margin-bottom: 14px; line-height: 1.5; }
-        .sdfo-pkg-card__cta   {
+        .sdfo-pkg-card__name    { font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 6px; }
+        .sdfo-pkg-card__price   { font-size: 22px; font-weight: 900; color: #111827; margin: 0 0 10px; }
+        .sdfo-pkg-card__tagline { font-size: 13px; color: #64748b; margin: 0 0 14px; line-height: 1.4; font-style: italic; }
+        .sdfo-pkg-card__features {
+            list-style: none; margin: 0 0 14px; padding: 0;
+            border-top: 1px solid #f1f5f9; padding-top: 12px;
+        }
+        .sdfo-pkg-card__features li {
+            font-size: 12.5px; color: #334155; line-height: 1.7;
+            padding-left: 18px; position: relative;
+        }
+        .sdfo-pkg-card__features li::before {
+            content: "✓"; position: absolute; left: 0; color: #16a34a; font-weight: 700;
+        }
+        .sdfo-pkg-card__fee {
+            font-size: 12px; color: #475569; margin: 0 0 8px;
+            padding: 5px 10px; background: #f8fafc; border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        .sdfo-pkg-card__provision { font-size: 11.5px; color: #94a3b8; margin: 0 0 16px; }
+        .sdfo-pkg-card__cta {
             display: inline-block; padding: 8px 20px; border-radius: 999px;
             background: #f1f5f9; font-size: 13px; font-weight: 700; color: #0f172a;
-            transition: background .15s;
+            transition: background .15s; margin-top: auto; align-self: flex-start;
         }
         .sdfo-pkg-card.is-selected .sdfo-pkg-card__cta { background: #111827; color: #fff; }
         </style>
@@ -1739,6 +1798,46 @@ final class SD_Front_Office_Scaffold {
         </script>
         <?php
         return (string) ob_get_clean();
+    }
+
+    /**
+     * Build a human-readable per-ride fee line from an application_fee_policy array.
+     *
+     * Handles:
+     *   mode = 'none'       → "No per-ride fee"
+     *   mode = 'percentage' → "6.5% per ride (min $1.00)"
+     *                         "6.5% per ride after first $500/mo (min $1.00)"
+     */
+    private static function build_fee_line(array $policy): string {
+        $mode = $policy['mode'] ?? 'percentage';
+
+        if ($mode === 'none') {
+            return 'No per-ride fee';
+        }
+
+        if ($mode === 'percentage') {
+            $pct       = (float) ($policy['percentage']              ?? 0);
+            $min_cents = (int)   ($policy['minimum_fee_cents']        ?? 0);
+            $threshold = (int)   ($policy['monthly_volume_threshold_cents'] ?? 0);
+
+            if ($pct <= 0) {
+                return 'No per-ride fee';
+            }
+
+            $pct_str = rtrim(rtrim(number_format($pct, 2, '.', ''), '0'), '.') . '%';
+
+            $line = $threshold > 0
+                ? $pct_str . ' per ride after first $' . number_format($threshold / 100, 0) . '/mo'
+                : $pct_str . ' per ride';
+
+            if ($min_cents > 0) {
+                $line .= ' (min $' . number_format($min_cents / 100, 2) . ')';
+            }
+
+            return $line;
+        }
+
+        return '';
     }
 
     private static function is_valid_slug_candidate(string $slug): bool {

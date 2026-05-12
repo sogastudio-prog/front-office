@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--sd-ink)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- person head -->
+  <circle cx="12" cy="8" r="3"/>
+  <!-- person body arc -->
+  <path d="M6 21v-1a6 6 0 0 1 12 0v1"/>
+  <!-- return arc (rider comes back around) -->
+  <path d="M20 12 a8 8 0 0 0-16 0"/>
+  <!-- arrowhead at end of arc pointing right (arrival) -->
+  <polyline points="6 10 4 12 6 14"/>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--sd-ink)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- left chain link (pill) -->
+  <rect x="2" y="9" width="8" height="6" rx="3"/>
+  <!-- right chain link (pill) -->
+  <rect x="14" y="9" width="8" height="6" rx="3"/>
+  <!-- connector bar -->
+  <line x1="10" y1="12" x2="14" y2="12"/>
+</svg>
