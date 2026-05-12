@@ -1140,9 +1140,10 @@ final class SD_Front_Office_Scaffold {
                 ? SD_CONTROL_PLANE_PROVISIONING_SECRET
                 : (string) get_option('sd_control_plane_provisioning_secret', '');
 
+            $issued_at = time();
             $onboarding_token = hash_hmac(
                 'sha256',
-                $prospect_post_id . '|' . $prospect_token,
+                $prospect_post_id . '|' . $prospect_token . '|' . $issued_at,
                 $provisioning_secret
             );
 
@@ -1156,6 +1157,7 @@ final class SD_Front_Office_Scaffold {
                 . '&prospect_post_id=' . rawurlencode((string) $prospect_post_id)
                 . '&prospect_token=' . rawurlencode($prospect_token)
                 . '&session_id={CHECKOUT_SESSION_ID}'
+                . '&issued_at=' . $issued_at
                 . '&sig=' . rawurlencode($onboarding_token);
 
             $cancel_url = add_query_arg(
