@@ -1471,21 +1471,31 @@ final class SD_Front_Office_Scaffold {
             return;
         }
 
-        $endpoint = 'https://app.solodrive.pro/wp-json/sd/v1/provision-operator';
+        $provisioning_secret = defined('SD_CONTROL_PLANE_PROVISIONING_SECRET')
+            ? SD_CONTROL_PLANE_PROVISIONING_SECRET
+            : (string) get_option('sd_control_plane_provisioning_secret', '');
+
+        $endpoint = defined('SD_RUNTIME_BASE_URL')
+            ? rtrim(SD_RUNTIME_BASE_URL, '/') . '/wp-json/sd/v1/provision-operator'
+            : 'https://app.solodrive.pro/wp-json/sd/v1/provision-operator';
 
         $payload = [
-            'tenant_id' => $tenant_id,
+            'tenant_id'   => $tenant_id,
             'tenant_slug' => $slug,
-            'email' => $email,
-            'full_name' => $full_name,
+            'email'       => $email,
+            'full_name'   => $full_name,
         ];
+
+        $payload_json = wp_json_encode($payload);
+        $sig = hash_hmac('sha256', $payload_json, $provisioning_secret);
 
         $response = wp_remote_post($endpoint, [
             'timeout' => 15,
             'headers' => [
-                'Content-Type' => 'application/json',
+                'Content-Type'   => 'application/json',
+                'X-SD-Signature' => $sig,
             ],
-            'body' => wp_json_encode($payload),
+            'body' => $payload_json,
         ]);
 
         if (is_wp_error($response)) {
@@ -2478,7 +2488,7 @@ final class SD_Front_Office_Scaffold {
             'phone_raw'         => $phone_raw,
             'phone_normalized'  => self::normalize_phone($phone_raw),
             'invitation_code'   => $first($posted_data['invite_code'] ?? ''),
-            'package_key'       => sanitize_key((string) ($posted_data['sd_package_key'] ?? $posted_data['sd_package'] ?? 'operator')),
+            'package_key'       => sanitize_key((string) ($posted_data['sd_package_key'] ?? $posted_data['sd_package'] ?? $posted_data['package'] ?? 'operator')),
             'authorization_code'=> sanitize_text_field((string) ($posted_data['sd_authorization_code'] ?? $posted_data['authorization_code'] ?? $posted_data['invite_code'] ?? '')),
             'submission_count'  => 1,
             'submitted_at_gmt'  => current_time('mysql', true),
@@ -2791,7 +2801,7 @@ add_action('wp_footer', function () {
     <script>
     (function() {
       var params = new URLSearchParams(window.location.search);
-      var packageKey = params.get('sd_package') || params.get('sd_package_key');
+      var packageKey = params.get('sd_package_key') || params.get('sd_package') || params.get('package');
       var authorizationCode = params.get('sd_authorization_code') || params.get('authorization_code');
 
       try {

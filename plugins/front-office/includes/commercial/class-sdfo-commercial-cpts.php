@@ -556,6 +556,7 @@ final class SDFO_Commercial_CPTs {
             return [ 'valid' => false, 'reason' => 'linked_profile_invalid', 'record' => $record ];
         }
 
+        self::increment_auth_code_uses( $record['post_id'] );
         return [ 'valid' => true, 'reason' => 'valid', 'record' => $record, 'profile' => $profile ];
     }
 
