@@ -572,6 +572,11 @@ class SDCT_Sync_CLI_Command {
         if ( isset( $assoc_args['file'] ) ) {
             $file = $assoc_args['file'];
 
+            if ( $file[0] !== '/' ) {
+                $repo = new SDCT_Content_Repository();
+                $file = rtrim( $repo->root_dir(), '/' ) . '/' . $file;
+            }
+
             if ( ! file_exists( $file ) ) {
                 WP_CLI::error( 'File not found: ' . $file );
             }
