@@ -530,3 +530,125 @@ class SDCT_CLI_Command {
 
 
 }
+
+/**
+ * Pipeline-sync commands registered as `wp sdct`.
+ *
+ * Usage:
+ *   wp sdct sync --all
+ *   wp sdct sync --file=<path>
+ *   wp sdct status
+ *   wp sdct gates
+ */
+class SDCT_Sync_CLI_Command {
+
+    /**
+     * Sync authority cluster pages to WordPress.
+     *
+     * ## OPTIONS
+     *
+     * [--all]
+     * : Sync every page listed in authority-cluster.yml.
+     *
+     * [--file=<path>]
+     * : Absolute or root-relative path to a single markdown file.
+     *
+     * [--dry-run]
+     * : Report what would change without writing to WordPress.
+     */
+    public function sync( $args, $assoc_args ) {
+        $dry_run = ! empty( $assoc_args['dry-run'] );
+        $sync    = new SDCT_WordPress_Sync();
+
+        if ( isset( $assoc_args['file'] ) ) {
+            $file = $assoc_args['file'];
+
+            if ( ! file_exists( $file ) ) {
+                WP_CLI::error( 'File not found: ' . $file );
+            }
+
+            if ( $dry_run ) {
+                WP_CLI::line( 'Would sync: ' . basename( $file ) );
+                return;
+            }
+
+            $result = $sync->sync_file( $file );
+            $this->report_result( $result );
+            return;
+        }
+
+        if ( isset( $assoc_args['all'] ) ) {
+            if ( $dry_run ) {
+                $cluster = new SDCT_Cluster_Reader();
+                foreach ( $cluster->get_pages() as $page ) {
+                    WP_CLI::line( 'Would sync: ' . ( $page['slug'] ?? '?' ) );
+                }
+                return;
+            }
+
+            $results = $sync->sync_all();
+            foreach ( $results as $result ) {
+                $this->report_result( $result );
+            }
+            WP_CLI::success( 'Sync complete. ' . count( $results ) . ' pages processed.' );
+            return;
+        }
+
+        WP_CLI::error( 'Pass --all or --file=<path>.' );
+    }
+
+    /**
+     * Show sync status of every page in the authority cluster.
+     */
+    public function status( $args, $assoc_args ) {
+        $cluster = new SDCT_Cluster_Reader();
+        $pages   = $cluster->get_pages();
+
+        if ( ! $pages ) {
+            WP_CLI::warning( 'No pages in authority-cluster.yml.' );
+            return;
+        }
+
+        WP_CLI::line( sprintf( '%-40s %-12s %-10s %s', 'SLUG', 'ROLE', 'WP STATUS', 'POST ID' ) );
+        WP_CLI::line( str_repeat( '-', 75 ) );
+
+        foreach ( $pages as $page ) {
+            $slug    = $page['slug']  ?? '';
+            $role    = $page['role']  ?? '';
+            $wp_post = get_page_by_path( $slug, OBJECT, 'page' );
+            $status  = $wp_post ? $wp_post->post_status : 'not found';
+            $post_id = $wp_post ? (string) $wp_post->ID : '—';
+
+            WP_CLI::line( sprintf( '%-40s %-12s %-10s %s', $slug, $role, $status, $post_id ) );
+        }
+    }
+
+    /**
+     * Show current publish gate states from authority-cluster.yml.
+     */
+    public function gates( $args, $assoc_args ) {
+        $cluster = new SDCT_Cluster_Reader();
+        $gates   = $cluster->get_publish_gates();
+
+        if ( ! $gates ) {
+            WP_CLI::warning( 'No publish_status block in authority-cluster.yml.' );
+            return;
+        }
+
+        foreach ( $gates as $key => $value ) {
+            $flag = $value === 'auto_publish' ? '✓ open' : '✗ gated';
+            WP_CLI::line( sprintf( '%-30s %-30s %s', $key, $value, $flag ) );
+        }
+    }
+
+    private function report_result( array $result ): void {
+        $slug = $result['slug'] ?? '?';
+        if ( ( $result['status'] ?? '' ) === 'error' ) {
+            WP_CLI::warning( $slug . ': ' . ( $result['message'] ?? 'unknown error' ) );
+        } elseif ( ( $result['status'] ?? '' ) === 'missing' ) {
+            WP_CLI::warning( $slug . ': file not found' );
+        } else {
+            WP_CLI::success( $slug . ' → post ' . ( $result['post_id'] ?? '?' ) . ' [' . ( $result['wp_status'] ?? '' ) . ']' );
+        }
+    }
+}

@@ -22,26 +22,9 @@ A rider gets in your car, enjoys the ride, and asks whether you will be around l
 
 SoloDrive gives drivers a booking page, intake flow, trip status surface, and payment path so passengers can book directly next time.
 
+## Related SoloDrive pages
 
-<section class="sd-section sd-card sd-related-pages">
-  <p class="sd-eyebrow">Related SoloDrive pages</p>
-
-  <h2>Keep going</h2>
-
-  <ul>
-    <li><a href="/own-your-riders/">Own Your Riders</a></li>
-    <li><a href="/why-uber-and-lyft-drivers-struggle-to-make-more-money/">Why Uber and Lyft Drivers Struggle to Make More Money</a></li>
-    <li><a href="/uber-vs-owning-your-own-business/">Uber vs Owning Your Own Business</a></li>
-    <li><a href="/how-to-turn-uber-riders-into-repeat-customers/">How to Turn Uber Riders Into Repeat Customers</a></li>
-  </ul>
-</section>
-
-<section class="sd-section sd-card sd-final-cta">
-  <p class="sd-eyebrow">Next step</p>
-
-  <h2>Keep the relationship after the first ride.</h2>
-
-  <p>Start your booking page so riders who already know you have a direct way to come back.</p>
-
-  <p><a class="sd-button" href="/start/">Start your booking page</a></p>
-</section>
+- [Own Your Riders](/own-your-riders/)
+- [Why Uber and Lyft Drivers Struggle to Make More Money](/why-uber-and-lyft-drivers-struggle-to-make-more-money/)
+- [Uber vs Owning Your Own Business](/uber-vs-owning-your-own-business/)
+- [How to Turn Uber Riders Into Repeat Customers](/how-to-turn-uber-riders-into-repeat-customers/)
