@@ -16,31 +16,43 @@ final class SD_Social_Publisher {
      * Handle Quick Publish form submission
      */
     public static function handle_quick_publish(): void {
-        if (!current_user_can('manage_options')) {
-            wp_die('Insufficient permissions.');
-        }
+        if (!current_user_can('manage_options')) wp_die('Insufficient permissions.');
 
         check_admin_referer('sd_social_quick_publish');
 
         $message = sanitize_textarea_field($_POST['message'] ?? '');
         $link    = esc_url_raw($_POST['link'] ?? '');
+        $target  = sanitize_text_field($_POST['target'] ?? 'google');
 
         if (empty($message)) {
             wp_redirect(admin_url('admin.php?page=solodrive-social&publish_error=Message+is+required'));
             exit;
         }
 
-        $post_data = [
-            'message' => $message,
-            'link'    => $link
-        ];
+        $post_data = ['message' => $message, 'link' => $link];
+        $success = true;
+        $errors = [];
 
-        $result = self::publish_to_google($post_data);
+        if (in_array($target, ['google', 'both'])) {
+            $result = self::publish_to_google($post_data);
+            if (!$result['success']) {
+                $success = false;
+                $errors[] = 'Google: ' . $result['error'];
+            }
+        }
 
-        if ($result['success']) {
+        if (in_array($target, ['meta', 'both'])) {
+            $result = self::publish_to_meta($post_data);
+            if (!$result['success']) {
+                $success = false;
+                $errors[] = 'Meta: ' . $result['error'];
+            }
+        }
+
+        if ($success) {
             wp_redirect(admin_url('admin.php?page=solodrive-social&publish_success=1'));
         } else {
-            wp_redirect(admin_url('admin.php?page=solodrive-social&publish_error=' . urlencode($result['error'] ?? 'Unknown error')));
+            wp_redirect(admin_url('admin.php?page=solodrive-social&publish_error=' . urlencode(implode(', ', $errors))));
         }
         exit;
     }
