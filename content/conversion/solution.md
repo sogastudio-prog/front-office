@@ -45,12 +45,9 @@ primary_cta_url: /start/
   </div>
 </section>
 
-<!-- EDITORIAL PLACEHOLDER: Hub-and-spoke explainer diagram — design asset not yet created.
-     Replace img src with final diagram URL before publishing.
-     Caption is final copy — do not change. -->
 <section class="sd-section sd-panel sd-panel--soft sd-loop-visual">
   <figure>
-    <p><strong>⚠ PLACEHOLDER — design asset needed: hub-and-spoke explainer diagram.</strong></p>
+    <img src="https://solodrive.pro/wp-content/uploads/2026/05/sdp-loop-day.svg" alt="Hub-and-spoke diagram showing how your SoloDrive booking link connects you directly to your riders" width="800" />
     <figcaption>Your booking link turns each Uber ride into a direct booking.</figcaption>
   </figure>
 </section>
