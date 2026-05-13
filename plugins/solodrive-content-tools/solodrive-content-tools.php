@@ -88,6 +88,25 @@ add_filter( 'body_class', function ( $classes ) {
 } );
 
 /**
+ * Path A — override browser title tag for pipeline-synced WP pages.
+ * Uses _sdct_meta_title when present so the <title> matches frontmatter,
+ * not the WP post_title.
+ */
+add_filter( 'pre_get_document_title', function ( $title ) {
+	if ( ! is_page() ) {
+		return $title;
+	}
+
+	$post = get_post();
+	if ( ! $post || strpos( (string) $post->post_content, 'sd-managed-page' ) === false ) {
+		return $title;
+	}
+
+	$meta_title = get_post_meta( $post->ID, '_sdct_meta_title', true );
+	return $meta_title ? (string) $meta_title : $title;
+}, 10 );
+
+/**
  * Path A — inject meta tags and schema for pipeline-synced WP pages.
  *
  * Only fires for regular WP pages whose post_content contains sd-managed-page

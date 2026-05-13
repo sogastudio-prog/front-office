@@ -102,6 +102,12 @@ class SDCT_WordPress_Sync {
 		update_post_meta( $post_id, '_sdct_schema_json', $schema_blob );
 		update_post_meta( $post_id, '_sdct_slug', $slug );
 
+		// Suppress Astra theme page title for all authority pages.
+		// The renderer writes its own H1 via sd-authority__title.
+		if ( in_array( $type, [ 'authority', 'page' ], true ) ) {
+			update_post_meta( $post_id, 'site-post-title', 'disabled' );
+		}
+
 		return [
 			'slug'      => $slug,
 			'post_id'   => $post_id,
