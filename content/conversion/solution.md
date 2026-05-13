@@ -211,6 +211,19 @@ primary_cta: Get Your Booking Page
   <blockquote>SoloDrive is closer to Shopify for independent ride services than another Uber-style marketplace.</blockquote>
 </section>
 
+<section class="sd-section sd-card">
+  <p class="sd-eyebrow">No requirements</p>
+
+  <h2>What You Don't Need</h2>
+
+  <ul>
+    <li>No app to build.</li>
+    <li>No tech team.</li>
+    <li>No waiting on approval.</li>
+    <li>No commission to a platform that owns your riders.</li>
+  </ul>
+</section>
+
 <section class="sd-section sd-card sd-solution-driver-moment">
   <p class="sd-eyebrow">The driver moment</p>
 
