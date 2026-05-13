@@ -45,10 +45,12 @@ primary_cta_url: /start/
   </div>
 </section>
 
-<!-- EDITORIAL: Loop visual asset — Hub-and-spoke explainer diagram pending from design -->
+<!-- EDITORIAL PLACEHOLDER: Hub-and-spoke explainer diagram — design asset not yet created.
+     Replace img src with final diagram URL before publishing.
+     Caption is final copy — do not change. -->
 <section class="sd-section sd-panel sd-panel--soft sd-loop-visual">
   <figure>
-    <img src="/wp-content/plugins/solodrive-front-css/assets/icons/icon-direct-link.svg" alt="Your booking link connects you directly to your riders" aria-hidden="true" />
+    <p><strong>⚠ PLACEHOLDER — design asset needed: hub-and-spoke explainer diagram.</strong></p>
     <figcaption>Your booking link turns each Uber ride into a direct booking.</figcaption>
   </figure>
 </section>
