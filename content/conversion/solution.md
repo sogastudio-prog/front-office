@@ -1,7 +1,7 @@
 ---
 title: Solution
 slug: solution
-status: publish
+status: draft
 type: conversion
 template: product
 page_title: The Direct Booking System for Independent Ride Drivers
@@ -229,6 +229,15 @@ primary_cta: Get Your Booking Page
   <blockquote>“Yes. Here’s my booking link.”</blockquote>
 
   <p><a class="sd-button" href="/start/">Get Your Booking Page</a></p>
+</section>
+
+<!-- EDITORIAL PLACEHOLDER: Social proof — do not publish until sourced -->
+<section class="sd-panel sd-panel--soft">
+  <p><strong>⚠ PLACEHOLDER — not for publication.</strong> Driver testimonial to be sourced from beta operators before this page goes live.</p>
+  <blockquote>
+    <p>[Driver quote to be placed here]</p>
+    <cite>[Driver name, city]</cite>
+  </blockquote>
 </section>
 
 <section class="sd-section sd-card sd-solution-summary-grid">

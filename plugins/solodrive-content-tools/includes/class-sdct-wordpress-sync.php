@@ -121,6 +121,9 @@ class SDCT_WordPress_Sync {
 		if ( in_array( $type, [ 'authority', 'page' ], true ) ) {
 			return $this->renderer->render_authority( $page );
 		}
+		if ( $type === 'conversion' ) {
+			return $page['body'] ?? '';
+		}
 		return '';
 	}
 

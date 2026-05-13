@@ -3,7 +3,7 @@ type: conversion
 template: pricing
 title: Pricing
 slug: pricing
-status: publish
+status: draft
 meta_title: SoloDrive Pricing
 meta_description: Start your SoloDrive booking page with the Operator Subscription. $20/month after checkout.
 summary: Pricing page for the SoloDrive Operator Subscription.
@@ -44,6 +44,15 @@ primary_cta_url: /start/?sd_package=operator
   </ul>
 
   <p><a class="sd-button" href="/start/?sd_package=operator">Start with this plan</a></p>
+</section>
+
+<!-- EDITORIAL PLACEHOLDER: Social proof — do not publish until sourced -->
+<section class="sd-panel sd-panel--soft">
+  <p><strong>⚠ PLACEHOLDER — not for publication.</strong> Driver testimonial to be sourced from beta operators before this page goes live.</p>
+  <blockquote>
+    <p>[Driver quote to be placed here]</p>
+    <cite>[Driver name, city]</cite>
+  </blockquote>
 </section>
 
 <section class="sd-section sd-card">
