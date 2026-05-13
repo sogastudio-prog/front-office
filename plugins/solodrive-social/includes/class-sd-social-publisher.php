@@ -16,7 +16,9 @@ final class SD_Social_Publisher {
      * Handle Quick Publish form submission
      */
     public static function handle_quick_publish(): void {
-        if (!current_user_can('manage_options')) wp_die('Insufficient permissions.');
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions.');
+        }
 
         check_admin_referer('sd_social_quick_publish');
 
@@ -33,26 +35,28 @@ final class SD_Social_Publisher {
         $success = true;
         $errors = [];
 
+        // Publish to Google
         if (in_array($target, ['google', 'both'])) {
             $result = self::publish_to_google($post_data);
             if (!$result['success']) {
                 $success = false;
-                $errors[] = 'Google: ' . $result['error'];
+                $errors[] = 'Google: ' . ($result['error'] ?? 'Unknown error');
             }
         }
 
+        // Publish to Meta
         if (in_array($target, ['meta', 'both'])) {
             $result = self::publish_to_meta($post_data);
             if (!$result['success']) {
                 $success = false;
-                $errors[] = 'Meta: ' . $result['error'];
+                $errors[] = 'Meta: ' . ($result['error'] ?? 'Unknown error');
             }
         }
 
         if ($success) {
             wp_redirect(admin_url('admin.php?page=solodrive-social&publish_success=1'));
         } else {
-            wp_redirect(admin_url('admin.php?page=solodrive-social&publish_error=' . urlencode(implode(', ', $errors))));
+            wp_redirect(admin_url('admin.php?page=solodrive-social&publish_error=' . urlencode(implode(' | ', $errors))));
         }
         exit;
     }
