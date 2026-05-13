@@ -7,7 +7,7 @@ standard_cta:
   link_url: /request-access/
 
 publish_status:
-  authority_cluster: draft_until_visual_review
+  authority_cluster: auto_publish
   conversion_pages: manual_until_migrated
   legal_pages: review_required
 
