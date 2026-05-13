@@ -26,17 +26,22 @@ class SDCT_WordPress_Sync {
 		return $this->sync_page( $this->repo->load_page( $file_path ) );
 	}
 
-	public function sync_all(): array {
+	public function sync_all( array $skip_slugs = [] ): array {
 		$results      = [];
 		$root         = $this->repo->root_dir();
 		$content_dirs = [
-			'authority' => $root . '/content/pages',
+			'authority'  => $root . '/content/pages',
 			'conversion' => $root . '/content/conversion',
 		];
 
 		foreach ( $this->cluster->get_pages() as $cluster_page ) {
 			$slug = $cluster_page['slug'] ?? '';
 			if ( $slug === '' ) {
+				continue;
+			}
+
+			if ( in_array( $slug, $skip_slugs, true ) ) {
+				$results[] = [ 'slug' => $slug, 'status' => 'skipped', 'message' => 'Excluded by --skip' ];
 				continue;
 			}
 

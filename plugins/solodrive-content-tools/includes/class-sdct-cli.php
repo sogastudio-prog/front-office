@@ -551,14 +551,23 @@ class SDCT_Sync_CLI_Command {
      * : Sync every page listed in authority-cluster.yml.
      *
      * [--file=<path>]
-     * : Absolute or root-relative path to a single markdown file.
+     * : Absolute path to a single markdown file.
+     *
+     * [--skip=<slugs>]
+     * : Comma-separated slugs to exclude from --all sync.
      *
      * [--dry-run]
      * : Report what would change without writing to WordPress.
      */
     public function sync( $args, $assoc_args ) {
-        $dry_run = ! empty( $assoc_args['dry-run'] );
-        $sync    = new SDCT_WordPress_Sync();
+        $dry_run    = ! empty( $assoc_args['dry-run'] );
+        $skip_slugs = [];
+
+        if ( ! empty( $assoc_args['skip'] ) ) {
+            $skip_slugs = array_map( 'trim', explode( ',', $assoc_args['skip'] ) );
+        }
+
+        $sync = new SDCT_WordPress_Sync();
 
         if ( isset( $assoc_args['file'] ) ) {
             $file = $assoc_args['file'];
@@ -578,19 +587,30 @@ class SDCT_Sync_CLI_Command {
         }
 
         if ( isset( $assoc_args['all'] ) ) {
+            if ( $skip_slugs ) {
+                WP_CLI::line( 'Skipping: ' . implode( ', ', $skip_slugs ) );
+            }
+
             if ( $dry_run ) {
                 $cluster = new SDCT_Cluster_Reader();
                 foreach ( $cluster->get_pages() as $page ) {
-                    WP_CLI::line( 'Would sync: ' . ( $page['slug'] ?? '?' ) );
+                    $slug = $page['slug'] ?? '?';
+                    if ( in_array( $slug, $skip_slugs, true ) ) {
+                        WP_CLI::line( 'Would skip:  ' . $slug );
+                    } else {
+                        WP_CLI::line( 'Would sync:  ' . $slug );
+                    }
                 }
                 return;
             }
 
-            $results = $sync->sync_all();
+            $results = $sync->sync_all( $skip_slugs );
             foreach ( $results as $result ) {
                 $this->report_result( $result );
             }
-            WP_CLI::success( 'Sync complete. ' . count( $results ) . ' pages processed.' );
+            $synced  = count( array_filter( $results, fn( $r ) => ( $r['status'] ?? '' ) === 'synced' ) );
+            $skipped = count( array_filter( $results, fn( $r ) => ( $r['status'] ?? '' ) === 'skipped' ) );
+            WP_CLI::success( "Sync complete. {$synced} synced, {$skipped} skipped." );
             return;
         }
 
