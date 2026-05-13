@@ -1,6 +1,7 @@
 ---
 title: Do Uber Drivers Own Their Customers?
 slug: do-uber-drivers-own-their-customers
+canonical: https://solodrive.pro/do-uber-drivers-own-their-customers/
 status: publish
 meta_title: Do Uber Drivers Own Their Customers? | SoloDrive
 meta_description: Uber and Lyft drivers usually do not own the customer relationship. SoloDrive helps drivers build direct rider relationships and repeat bookings.

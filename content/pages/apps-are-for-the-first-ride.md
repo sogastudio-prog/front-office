@@ -1,6 +1,7 @@
 ---
 title: Apps Are for the First Ride
 slug: apps-are-for-the-first-ride
+canonical: https://solodrive.pro/apps-are-for-the-first-ride/
 status: publish
 meta_title: Apps Are for the First Ride | SoloDrive
 meta_description: Rideshare apps can introduce drivers to passengers. SoloDrive helps drivers keep the relationship after trust is built.

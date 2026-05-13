@@ -1,6 +1,7 @@
 ---
 title: Best Alternatives to Uber for Drivers
 slug: best-alternatives-to-uber-for-drivers
+canonical: https://solodrive.pro/best-alternatives-to-uber-for-drivers/
 status: publish
 meta_title: Best Alternatives to Uber for Drivers | SoloDrive
 meta_description: The best Uber alternatives for drivers are options that help them build direct rider relationships, repeat bookings, and their own transportation business.

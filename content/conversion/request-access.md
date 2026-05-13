@@ -5,7 +5,7 @@ title: Request Access
 slug: request-access
 status: publish
 meta_title: Request Access | SoloDrive
-meta_description: Request access to SoloDrive and start setting up your own direct-booking ride service page.
+meta_description: Request access to SoloDrive and get your professional ride booking page. No contracts. No commitments. Live in minutes.
 summary: Request access to SoloDrive and begin setting up a direct-booking page for your ride service.
 primary_cta: start
 conversion_goal: submit_request_access
