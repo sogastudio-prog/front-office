@@ -1,4 +1,4 @@
-# WP Page Map — Authority Cluster
+# WP Page Map — Authority Cluster + Conversion Pages
 
 Last updated: 2026-05-13  
 Last sync: 2026-05-13 (full sync via `wp sdct sync --all --skip=solodrive-pro-gig-driver-to-ride-service-owner`)
@@ -25,6 +25,16 @@ Hub: `what-should-uber-drivers-do-next`
 | how-to-get-repeat-riders | execution | 752 | publish | 2026-05-13 |
 | how-do-private-ride-drivers-get-clients | acquisition | 848 | publish | 2026-05-13 |
 | how-to-start-a-transportation-business-in-a-small-town | small-market | 755 | publish | 2026-05-13 |
+
+---
+
+## Conversion Pages
+
+| Slug | WP Post ID | Status | Last Synced | Notes |
+|---|---|---|---|---|
+| request-access | 136 | draft | — | Pre-existing. Contact Form 7 intake. |
+| pricing | 413 | draft | 2026-05-13 | Social proof block placeholder present. |
+| solution | 1413 | draft | 2026-05-13 | Cluster layout. Loop visual pending design asset. Social proof placeholder present. |
 
 ---
 

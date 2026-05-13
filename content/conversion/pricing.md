@@ -9,6 +9,7 @@ meta_description: Start your SoloDrive booking page with the Operator Subscripti
 summary: Pricing page for the SoloDrive Operator Subscription.
 schema_type: Product
 last_reviewed: 2026-04-29
+wp_post_id: 413
 primary_cta: Start with this plan
 primary_cta_url: /start/?sd_package=operator
 ---
