@@ -1,7 +1,7 @@
 ---
 title: Is Uber Worth It Long Term?
 slug: is-uber-worth-it-long-term
-status: draft
+status: publish
 meta_title: Is Uber Worth It Long Term? | SoloDrive
 meta_description: Uber may create income today, but long-term drivers need repeat riders, direct bookings, and customer relationships they can keep.
 summary: Uber can be useful for short-term income and passenger discovery, but long-term drivers need a way to build direct rider relationships outside the app.

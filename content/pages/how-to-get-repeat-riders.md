@@ -1,7 +1,7 @@
 ---
 title: How to Get Repeat Riders
 slug: how-to-get-repeat-riders
-status: draft
+status: publish
 meta_title: How to Get Repeat Riders | SoloDrive
 meta_description: Learn how independent rideshare drivers can get repeat riders by building trust, sharing a direct booking link, and making it easy for passengers to book again.
 summary: Drivers get repeat riders by giving great service, recognizing future-ride moments, and giving passengers a simple way to book them directly again.

@@ -1,7 +1,7 @@
 ---
 title: Best Alternatives to Uber for Drivers
 slug: best-alternatives-to-uber-for-drivers
-status: draft
+status: publish
 meta_title: Best Alternatives to Uber for Drivers | SoloDrive
 meta_description: The best Uber alternatives for drivers are options that help them build direct rider relationships, repeat bookings, and their own transportation business.
 summary: The best alternative to Uber for drivers is not just another app. It is a way to build direct rider relationships and repeat bookings under the driver's own name.

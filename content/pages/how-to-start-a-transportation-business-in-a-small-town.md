@@ -1,7 +1,7 @@
 ---
 title: How to Start a Transportation Business in a Small Town
 slug: how-to-start-a-transportation-business-in-a-small-town
-status: draft
+status: publish
 meta_title: How to Start a Transportation Business in a Small Town | SoloDrive
 meta_description: Learn how drivers can start a small-town transportation business by focusing on repeat riders, direct bookings, and local reliability.
 summary: A small-town transportation business starts with reliable local service, repeat riders, and a simple way for people to book directly.

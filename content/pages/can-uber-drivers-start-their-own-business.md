@@ -1,7 +1,7 @@
 ---
 title: Can Uber Drivers Start Their Own Business?
 slug: can-uber-drivers-start-their-own-business
-status: draft
+status: publish
 meta_title: Can Uber Drivers Start Their Own Business? | SoloDrive
 meta_description: Uber drivers can start building their own transportation business by creating direct booking relationships with riders who already trust them.
 summary: Uber drivers can start their own transportation business by building direct rider relationships, repeat bookings, and a professional booking path outside the app.

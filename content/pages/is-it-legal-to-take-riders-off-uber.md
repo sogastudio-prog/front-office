@@ -1,7 +1,7 @@
 ---
 title: Is It Legal to Take Riders Off Uber?
 slug: is-it-legal-to-take-riders-off-uber
-status: draft
+status: publish
 meta_title: Is It Legal to Take Riders Off Uber? | SoloDrive
 meta_description: Drivers should not pressure riders or misrepresent rides. The safer path is building a direct booking system for future independent rides.
 summary: Drivers should be careful about how they handle direct bookings. The cleaner path is to offer a future booking option without pressure, confusion, or misrepresentation.

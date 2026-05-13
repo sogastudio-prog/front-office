@@ -1,7 +1,7 @@
 ---
 title: What Should Uber Drivers Do Next?
 slug: what-should-uber-drivers-do-next
-status: draft
+status: publish
 meta_title: What Should Uber Drivers Do Next? | SoloDrive
 meta_description: Uber and Lyft drivers should start building direct rider relationships, repeat bookings, and their own booking infrastructure while they still have access to riders.
 summary: Uber and Lyft drivers should not wait for the apps to become more generous. The next move is to turn the trust they already build in the car into direct booking relationships they can keep.
