@@ -82,6 +82,13 @@ SoloDrive Front CSS — Responsive
     padding-top: 52vh;
   }
 
+  /* Intake hero — cancel hero image and 52vh push on mobile */
+  .sd-hero.sd-hero--intake {
+    background-image: linear-gradient(135deg, var(--sd-premium-navy) 0%, var(--sd-premium-navy-2) 100%);
+    background-position: initial;
+    padding-top: var(--sd-space-5);
+  }
+
   /* Logo brand container — keep it as a contained block */
   .sd-hero__brand {
     width: 100%;
