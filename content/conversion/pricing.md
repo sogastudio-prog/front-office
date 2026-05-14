@@ -4,71 +4,117 @@ template: pricing
 title: Pricing
 slug: pricing
 status: draft
-meta_title: SoloDrive Pricing | Choose Your Plan
-meta_description: Choose the SoloDrive plan that fits where you are. Booking page, direct rider requests, secure payments. Start today.
-summary: Pricing page — three-tier plan select powered by sdfo_package_select shortcode.
+meta_title: SoloDrive Pricing | Simple Monthly Plans
+meta_description: One monthly fee. Booking page, payments, and direct rider relationships included in every plan. No contracts. No commitments.
+summary: Pricing page — three-tier pricing with full-bleed hero.
 schema_type: Product
 last_reviewed: 2026-05-14
 wp_post_id: 413
-primary_cta: Get My Booking Page
+primary_cta: Start Today
 primary_cta_url: /start/
 ---
 
-<section class="sd-section sd-hero sd-hero--pricing">
-  <p class="sd-eyebrow">Pricing</p>
+<div class="sd-home-premium">
 
-  <h1>Choose the plan that fits where you are.</h1>
-
-  <p class="sd-hero__lead">Every plan gives you a direct booking page and a cleaner way to turn repeat riders into your own business.</p>
-
-  <p>No contracts. Start immediately after checkout.</p>
+<section class="sd-home-hero sd-home-hero--premium">
+  <div class="sd-home-hero__inner">
+    <div class="sd-home-hero__content">
+      <p class="sd-home-hero__eyebrow">Pricing</p>
+      <h1 class="sd-home-hero__title">Straightforward Pricing for a Business You Actually Own</h1>
+      <p class="sd-home-hero__lede">One monthly fee. No contracts. No commitments.</p>
+      <div class="sd-home-hero__actions">
+        <a class="sd-home-hero__primary" href="/start/">Start Today</a>
+      </div>
+    </div>
+  </div>
 </section>
 
-<section class="sd-section sd-card">
-  [sdfo_package_select]
+<div class="sd-pricing-content">
+
+<section class="sd-card">
+  <div class="sd-pricing-grid">
+
+    <article class="sd-pricing-card">
+      <p class="sd-eyebrow">Basic</p>
+      <p class="sd-pricing-card__price">$10<span>/month</span></p>
+      <p class="sd-pricing-card__fee">6.5% per ride &middot; $1.00 minimum</p>
+      <p class="sd-pricing-card__include">Full platform included.</p>
+      <p class="sd-pricing-card__terms">No contracts. No commitments.</p>
+      <a class="sd-button" href="/start/">Get My Booking Page</a>
+    </article>
+
+    <article class="sd-pricing-card sd-pricing-card--featured">
+      <p class="sd-eyebrow">Pro</p>
+      <p class="sd-pricing-card__price">$45<span>/month</span></p>
+      <p class="sd-pricing-card__fee">4% per ride &middot; $1.00 minimum</p>
+      <p class="sd-pricing-card__include">Full platform included.</p>
+      <p class="sd-pricing-card__terms">No contracts. No commitments.</p>
+      <a class="sd-button" href="/start/">Get My Booking Page</a>
+    </article>
+
+    <article class="sd-pricing-card">
+      <p class="sd-eyebrow">Elite</p>
+      <p class="sd-pricing-card__price">$100<span>/month</span></p>
+      <p class="sd-pricing-card__fee">No per-ride fee.</p>
+      <p class="sd-pricing-card__include">Full platform included.</p>
+      <p class="sd-pricing-card__terms">No contracts. No commitments.</p>
+      <a class="sd-button" href="/start/">Get My Booking Page</a>
+    </article>
+
+  </div>
 </section>
 
-<section class="sd-section sd-card">
-  <p class="sd-eyebrow">What happens next</p>
-
-  <h2>You do not pay on the first screen.</h2>
-
-  <ol>
-    <li>You start your booking page setup.</li>
-    <li>You choose your booking link.</li>
-    <li>You review your plan in Stripe.</li>
-    <li>After checkout, we prepare your operator account and booking page.</li>
-  </ol>
+<section class="sd-card">
+  <p class="sd-eyebrow">What's Included</p>
+  <h2>Every Plan. Full Platform.</h2>
+  <p>Every plan includes the same booking page, payment flow, fare breakdown, arrival card, and direct rider relationships.</p>
+  <p>The plan you choose doesn't change what you get. It changes how the money moves.</p>
 </section>
 
-<section class="sd-section sd-panel sd-panel--soft">
-  <blockquote>
-    <p>"My passengers love it. They never knew what to expect with Lyft. Now, they get me every time."</p>
-    <cite>Stan — Memphis, TN</cite>
-  </blockquote>
+<section class="sd-card sd-card--soft">
+  <p class="sd-eyebrow">Volume Guide</p>
+  <h2>Pick the Plan That Matches Your Volume</h2>
+  <p>Do the math on what you're making.</p>
+  <ul>
+    <li>Under $1,400 a month in rides? Basic costs less.</li>
+    <li>Over $1,400 a month? Pro or Elite starts saving you money.</li>
+    <li>Running serious volume? Elite is one flat monthly fee. No cut on any ride.</li>
+  </ul>
 </section>
 
-<section class="sd-section sd-card">
-  <p class="sd-eyebrow">What this is</p>
+<section class="sd-card">
+  <p class="sd-eyebrow">FAQ</p>
+  <h2>Common Questions</h2>
 
-  <h2>A direct booking path riders can use to find you again.</h2>
+  <div class="sd-faq-list">
+    <details class="sd-faq-item">
+      <summary class="sd-faq-question">Can I cancel anytime?</summary>
+      <div class="sd-faq-answer">
+        <p>Yes. No contracts. No cancellation fees. Cancel whenever you want.</p>
+      </div>
+    </details>
 
-  <p>SoloDrive does not send you random riders. It gives riders who already know you a cleaner way to come back directly.</p>
+    <details class="sd-faq-item">
+      <summary class="sd-faq-question">What's the per-ride fee?</summary>
+      <div class="sd-faq-answer">
+        <p>Basic: 6.5% per ride, $1.00 minimum. Pro: 4% per ride, $1.00 minimum. Elite: no per-ride fee.</p>
+      </div>
+    </details>
 
-  <p>That is the point: keep the relationship from disappearing after the ride ends.</p>
+    <details class="sd-faq-item">
+      <summary class="sd-faq-question">Do I need a credit card to start?</summary>
+      <div class="sd-faq-answer">
+        <p>Not for the initial request. Payment setup happens after access is granted.</p>
+      </div>
+    </details>
+  </div>
 </section>
 
-<section class="sd-section sd-card">
-  <p class="sd-eyebrow">What this is not</p>
-
-  <h2>It is not a rideshare marketplace.</h2>
-
-  <p>SoloDrive does not match random riders to random drivers. You bring your own riders, relationships, and local demand.</p>
-
-  <p>We provide the booking and setup infrastructure. You remain responsible for your own business, service, and local requirements.</p>
-</section>
-
-<section class="sd-section sd-cta sd-cta--blue">
-  <h2>Your page is one step away.</h2>
+<section class="sd-cta sd-cta--blue">
+  <h2>Your riders are out there. Your page should be too.</h2>
   <a class="sd-button sd-button--light" href="/start/">Get My Booking Page</a>
 </section>
+
+</div>
+
+</div>

@@ -514,3 +514,124 @@ a.sd-button:hover {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* =====================================
+   FULL-BLEED PAGE CONTENT WRAPPER
+   Constrains body sections when inside .sd-home-premium
+   ===================================== */
+
+.sd-pricing-content,
+.sd-solution-content {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: var(--sd-space-6) var(--sd-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sd-space-5);
+}
+
+@media (max-width: 640px) {
+  .sd-pricing-content,
+  .sd-solution-content {
+    padding: var(--sd-space-4) var(--sd-space-3) var(--sd-space-7);
+  }
+}
+
+/* =====================================
+   PRICING CARDS
+   ===================================== */
+
+.sd-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sd-space-4);
+}
+
+.sd-pricing-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sd-space-3);
+  padding: var(--sd-space-5) var(--sd-space-4);
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-line);
+  border-radius: var(--sd-radius-xl);
+  box-shadow: var(--sd-shadow-soft);
+}
+
+.sd-pricing-card--featured {
+  background: linear-gradient(135deg, var(--sd-premium-navy) 0%, var(--sd-premium-navy-2) 100%);
+  border-color: transparent;
+  box-shadow: var(--sd-premium-shadow-strong);
+  color: #ffffff;
+}
+
+.sd-pricing-card--featured .sd-eyebrow,
+.sd-pricing-card--featured p {
+  color: #ffffff;
+}
+
+.sd-pricing-card--featured .sd-pricing-card__fee,
+.sd-pricing-card--featured .sd-pricing-card__terms {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+.sd-pricing-card--featured .sd-button {
+  background: #ffffff;
+  color: #111111;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+}
+
+.sd-pricing-card--featured .sd-button:hover {
+  background: var(--sd-premium-cream-2);
+  color: #111111;
+}
+
+.sd-pricing-card__price {
+  font-size: clamp(2.4rem, 5vw, 3.5rem);
+  font-weight: 850;
+  line-height: 1;
+  color: var(--sd-ink);
+  margin: 0;
+}
+
+.sd-pricing-card--featured .sd-pricing-card__price {
+  color: #ffffff;
+}
+
+.sd-pricing-card__price span {
+  font-size: 1rem;
+  font-weight: 500;
+  opacity: 0.65;
+}
+
+.sd-pricing-card__fee {
+  font-size: 15px;
+  color: var(--sd-muted);
+  margin: 0;
+  font-weight: 600;
+}
+
+.sd-pricing-card__include {
+  font-size: 15px;
+  color: var(--sd-ink);
+  margin: 0;
+}
+
+.sd-pricing-card__terms {
+  font-size: 14px;
+  color: var(--sd-muted);
+  margin: 0;
+}
+
+.sd-pricing-card .sd-button {
+  margin-top: auto;
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+}
+
+@media (max-width: 760px) {
+  .sd-pricing-grid {
+    grid-template-columns: 1fr;
+  }
+}

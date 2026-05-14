@@ -1709,7 +1709,6 @@ final class SD_Front_Office_Scaffold {
             <?php endforeach; ?>
             </div>
 
-            <p class="sdfo-package-select__note">No payment on this step. You will review and confirm payment securely with Stripe.</p>
         </div>
 
         <style>

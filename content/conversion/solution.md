@@ -6,21 +6,32 @@ slug: solution
 status: draft
 meta_title: SoloDrive Solution | Your Booking Page, Payments, and Riders
 meta_description: Everything you need to run your own ride business. Booking. Payments. Rider relationships. All of it, live today.
-summary: Solution page — cluster-based layout covering Your Page, Your Payment, Your Riders.
+summary: Solution page — cluster-based layout with full-bleed premium hero.
 schema_type: WebPage
-last_reviewed: 2026-05-13
+last_reviewed: 2026-05-14
 wp_post_id: 1413
 primary_cta: Get My Booking Page
 primary_cta_url: /start/
 ---
 
-<section class="sd-section sd-hero">
-  <h1>Everything You Need to Run Your Own Ride Business</h1>
-  <p class="sd-hero__lead">Booking. Payments. Rider relationships. All of it, live today.</p>
-  <a class="sd-button" href="#cluster-your-page">See How It Works</a>
+<div class="sd-home-premium">
+
+<section class="sd-home-hero sd-home-hero--premium">
+  <div class="sd-home-hero__inner">
+    <div class="sd-home-hero__content">
+      <p class="sd-home-hero__eyebrow">The SoloDrive System</p>
+      <h1 class="sd-home-hero__title">Everything You Need to Run Your Own Ride Business</h1>
+      <p class="sd-home-hero__lede">Booking. Payments. Rider relationships. All of it, live today.</p>
+      <div class="sd-home-hero__actions">
+        <a class="sd-home-hero__primary" href="#cluster-your-page">See How It Works</a>
+      </div>
+    </div>
+  </div>
 </section>
 
-<section id="cluster-your-page" class="sd-section sd-card sd-cluster">
+<div class="sd-solution-content">
+
+<section id="cluster-your-page" class="sd-card sd-cluster">
   <p class="sd-eyebrow">Your Page</p>
   <p class="sd-cluster__framing">You get a page that works before you even share it.</p>
 
@@ -45,14 +56,14 @@ primary_cta_url: /start/
   </div>
 </section>
 
-<section class="sd-section sd-panel sd-panel--soft sd-loop-visual">
+<section class="sd-panel sd-panel--soft sd-loop-visual">
   <figure>
     <img src="https://solodrive.pro/wp-content/uploads/2026/05/sdp-loop-day.svg" alt="Hub-and-spoke diagram showing how your SoloDrive booking link connects you directly to your riders" width="800" />
     <figcaption>Your booking link turns each Uber ride into a direct booking.</figcaption>
   </figure>
 </section>
 
-<section class="sd-section sd-card sd-cluster">
+<section class="sd-card sd-cluster">
   <p class="sd-eyebrow">Your Payment</p>
   <p class="sd-cluster__framing">No fare disputes. No awkward cash moments. No chasing payment.</p>
 
@@ -77,7 +88,7 @@ primary_cta_url: /start/
   </div>
 </section>
 
-<section class="sd-section sd-card sd-cluster">
+<section class="sd-card sd-cluster">
   <p class="sd-eyebrow">Your Riders</p>
   <p class="sd-cluster__framing">Every ride you complete on SoloDrive is one Uber can't take back.</p>
 
@@ -102,9 +113,8 @@ primary_cta_url: /start/
   </div>
 </section>
 
-<section class="sd-section sd-card">
+<section class="sd-card">
   <p class="sd-eyebrow">No requirements</p>
-
   <h2>What You Don't Need</h2>
 
   <ul>
@@ -115,14 +125,18 @@ primary_cta_url: /start/
   </ul>
 </section>
 
-<section class="sd-section sd-panel sd-panel--soft">
+<section class="sd-panel sd-panel--soft">
   <blockquote>
     <p>"My passengers love it. They never knew what to expect with Lyft. Now, they get me every time."</p>
     <cite>Stan — Memphis, TN</cite>
   </blockquote>
 </section>
 
-<section class="sd-section sd-cta sd-cta--blue">
+<section class="sd-cta sd-cta--blue">
   <h2>Your page is one step away.</h2>
   <a class="sd-button sd-button--light" href="/start/">Get My Booking Page</a>
 </section>
+
+</div>
+
+</div>
