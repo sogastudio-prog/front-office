@@ -3,7 +3,7 @@ type: conversion
 template: solution
 title: Solution
 slug: solution
-status: draft
+status: publish
 meta_title: SoloDrive Solution | Your Booking Page, Payments, and Riders
 meta_description: Everything you need to run your own ride business. Booking. Payments. Rider relationships. All of it, live today.
 summary: Solution page — cluster-based layout with full-bleed premium hero.

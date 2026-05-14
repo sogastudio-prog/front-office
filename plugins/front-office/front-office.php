@@ -1565,6 +1565,7 @@ final class SD_Front_Office_Scaffold {
     public static function register_shortcodes(): void {
         add_shortcode('sdfo_prospect_state',   [__CLASS__, 'shortcode_prospect_state']);
         add_shortcode('sdfo_package_select',   [__CLASS__, 'shortcode_package_select']);
+        add_shortcode('sd_pricing_display',    [__CLASS__, 'shortcode_pricing_display']);
     }
 
     /**
@@ -1805,6 +1806,130 @@ final class SD_Front_Office_Scaffold {
             }
         })();
         </script>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * [sd_pricing_display] shortcode.
+     *
+     * Display-only pricing grid for marketing pages. Reads from sd_comm_package CPT
+     * and linked default profile (feature gates, fee policy, provisioning policy).
+     * No sessionStorage, no CF7 injection, no select/checkout interaction.
+     *
+     * Featured treatment: set sd_featured = 1 on a package in WP admin.
+     *
+     * Usage: [sd_pricing_display]
+     */
+    public static function shortcode_pricing_display(array $atts = []): string {
+        if (self::is_editor_request()) {
+            return '<div class="sd-front-placeholder">Pricing display block</div>';
+        }
+
+        $gate_labels = [
+            'tenant_storefront'    => 'Your booking page',
+            'lead_capture'         => 'Ride requests',
+            'stripe_authorization' => 'Secure checkout',
+            'payment_capture'      => 'Automatic payment collection',
+            'operator_console'     => 'Your dashboard',
+            'driver_portal'        => 'Operator app',
+            'reservations'         => 'Scheduled rides',
+            'quote_workflow'       => 'Custom quote approval',
+            'stacked_availability' => 'Back-to-back ride scheduling',
+            'advanced_reporting'   => 'Advanced reporting',
+            'custom_domain'        => 'Custom web address',
+            'white_label'          => 'Remove SoloDrive branding',
+        ];
+
+        $packages = SDFO_Commercial_CPTs::get_public_packages();
+
+        if (empty($packages)) {
+            $all_posts = get_posts([
+                'post_type'      => SDFO_Commercial_CPTs::CPT_PACKAGE,
+                'post_status'    => ['publish', 'draft'],
+                'posts_per_page' => 10,
+                'no_found_rows'  => true,
+            ]);
+            foreach ($all_posts as $post) {
+                $price_id = (string) get_post_meta($post->ID, 'sd_stripe_price_id', true);
+                if ($price_id !== '') {
+                    $pkg = SDFO_Commercial_CPTs::get_package_any_status(
+                        (string) get_post_meta($post->ID, 'sd_package_key', true)
+                    );
+                    if ($pkg) {
+                        $packages[$pkg['package_key']] = $pkg;
+                    }
+                }
+            }
+        }
+
+        if (empty($packages)) {
+            return '';
+        }
+
+        ob_start();
+        ?>
+        <div class="sd-pricing-grid sd-pricing-display">
+        <?php foreach ($packages as $pkg) :
+
+            $price_cents = (int) ($pkg['display_price_cents'] ?? 0);
+            $interval    = $pkg['billing_interval'] ?? 'month';
+            $price_str   = $price_cents > 0 ? number_format($price_cents / 100, 0) : '0';
+
+            $profile     = SDFO_Commercial_CPTs::get_default_profile_for_package((int) $pkg['post_id']);
+            $features    = $profile ? ($profile['features']               ?? []) : [];
+            $fee_policy  = $profile ? ($profile['application_fee_policy'] ?? []) : [];
+            $prov_policy = $profile ? ($profile['provisioning_policy']    ?? []) : [];
+
+            $active_features = [];
+            foreach ($gate_labels as $gate_key => $gate_label) {
+                if (!empty($features[$gate_key])) {
+                    $active_features[] = $gate_label;
+                }
+            }
+
+            $fee_line  = self::build_fee_line($fee_policy);
+            $prov_note = (!empty($prov_policy['auto_provision']) && empty($prov_policy['requires_manual_review']))
+                ? 'Starts immediately after checkout'
+                : 'Account reviewed before activation';
+
+            $is_featured = !empty($pkg['featured']);
+            $cta_url     = esc_url(home_url('/start/?sd_package_key=' . $pkg['package_key']));
+        ?>
+            <article class="sd-pricing-card<?php echo $is_featured ? ' sd-pricing-card--featured' : ''; ?>">
+
+                <?php if ($is_featured) : ?>
+                    <p class="sd-pricing-badge">Most Popular</p>
+                <?php endif; ?>
+
+                <p class="sd-eyebrow"><?php echo esc_html($pkg['label']); ?></p>
+
+                <p class="sd-pricing-card__price">
+                    $<?php echo esc_html($price_str); ?><span>/<?php echo esc_html($interval); ?></span>
+                </p>
+
+                <?php if ($fee_line !== '') : ?>
+                    <p class="sd-pricing-card__fee"><?php echo esc_html($fee_line); ?></p>
+                <?php endif; ?>
+
+                <?php if (!empty($active_features)) : ?>
+                    <ul class="sd-pricing-card__features">
+                        <?php foreach ($active_features as $feat_label) : ?>
+                            <li><?php echo esc_html($feat_label); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+
+                <p class="sd-pricing-card__include">Full platform included.</p>
+                <p class="sd-pricing-card__terms">No contracts. No commitments.</p>
+
+                <a class="sd-button" href="<?php echo $cta_url; ?>">Get My Booking Page</a>
+
+                <p class="sd-pricing-card__provision"><?php echo esc_html($prov_note); ?></p>
+
+            </article>
+        <?php endforeach; ?>
+        </div>
         <?php
         return (string) ob_get_clean();
     }

@@ -32,36 +32,7 @@ primary_cta_url: /start/
 <div class="sd-pricing-content">
 
 <section class="sd-card">
-  <div class="sd-pricing-grid">
-
-    <article class="sd-pricing-card">
-      <p class="sd-eyebrow">Basic</p>
-      <p class="sd-pricing-card__price">$10<span>/month</span></p>
-      <p class="sd-pricing-card__fee">6.5% per ride &middot; $1.00 minimum</p>
-      <p class="sd-pricing-card__include">Full platform included.</p>
-      <p class="sd-pricing-card__terms">No contracts. No commitments.</p>
-      <a class="sd-button" href="/start/">Get My Booking Page</a>
-    </article>
-
-    <article class="sd-pricing-card sd-pricing-card--featured">
-      <p class="sd-eyebrow">Pro</p>
-      <p class="sd-pricing-card__price">$45<span>/month</span></p>
-      <p class="sd-pricing-card__fee">4% per ride &middot; $1.00 minimum</p>
-      <p class="sd-pricing-card__include">Full platform included.</p>
-      <p class="sd-pricing-card__terms">No contracts. No commitments.</p>
-      <a class="sd-button" href="/start/">Get My Booking Page</a>
-    </article>
-
-    <article class="sd-pricing-card">
-      <p class="sd-eyebrow">Elite</p>
-      <p class="sd-pricing-card__price">$100<span>/month</span></p>
-      <p class="sd-pricing-card__fee">No per-ride fee.</p>
-      <p class="sd-pricing-card__include">Full platform included.</p>
-      <p class="sd-pricing-card__terms">No contracts. No commitments.</p>
-      <a class="sd-button" href="/start/">Get My Booking Page</a>
-    </article>
-
-  </div>
+  [sd_pricing_display]
 </section>
 
 <section class="sd-card">
