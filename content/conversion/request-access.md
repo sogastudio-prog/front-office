@@ -14,6 +14,8 @@ last_reviewed: 2026-05-13
 ---
 
 <section class="sd-section sd-hero sd-hero--intake">
+  <img class="sd-exit-sign" src="/wp-content/plugins/solodrive-front-css/assets/sdp-exit-sign.svg" alt="" aria-hidden="true" />
+
   <p class="sd-eyebrow">Start</p>
 
   <h1>This is your exit.</h1>

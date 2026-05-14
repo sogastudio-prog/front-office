@@ -381,6 +381,25 @@ a.sd-button:hover {
   background: linear-gradient(135deg, var(--sd-premium-navy) 0%, var(--sd-premium-navy-2) 100%);
 }
 
+/* Exit sign — absolutely positioned in upper right of intake hero */
+.sd-exit-sign {
+  position: absolute;
+  top: 28px;
+  right: 36px;
+  width: 120px;
+  height: auto;
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .sd-exit-sign {
+    width: 80px;
+    top: 18px;
+    right: 20px;
+  }
+}
+
 .sd-form-card {
   background: var(--sd-surface);
   border: 1px solid var(--sd-line);
