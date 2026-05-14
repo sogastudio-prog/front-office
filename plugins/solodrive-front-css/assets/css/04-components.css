@@ -371,3 +371,127 @@ a.sd-button:hover {
     text-align: left;
   }
 }
+
+/* =====================================
+   INTAKE / FORM-FLOW COMPONENTS
+   ===================================== */
+
+/* Intake hero: solid navy gradient, no vehicle background image */
+.sd-hero--intake {
+  background: linear-gradient(135deg, var(--sd-premium-navy) 0%, var(--sd-premium-navy-2) 100%);
+}
+
+.sd-form-card {
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-line);
+  border-radius: var(--sd-radius-xl);
+  box-shadow: var(--sd-shadow-soft);
+  padding: clamp(32px, 5vw, 56px);
+}
+
+.sd-form-shell {
+  margin-top: var(--sd-space-4);
+}
+
+.sd-form-shell .wpcf7 {
+  margin: 0;
+}
+
+.sd-form-support {
+  margin-top: var(--sd-space-3);
+  font-size: 14px;
+  color: var(--sd-muted);
+}
+
+.sd-step-list {
+  counter-reset: step;
+  list-style: none;
+  padding: 0;
+  margin: var(--sd-space-4) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sd-space-3);
+}
+
+.sd-step-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sd-space-3);
+  counter-increment: step;
+}
+
+.sd-step-list li::before {
+  content: counter(step);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--sd-premium-navy);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+/* =====================================
+   SOLUTION CLUSTER / FEATURE GRID
+   ===================================== */
+
+.sd-cluster__framing {
+  font-size: clamp(17px, 1.8vw, 20px);
+  color: var(--sd-muted);
+  max-width: 560px;
+  margin-bottom: var(--sd-space-4);
+}
+
+.sd-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sd-space-4);
+  margin-top: var(--sd-space-3);
+}
+
+.sd-feature-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sd-space-2);
+  padding: var(--sd-space-4);
+  background: var(--sd-surface-soft);
+  border: 1px solid var(--sd-line);
+  border-radius: var(--sd-radius-lg);
+}
+
+.sd-feature-card__icon {
+  display: block;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  margin-bottom: var(--sd-space-1);
+}
+
+.sd-feature-card h3 {
+  font-size: 17px;
+  font-weight: 750;
+  margin: 0;
+}
+
+.sd-feature-card p {
+  font-size: 15px;
+  color: var(--sd-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+@media (max-width: 860px) {
+  .sd-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .sd-feature-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
