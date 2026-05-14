@@ -4,56 +4,28 @@ template: pricing
 title: Pricing
 slug: pricing
 status: draft
-meta_title: SoloDrive Pricing
-meta_description: Start your SoloDrive booking page with the Operator Subscription. $20/month after checkout.
-summary: Pricing page for the SoloDrive Operator Subscription.
+meta_title: SoloDrive Pricing | Choose Your Plan
+meta_description: Choose the SoloDrive plan that fits where you are. Booking page, direct rider requests, secure payments. Start today.
+summary: Pricing page — three-tier plan select powered by sdfo_package_select shortcode.
 schema_type: Product
-last_reviewed: 2026-04-29
+last_reviewed: 2026-05-14
 wp_post_id: 413
-primary_cta: Start with this plan
-primary_cta_url: /start/?sd_package=operator
+primary_cta: Get My Booking Page
+primary_cta_url: /start/
 ---
 
 <section class="sd-section sd-hero sd-hero--pricing">
   <p class="sd-eyebrow">Pricing</p>
 
-  <h1>Start with a booking page you can actually use.</h1>
+  <h1>Choose the plan that fits where you are.</h1>
 
-  <p class="sd-hero__lead">SoloDrive gives independent drivers a direct booking path riders can use to request them again.</p>
+  <p class="sd-hero__lead">Every plan gives you a direct booking page and a cleaner way to turn repeat riders into your own business.</p>
 
-  <p>One subscription. One setup path. One clean way to begin turning repeat riders into your own business.</p>
-
-  <p><a class="sd-button" href="/start/?sd_package=operator">Start with this plan</a></p>
+  <p>No contracts. Start immediately after checkout.</p>
 </section>
 
-<section class="sd-section sd-card sd-plan-card sd-plan-card--featured">
-  <p class="sd-eyebrow">Operator Subscription</p>
-
-  <h2>$20/month</h2>
-
-  <p><strong>After secure checkout.</strong></p>
-
-  <p>Includes the core SoloDrive setup path for drivers who want their own booking page, direct rider request flow, and a cleaner way to turn repeat riders into direct business.</p>
-
-  <ul>
-    <li>Direct booking page setup path</li>
-    <li>Booking link riders can use to request you directly</li>
-    <li>Trip and status surfaces</li>
-    <li>Operator onboarding path</li>
-    <li>Stripe checkout for your SoloDrive subscription</li>
-    <li>Infrastructure for direct repeat business</li>
-  </ul>
-
-  <p><a class="sd-button" href="/start/?sd_package=operator">Start with this plan</a></p>
-</section>
-
-<!-- EDITORIAL PLACEHOLDER: Social proof — do not publish until sourced -->
-<section class="sd-panel sd-panel--soft">
-  <p><strong>⚠ PLACEHOLDER — not for publication.</strong> Driver testimonial to be sourced from beta operators before this page goes live.</p>
-  <blockquote>
-    <p>[Driver quote to be placed here]</p>
-    <cite>[Driver name, city]</cite>
-  </blockquote>
+<section class="sd-section sd-card">
+  [sdfo_package_select]
 </section>
 
 <section class="sd-section sd-card">
@@ -64,25 +36,22 @@ primary_cta_url: /start/?sd_package=operator
   <ol>
     <li>You start your booking page setup.</li>
     <li>You choose your booking link.</li>
-    <li>You review the $20/month subscription in Stripe.</li>
+    <li>You review your plan in Stripe.</li>
     <li>After checkout, we prepare your operator account and booking page.</li>
   </ol>
 </section>
 
-<section class="sd-section sd-card">
-  <p class="sd-eyebrow">Why it is priced this way</p>
-
-  <h2>This is not random software pricing.</h2>
-
-  <p>You are not buying access to another marketplace. You are starting your own direct booking path.</p>
-
-  <p>The subscription supports the infrastructure behind your booking page, request flow, trip surfaces, setup path, and future operator tools.</p>
+<section class="sd-section sd-panel sd-panel--soft">
+  <blockquote>
+    <p>"My passengers love it. They never knew what to expect with Lyft. Now, they get me every time."</p>
+    <cite>Stan — Memphis, TN</cite>
+  </blockquote>
 </section>
 
 <section class="sd-section sd-card">
   <p class="sd-eyebrow">What this is</p>
 
-  <h2>A practical first step toward direct repeat business.</h2>
+  <h2>A direct booking path riders can use to find you again.</h2>
 
   <p>SoloDrive does not send you random riders. It gives riders who already know you a cleaner way to come back directly.</p>
 
@@ -99,12 +68,7 @@ primary_cta_url: /start/?sd_package=operator
   <p>We provide the booking and setup infrastructure. You remain responsible for your own business, service, and local requirements.</p>
 </section>
 
-<section class="sd-section sd-card">
-  <p class="sd-eyebrow">Ready</p>
-
-  <h2>Start your booking page.</h2>
-
-  <p>You will enter your basic information, choose your booking link, then review checkout securely with Stripe.</p>
-
-  <p><a class="sd-button" href="/start/?sd_package=operator">Start with this plan</a></p>
+<section class="sd-section sd-cta sd-cta--blue">
+  <h2>Your page is one step away.</h2>
+  <a class="sd-button sd-button--light" href="/start/">Get My Booking Page</a>
 </section>
