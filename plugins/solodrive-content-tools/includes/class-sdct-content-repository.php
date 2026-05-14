@@ -130,30 +130,106 @@ class SDCT_Content_Repository {
     }
 
     private function parse_simple_yaml($yaml) {
-        $data = array();
+        $data  = array();
         $lines = preg_split('/\R/', $yaml);
+        $count = count($lines);
 
-        foreach ($lines as $line) {
-            $line = trim($line);
+        $list_key     = null;
+        $current_item = null;
 
-            if ($line === '' || strpos($line, '#') === 0) {
+        for ($i = 0; $i < $count; $i++) {
+            $raw     = $lines[$i];
+            $trimmed = rtrim($raw);
+
+            if ($trimmed === '') {
                 continue;
             }
 
-            if (!preg_match('/^([A-Za-z0-9_\-]+):\s*(.*)$/', $line, $m)) {
+            $indent  = strlen($trimmed) - strlen(ltrim($trimmed));
+            $trimmed = ltrim($trimmed);
+
+            if ($trimmed === '' || strpos($trimmed, '#') === 0) {
                 continue;
             }
 
-            $key = sanitize_key(str_replace('-', '_', $m[1]));
+            // Returned to root level while building a list — flush current item.
+            if ($list_key !== null && $indent === 0) {
+                if ($current_item !== null) {
+                    $data[$list_key][] = $current_item;
+                    $current_item      = null;
+                }
+                $list_key = null;
+                // fall through: process this line as a root key:value
+            }
+
+            // List item start:  "  - key: value"
+            if ($list_key !== null && preg_match('/^-\s+([A-Za-z0-9_\-]+):\s*(.*)$/', $trimmed, $m)) {
+                if ($current_item !== null) {
+                    $data[$list_key][] = $current_item;
+                }
+                $current_item = array();
+                $sub_key      = sanitize_key(str_replace('-', '_', $m[1]));
+                $current_item[$sub_key] = trim($m[2], "\"'");
+                continue;
+            }
+
+            // Continuation of current list item:  "    key: value"  (no dash)
+            if ($list_key !== null && $current_item !== null
+                && preg_match('/^([A-Za-z0-9_\-]+):\s*(.*)$/', $trimmed, $m)
+            ) {
+                $sub_key = sanitize_key(str_replace('-', '_', $m[1]));
+                $current_item[$sub_key] = trim($m[2], "\"'");
+                continue;
+            }
+
+            // Root-level key:value pair.
+            if (!preg_match('/^([A-Za-z0-9_\-]+):\s*(.*)$/', $trimmed, $m)) {
+                continue;
+            }
+
+            $key   = sanitize_key(str_replace('-', '_', $m[1]));
             $value = trim($m[2]);
             $value = trim($value, "\"'");
 
+            if ($value === '') {
+                // Lookahead: enter list mode only if next non-empty line is indented and starts with "-".
+                $is_list = false;
+                for ($j = $i + 1; $j < $count; $j++) {
+                    $peek = $lines[$j];
+                    $peek_t = ltrim(rtrim($peek));
+                    if ($peek_t === '' || strpos($peek_t, '#') === 0) {
+                        continue;
+                    }
+                    $peek_indent = strlen(rtrim($peek)) - strlen(ltrim(rtrim($peek)));
+                    if ($peek_indent > 0 && strpos(ltrim(rtrim($peek)), '-') === 0) {
+                        $is_list = true;
+                    }
+                    break;
+                }
+
+                if ($is_list) {
+                    $list_key     = $key;
+                    $data[$key]   = array();
+                    $current_item = null;
+                    continue;
+                }
+
+                $data[$key] = '';
+                continue;
+            }
+
+            // Inline array:  [a, b, c]
             if (strpos($value, '[') === 0 && substr($value, -1) === ']') {
                 $items = trim($value, '[]');
                 $value = $items === '' ? array() : array_map('trim', explode(',', $items));
             }
 
             $data[$key] = $value;
+        }
+
+        // Flush pending list item at end of input.
+        if ($list_key !== null && $current_item !== null) {
+            $data[$list_key][] = $current_item;
         }
 
         return $data;

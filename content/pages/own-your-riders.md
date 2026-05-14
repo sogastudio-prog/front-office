@@ -10,6 +10,15 @@ primary_topic: driver-owned rider relationships
 cta: request-access
 schema_type: Article
 last_reviewed: 2026-04-27
+faq:
+  - question: Can rideshare drivers accept direct bookings from their riders?
+    answer: Yes. Drivers can build a separate direct-booking path for future rides. SoloDrive provides a booking page so riders can request the same driver again, independent of app-assigned rides.
+  - question: How does a driver build a repeat rider base?
+    answer: Drivers build repeat riders by giving reliable service, recognizing when passengers show interest in future rides, and sharing a direct booking link. When the rider has a simple way to request the same driver, repeat bookings become possible.
+  - question: What does it mean for a driver to own their riders?
+    answer: Owning your riders means having a direct relationship with passengers rather than depending entirely on an app to reconnect you. When a driver has a booking page, riders who already trust them can request that driver directly.
+  - question: How is SoloDrive different from Uber and Lyft?
+    answer: SoloDrive is not a rideshare marketplace. It is infrastructure for independent drivers to accept direct ride requests under their own name, separate from app platforms.
 ---
 
 Drivers do not need more random rides. They need a way to turn the trust they already build in the car into repeat direct bookings.

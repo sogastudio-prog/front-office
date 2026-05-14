@@ -149,4 +149,9 @@ add_action( 'wp_head', function () {
 	if ( $schema_json ) {
 		echo '<script type="application/ld+json">' . "\n" . wp_kses( $schema_json, [] ) . "\n</script>\n";
 	}
+
+	$faq_json = get_post_meta( $post_id, '_sdct_schema_faq_json', true );
+	if ( $faq_json ) {
+		echo '<script type="application/ld+json">' . "\n" . wp_kses( $faq_json, [] ) . "\n</script>\n";
+	}
 }, 5 );

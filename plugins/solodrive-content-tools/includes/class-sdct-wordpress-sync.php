@@ -102,6 +102,19 @@ class SDCT_WordPress_Sync {
 		update_post_meta( $post_id, '_sdct_schema_json', $schema_blob );
 		update_post_meta( $post_id, '_sdct_slug', $slug );
 
+		// FAQPage schema — only when faq items are present in frontmatter.
+		$faq_items = $meta['faq'] ?? null;
+		if ( is_array( $faq_items ) && $faq_items ) {
+			$faq_schema = $this->schema->build_faq( $faq_items );
+			if ( $faq_schema ) {
+				update_post_meta( $post_id, '_sdct_schema_faq_json', $this->schema->encode( $faq_schema ) );
+			} else {
+				delete_post_meta( $post_id, '_sdct_schema_faq_json' );
+			}
+		} else {
+			delete_post_meta( $post_id, '_sdct_schema_faq_json' );
+		}
+
 		// Suppress Astra theme page title for all authority pages.
 		// The renderer writes its own H1 via sd-authority__title.
 		if ( in_array( $type, [ 'authority', 'page' ], true ) ) {
