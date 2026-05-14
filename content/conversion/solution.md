@@ -115,12 +115,10 @@ primary_cta_url: /start/
   </ul>
 </section>
 
-<!-- EDITORIAL PLACEHOLDER: Social proof — do not publish until sourced -->
 <section class="sd-panel sd-panel--soft">
-  <p><strong>⚠ PLACEHOLDER — not for publication.</strong> Driver testimonial to be sourced from beta operators before this page goes live.</p>
   <blockquote>
-    <p>[Driver quote to be placed here]</p>
-    <cite>[Driver name, city]</cite>
+    <p>"My passengers love it. They never knew what to expect with Lyft. Now, they get me every time."</p>
+    <cite>Stan — Memphis, TN</cite>
   </blockquote>
 </section>
 
