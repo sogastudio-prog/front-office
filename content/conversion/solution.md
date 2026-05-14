@@ -115,14 +115,14 @@ primary_cta_url: /start/
   </ul>
 </section>
 
-<section class="sd-panel sd-panel--soft">
+<section class="sd-section sd-panel sd-panel--soft">
   <blockquote>
     <p>"My passengers love it. They never knew what to expect with Lyft. Now, they get me every time."</p>
     <cite>Stan — Memphis, TN</cite>
   </blockquote>
 </section>
 
-<section class="sd-cta sd-cta--blue">
+<section class="sd-section sd-cta sd-cta--blue">
   <h2>Your page is one step away.</h2>
   <a class="sd-button sd-button--light" href="/start/">Get My Booking Page</a>
 </section>
