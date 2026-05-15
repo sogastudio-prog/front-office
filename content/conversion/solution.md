@@ -56,6 +56,13 @@ primary_cta_url: /start/
   </div>
 </section>
 
+<section class="sd-panel sd-panel--soft sd-screen-shot">
+  <figure>
+    <img src="https://solodrive.pro/wp-content/uploads/2026/05/01-request.png" alt="SoloDrive rider booking form — request a ride" width="390" height="844" />
+    <figcaption>Your direct booking link. Riders can find you, request a trip, and confirm.</figcaption>
+  </figure>
+</section>
+
 <section class="sd-panel sd-panel--soft sd-loop-visual">
   <figure>
     <img src="https://solodrive.pro/wp-content/uploads/2026/05/sdp-loop-day.svg" alt="Hub-and-spoke diagram showing how your SoloDrive booking link connects you directly to your riders" width="800" />
@@ -88,6 +95,13 @@ primary_cta_url: /start/
   </div>
 </section>
 
+<section class="sd-panel sd-panel--soft sd-screen-shot">
+  <figure>
+    <img src="https://solodrive.pro/wp-content/uploads/2026/05/02-fare-authorized.png" alt="SoloDrive fare authorization — $18.63 secured" width="390" height="844" />
+    <figcaption>Fare upfront. Payment authorized before the ride starts.</figcaption>
+  </figure>
+</section>
+
 <section class="sd-card sd-cluster">
   <p class="sd-eyebrow">Your Riders</p>
   <p class="sd-cluster__framing">Every ride you complete on SoloDrive is one Uber can't take back.</p>
@@ -110,6 +124,33 @@ primary_cta_url: /start/
       <h3>Rides That Come Back</h3>
       <p>Every direct booking is a rider who knows how to find you again. That's not possible on Uber. That's the whole point of SoloDrive.</p>
     </article>
+  </div>
+</section>
+
+<section class="sd-panel sd-panel--soft sd-screen-shot">
+  <figure>
+    <img src="https://solodrive.pro/wp-content/uploads/2026/05/03-arrived.png" alt="SoloDrive arrival card — driver name, vehicle, wait window" width="390" height="844" />
+    <figcaption>Professional arrival card. Driver name, vehicle, and a wait window.</figcaption>
+  </figure>
+</section>
+
+<section class="sd-card sd-cluster">
+  <p class="sd-eyebrow">Your Dashboard</p>
+  <p class="sd-cluster__framing">Everything you need before you flip to Drive.</p>
+
+  <div class="sd-operator-screens">
+    <div class="sd-screen-shot">
+      <figure>
+        <img src="https://solodrive.pro/wp-content/uploads/2026/05/04-operator-home.png" alt="SoloDrive operator cockpit dashboard" width="390" height="844" />
+        <figcaption>Your operations dashboard. Everything before you flip to Drive.</figcaption>
+      </figure>
+    </div>
+    <div class="sd-screen-shot">
+      <figure>
+        <img src="https://solodrive.pro/wp-content/uploads/2026/05/05-operator-on-trip.png" alt="SoloDrive operator on-trip view — countdown, rider, route" width="390" height="844" />
+        <figcaption>Live trip view. Countdown, rider block, route, and one button to end and capture. <em>Note: minor nav compression — flagged for Design v1.1.</em></figcaption>
+      </figure>
+    </div>
   </div>
 </section>
 

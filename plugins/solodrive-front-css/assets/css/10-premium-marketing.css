@@ -158,6 +158,29 @@ body:has(.sd-start-premium) header.entry-header {
 
 .sd-btn:hover { opacity: 0.9 !important; }
 
+.sd-btn--primary {
+  background: var(--sd-premium-navy) !important;
+  color: #ffffff !important;
+}
+
+.sd-btn--outline {
+  background: transparent !important;
+  color: #ffffff !important;
+  border: 2px solid rgba(255, 255, 255, 0.65) !important;
+  box-shadow: none !important;
+}
+
+.sd-btn--outline:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  opacity: 1 !important;
+}
+
+.sd-btn--large {
+  min-height: 62px !important;
+  padding: 20px 40px !important;
+  font-size: 1.1rem !important;
+}
+
 .sd-premium-text-link {
   color: inherit !important;
   font-weight: 800 !important;
@@ -1117,6 +1140,23 @@ body:has(.sd-start-premium) header.entry-header {
   }
 }
 
+/* Campaign dark hero — no photo, solid near-black */
+.sd-home-hero--dark {
+  position: relative !important;
+  min-height: 80vh !important;
+  display: flex !important;
+  align-items: center !important;
+  background: #0d1117 !important;
+  color: #ffffff !important;
+}
+
+.sd-home-hero__inner--centered {
+  text-align: center !important;
+  max-width: 720px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
 .sd-home-hero--premium {
   position: relative !important;
   min-height: 92vh !important;
@@ -1723,5 +1763,65 @@ body:has(.sd-start-premium) header.entry-header {
 
   .sd-home-proof__grid {
     grid-template-columns: 1fr !important;
+  }
+}
+
+/* =============================================
+   CAMPAIGN PAGES — sd-section layout system
+   ============================================= */
+
+.sd-section {
+  padding: var(--sd-space-7) var(--sd-space-4) !important;
+  position: relative !important;
+}
+
+.sd-section--muted {
+  background: var(--sd-surface-soft) !important;
+}
+
+.sd-section__inner {
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+}
+
+.sd-section__inner--narrow {
+  max-width: 640px !important;
+  margin: 0 auto !important;
+}
+
+/* Campaign beats — large statement paragraphs */
+.sd-campaign__beat {
+  font-size: clamp(1.55rem, 2.8vw, 2.2rem) !important;
+  line-height: 1.22 !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  color: #1a1a1a !important;
+  margin: 0 0 var(--sd-space-5) !important;
+}
+
+.sd-campaign__beat--light {
+  color: var(--sd-muted) !important;
+  font-weight: 400 !important;
+}
+
+.sd-campaign__beat--strong {
+  font-weight: 850 !important;
+  color: #0d1117 !important;
+}
+
+.sd-lead {
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem) !important;
+  line-height: 1.55 !important;
+  color: #444 !important;
+  margin: 0 0 var(--sd-space-4) !important;
+}
+
+@media (max-width: 600px) {
+  .sd-section {
+    padding: var(--sd-space-6) var(--sd-space-3) !important;
+  }
+
+  .sd-home-hero--dark {
+    min-height: 70vh !important;
   }
 }
