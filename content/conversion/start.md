@@ -24,6 +24,31 @@ primary_cta_url: /start/
 </section>
 
 <section class="sd-section sd-card">
+  <h2>What Happens After You Click</h2>
+  <ol class="sd-step-list">
+    <li>
+      <div>
+        <strong>Fill out the short form.</strong>
+        <p>Takes about 2 minutes. Name, phone, and a few basics. No technical setup required.</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>We set up your operator account.</strong>
+        <p>We handle the build. You get a professional booking page with your name on it. No decisions to make. No code to write.</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Share your link. Riders book direct.</strong>
+        <p>One link. Text it. Drop it in your bio. Your next passenger can book you directly — fare upfront, payment secured before the ride starts.</p>
+      </div>
+    </li>
+  </ol>
+  <p>No technical skill needed. If you can send a text, you can do this.</p>
+</section>
+
+<section class="sd-section sd-card">
   [sdfo_package_select heading="Choose your plan"]
 </section>
 
