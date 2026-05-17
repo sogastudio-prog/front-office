@@ -336,53 +336,34 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function handle_cf7_submission($contact_form): void {
-        error_log('SD Front Office: handler fired');
-
-        if (is_object($contact_form) && method_exists($contact_form, 'id')) {
-        error_log('SD Front Office: form id = ' . $contact_form->id());
-        }
-
         if (!class_exists('WPCF7_Submission') || !method_exists('WPCF7_Submission', 'get_instance')) {
-        error_log('SD Front Office: WPCF7_Submission class or get_instance missing');
         return;
         }
 
         $submission = WPCF7_Submission::get_instance();
         if (!$submission) {
-        error_log('SD Front Office: submission instance is null');
         return;
         }
-
-        error_log('SD Front Office: submission instance acquired');
 
         $posted_data = $submission->get_posted_data();
 
         if (!is_array($posted_data)) {
-        error_log('SD Front Office: posted_data is not array');
-        error_log('SD Front Office: posted_data raw = ' . print_r($posted_data, true));
         return;
         }
 
-        error_log('SD Front Office: posted data = ' . wp_json_encode($posted_data));
-
         if (!self::is_request_access_form($contact_form, $posted_data)) {
-        error_log('SD Front Office: form check failed');
         return;
         }
 
         $payload = self::normalize_payload($posted_data);
         //      $payload['invitation'] = self::evaluate_invitation_code($payload['invitation_code']);
 
-        error_log('SD Front Office: normalized payload = ' . wp_json_encode($payload));
-
         $prospect_post_id = self::find_existing_prospect($payload);
-        error_log('SD Front Office: existing prospect id = ' . $prospect_post_id);
 
         if ($prospect_post_id > 0) {
             $prospect_post_id = self::update_existing_prospect($prospect_post_id, $payload);
             self::ensure_prospect_token($prospect_post_id);
             self::ensure_cf7_stripe_origin($prospect_post_id, $payload);
-            error_log('SD Front Office: updated existing prospect');
             return;
         }
 
@@ -391,7 +372,6 @@ final class SD_Front_Office_Scaffold {
             self::ensure_prospect_token($created_id);
             self::ensure_cf7_stripe_origin($created_id, $payload);
         }
-        error_log('SD Front Office: create_new_prospect returned = ' . $created_id);
     }
 
     private static function create_new_prospect(array $payload): int {
@@ -412,7 +392,7 @@ final class SD_Front_Office_Scaffold {
         ], true);
 
         if (is_wp_error($prospect_post_id) || !$prospect_post_id) {
-            error_log('SD Front Office: create_new_prospect failed: ' . (is_wp_error($prospect_post_id) ? $prospect_post_id->get_error_message() : 'unknown'));
+            error_log('SD Front Office: create_new_prospect failed: ' . (is_wp_error($prospect_post_id) ? $prospect_post_id->get_error_message() : 'unknown')); // production-safe log
             return 0;
         }
 
@@ -482,37 +462,30 @@ final class SD_Front_Office_Scaffold {
     }
 
     public static function inject_cf7_redirect($response, $result) {
-        error_log('SD Front Office: inject_cf7_redirect fired');
-
         if (!is_array($response)) {
             $response = [];
         }
 
         if (!class_exists('WPCF7_Submission') || !method_exists('WPCF7_Submission', 'get_instance')) {
-            error_log('SD Front Office: inject_cf7_redirect missing submission class');
             return $response;
         }
 
         $submission = WPCF7_Submission::get_instance();
         if (!$submission) {
-            error_log('SD Front Office: inject_cf7_redirect no submission instance');
             return $response;
         }
 
         $contact_form = $submission->get_contact_form();
         if (!is_object($contact_form) || !method_exists($contact_form, 'id')) {
-            error_log('SD Front Office: inject_cf7_redirect no contact form on submission');
             return $response;
         }
 
         if ((int) $contact_form->id() !== self::REQUEST_ACCESS_FORM_ID) {
-            error_log('SD Front Office: inject_cf7_redirect skipped, wrong form id = ' . $contact_form->id());
             return $response;
         }
 
         $posted_data = $submission->get_posted_data();
         if (!is_array($posted_data)) {
-            error_log('SD Front Office: inject_cf7_redirect posted_data not array');
             return $response;
         }
 
@@ -530,16 +503,12 @@ final class SD_Front_Office_Scaffold {
         $payload = self::normalize_payload($posted_data);
         $prospect_post_id = self::find_existing_prospect($payload);
 
-        error_log('SD Front Office: inject_cf7_redirect matched prospect id = ' . $prospect_post_id);
-
         if ($prospect_post_id <= 0) {
             return $response;
         }
 
         $redirect_url = self::get_prospect_url_for_post($prospect_post_id);
         $response['sd_redirect_url'] = $redirect_url;
-
-        error_log('SD Front Office: inject_cf7_redirect set sd_redirect_url = ' . $redirect_url);
 
         return $response;
     }
@@ -550,7 +519,7 @@ final class SD_Front_Office_Scaffold {
         $endpoint_secret = self::get_stripe_webhook_secret();
 
         if ($endpoint_secret === '') {
-            error_log('SD Front Office: missing Stripe webhook secret');
+            error_log('SD Front Office: missing Stripe webhook secret'); // production-safe log
             return new WP_REST_Response(['error' => 'missing webhook secret'], 500);
         }
 
@@ -565,7 +534,7 @@ final class SD_Front_Office_Scaffold {
                 $endpoint_secret
             );
         } catch (Throwable $e) {
-            error_log('SD Front Office: Stripe webhook signature failed: ' . $e->getMessage());
+            error_log('SD Front Office: Stripe webhook signature failed: ' . $e->getMessage()); // production-safe log
             return new WP_REST_Response(['error' => 'invalid signature'], 400);
         }
 
@@ -767,7 +736,7 @@ final class SD_Front_Office_Scaffold {
             update_post_meta($provision_package_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
         }
 
-        error_log('[SD Front Office] subscription paid via ' . ($source !== '' ? $source : 'direct') . ' for prospect_post_id=' . $prospect_post_id);
+        error_log('[SD Front Office] subscription paid via ' . ($source !== '' ? $source : 'direct') . ' for prospect_post_id=' . $prospect_post_id); // production-safe log
     }
 
     private static function find_prospect_by_meta(string $meta_key, string $meta_value): int {
@@ -796,7 +765,6 @@ final class SD_Front_Office_Scaffold {
 
     private static function handle_stripe_account_updated($account, string $event_id = ''): void {
         if (!is_object($account) || empty($account->id)) {
-            error_log('SD Front Office: account.updated missing account object');
             return;
         }
 
@@ -1205,7 +1173,7 @@ final class SD_Front_Office_Scaffold {
                 'url' => (string) $session->url,
             ];
         } catch (Throwable $e) {
-            error_log('SD Front Office: Stripe Checkout session create failed: ' . $e->getMessage());
+            error_log('SD Front Office: Stripe Checkout session create failed: ' . $e->getMessage()); // production-safe log
             return ['ok' => false, 'error' => 'checkout_failed'];
         }
     }
@@ -1339,22 +1307,17 @@ final class SD_Front_Office_Scaffold {
             return;
         }
 
-        error_log('SD Front Office: maybe_finalize_checkout_success entered for prospect_post_id=' . $prospect_post_id . ' checkout=' . $checkout_flag . ' session_id=' . $session_id);
-
         $existing_paid = (string) get_post_meta($prospect_post_id, 'sd_billing_status', true);
         if ($existing_paid === self::BILLING_SUBSCRIPTION_PAID) {
-            error_log('SD Front Office: checkout success finalizer skipped, already marked paid for prospect_post_id=' . $prospect_post_id);
             return;
         }
 
         if (!class_exists('\\Stripe\\Stripe') || !class_exists('\\Stripe\\Checkout\\Session')) {
-            error_log('SD Front Office: checkout success finalizer skipped, Stripe SDK missing');
             return;
         }
 
         $stripe_secret_key = self::get_stripe_secret_key();
         if ($stripe_secret_key === '') {
-            error_log('SD Front Office: checkout success finalizer skipped, Stripe secret missing');
             return;
         }
 
@@ -1363,12 +1326,10 @@ final class SD_Front_Office_Scaffold {
 
             $session = \Stripe\Checkout\Session::retrieve($session_id, []);
             if (!$session) {
-                error_log('SD Front Office: checkout success finalizer failed, no session returned for session_id=' . $session_id);
                 return;
             }
 
             if ((string) $session->payment_status !== 'paid') {
-                error_log('SD Front Office: checkout session not marked paid yet for session_id=' . $session_id);
                 return;
             }
 
@@ -1389,26 +1350,20 @@ final class SD_Front_Office_Scaffold {
                 exit;
             }
         } catch (Throwable $e) {
-            error_log('SD Front Office: checkout success verify failed: ' . $e->getMessage());
+            error_log('SD Front Office: checkout success verify failed: ' . $e->getMessage()); // production-safe log
         }
     }
 
     private static function maybe_stage_provision_package(int $prospect_post_id): void {
-        error_log('SD Front Office: maybe_stage_provision_package entered for prospect_post_id=' . $prospect_post_id);
-
         $existing_provision_package_post_id = (int) get_post_meta($prospect_post_id, 'sd_provision_package_post_id', true);
         if ($existing_provision_package_post_id > 0) {
-            error_log('SD Front Office: provision package staging skipped, already exists. provision_package_post_id=' . $existing_provision_package_post_id);
             return;
         }
 
         $reserved_slug = (string) get_post_meta($prospect_post_id, 'sd_reserved_slug', true);
         $prospect_id   = (string) get_post_meta($prospect_post_id, 'sd_prospect_id', true);
 
-        error_log('SD Front Office: provision package precheck reserved_slug=' . $reserved_slug . ' prospect_id=' . $prospect_id);
-
         if ($reserved_slug === '') {
-            error_log('SD Front Office: provision package staging aborted, missing reserved_slug for prospect_post_id=' . $prospect_post_id);
             return;
         }
 
@@ -1424,7 +1379,7 @@ final class SD_Front_Office_Scaffold {
                 . $prospect_post_id
                 . ' error='
                 . (is_wp_error($provision_package_post_id) ? $provision_package_post_id->get_error_message() : 'unknown')
-            );
+            ); // production-safe log
             return;
         }
 
@@ -1450,14 +1405,6 @@ final class SD_Front_Office_Scaffold {
         update_post_meta($prospect_post_id, self::META_ACTIVATION_STATE, self::STAGE_CHECKOUT_PENDING);
         update_post_meta($prospect_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
 
-        error_log(
-            'SD Front Office: provision package staged. provision_package_id='
-            . $provision_package_id
-            . ' provision_package_post_id='
-            . $provision_package_post_id
-            . ' storefront_url='
-            . $storefront_url
-        );
     }
 
     private static function deprecated_provision_runtime_operator_access(int $prospect_post_id, int $provision_package_post_id): void {
@@ -1467,7 +1414,6 @@ final class SD_Front_Office_Scaffold {
         $slug = (string) get_post_meta($provision_package_post_id, 'sd_reserved_slug', true);
 
         if ($email === '' || $tenant_id === '') {
-            error_log('SD Front Office: runtime provisioning skipped (missing email or tenant_id)');
             return;
         }
 
@@ -1499,7 +1445,7 @@ final class SD_Front_Office_Scaffold {
         ]);
 
         if (is_wp_error($response)) {
-            error_log('SD Front Office: runtime provisioning failed: ' . $response->get_error_message());
+            error_log('SD Front Office: runtime provisioning failed: ' . $response->get_error_message()); // production-safe log
             return;
         }
 
@@ -1507,10 +1453,6 @@ final class SD_Front_Office_Scaffold {
 
         if (!empty($body['ok']) && !empty($body['login_url'])) {
             update_post_meta($prospect_post_id, self::META_OPERATIONS_ENTRY_URL, (string) $body['login_url']);
-
-            error_log('SD Front Office: runtime operator access provisioned: ' . $body['login_url']);
-        } else {
-            error_log('SD Front Office: runtime provisioning response invalid');
         }
     }
 
@@ -2309,7 +2251,7 @@ final class SD_Front_Office_Scaffold {
             : (string) get_option('sd_control_plane_provisioning_secret', '');
 
         if ($secret === '') {
-            error_log('[SD Front Office] Provisioning secret not configured — rejecting request.');
+            error_log('[SD Front Office] Provisioning secret not configured — rejecting request.'); // production-safe log
             return false;
         }
 
@@ -2639,7 +2581,7 @@ final class SD_Front_Office_Scaffold {
             if (!empty($cpt_result['ok'])) {
                 return $cpt_result;
             }
-            error_log('[SD Front Office] CPT pricing resolution failed: ' . ($cpt_result['error'] ?? 'unknown') . ' package=' . $package_key);
+            error_log('[SD Front Office] CPT pricing resolution failed: ' . ($cpt_result['error'] ?? 'unknown') . ' package=' . $package_key); // production-safe log
         }
 
         // ---------------------------------------------------------------
@@ -2683,7 +2625,7 @@ final class SD_Front_Office_Scaffold {
         // ---------------------------------------------------------------
         $fallback_price = (string) get_post_meta($prospect_post_id, 'sd_resolved_stripe_price_id', true);
         if ($fallback_price !== '') {
-            error_log('[SD Front Office] Using stored fallback price for prospect_post_id=' . $prospect_post_id . ' price=' . $fallback_price);
+            error_log('[SD Front Office] Using stored fallback price for prospect_post_id=' . $prospect_post_id . ' price=' . $fallback_price); // production-safe log
             return [
                 'ok'             => true,
                 'profile_source' => 'stored_fallback',
@@ -2794,7 +2736,7 @@ final class SD_Front_Office_Scaffold {
             update_post_meta($provision_package_post_id, 'sd_commercial_terms_snapshot_json', wp_json_encode($terms_snapshot));
         }
 
-        error_log('[SD Front Office] CPT pricing resolved. package=' . $package_key . ' profile=' . $profile_key . ' price=' . $stripe_price_id . ' prospect=' . $prospect_post_id);
+        error_log('[SD Front Office] CPT pricing resolved. package=' . $package_key . ' profile=' . $profile_key . ' price=' . $stripe_price_id . ' prospect=' . $prospect_post_id); // production-safe log
 
         return [
             'ok'                     => true,
@@ -2912,7 +2854,6 @@ add_action('sd_control_plane_provision_package_requested', function ($provision_
         update_post_meta($provision_package_post_id, 'sd_provisioning_status', 'deprecated_front_dispatch_ignored');
         update_post_meta($provision_package_post_id, 'sd_updated_at_gmt', current_time('mysql', true));
     }
-    error_log('[SD Front Office] Ignored deprecated front provisioning dispatch. provision_package_post_id=' . (int) $provision_package_post_id);
 }, 10, 3);
 /**
  * Front-end helper for CF7 redirect.
